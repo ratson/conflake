@@ -6,8 +6,8 @@ in
 {
   options = {
     outputs = mkOption {
-      type = types.lazyAttrsOf types.raw;
-      default = { };
+      type = types.nullOr (types.lazyAttrsOf types.raw);
+      default = null;
     };
   };
 }

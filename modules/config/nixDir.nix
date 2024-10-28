@@ -1,9 +1,11 @@
-{ config, lib, ... }:
+{ config, lib, ... }@args:
 
 let
   inherit (builtins) attrValues foldl' mapAttrs pathExists readDir;
 
   inherit (lib) removeSuffix flip genAttrs nameValuePair mkOption pipe remove types;
+
+  inherit (config) inputs;
 
   loadDir = dir:
     let
@@ -27,15 +29,6 @@ let
         (acc: { name, value }:
           acc // { ${name} = value; }))
     ];
-
-  pkgsBySystem = genAttrs config.systems (system: import config.inputs.nixpkgs {
-    inherit system;
-  });
-
-  packages = mapAttrs
-    (system: pkgs:
-      mapAttrs (_: v: pkgs.callPackage v { }) config.nixDirEntries.packages or { })
-    pkgsBySystem;
 in
 {
   options = {
@@ -52,9 +45,5 @@ in
 
   config = {
     nixDirEntries = loadDir config.nixDir;
-
-    outputs = {
-      inherit packages;
-    };
   };
 }
