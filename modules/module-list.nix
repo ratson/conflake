@@ -1,0 +1,10 @@
+[
+  ./config/finalOutputs.nix
+  ./config/inputs.nix
+  ./config/nixDir.nix
+  ./config/outputs.nix
+  ./config/packages.nix
+  ./config/perSystem.nix
+  ./config/src.nix
+  ./config/systems.nix
+]
