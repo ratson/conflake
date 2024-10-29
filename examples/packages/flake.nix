@@ -7,7 +7,10 @@
 
   outputs = { conflake, ... }@inputs:
     conflake ./. inputs {
+      packages.hi = { pkgs, ... }: pkgs.hello;
 
-      packages.hi = { pkgs }: pkgs.hello;
+      perSystem = { pkgs, ... }: {
+        packages.haloha = pkgs.hello;
+      };
     };
 }

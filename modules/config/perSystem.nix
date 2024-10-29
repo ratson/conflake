@@ -6,9 +6,8 @@ in
 {
   options = {
     perSystem = mkOption {
-      type = types.functionTo types.str;
-      default = _: { };
+      type = types.nullOr (types.functionTo (types.lazyAttrsOf types.raw));
+      default = null;
     };
   };
 }
-

@@ -3,8 +3,8 @@
 let
   inherit (builtins) mapAttrs;
 
-  inherit (lib) attrNames functionArgs genAttrs getAttrs
-    mkDefault mkIf mkMerge mkOption types;
+  inherit (lib) attrValues callPackageWith foldAttrs genAttrs
+    mergeAttrs mkDefault mkIf mkMerge mkOption types;
 
   inherit (config) inputs;
 
@@ -33,6 +33,16 @@ let
       })
     )
     config.nixDirEntries.nixosModules or { };
+
+  callWith = callPackageWith { inherit inputs lib; };
+
+  perSystemOutputs = foldAttrs mergeAttrs { } (attrValues (mapAttrs
+    (system: pkgs: mapAttrs
+      (_: v: { ${system} = v; })
+      (callWith config.perSystem {
+        inherit pkgs system;
+      }))
+    config.pkgsBySystem));
 in
 {
   options = {
@@ -65,12 +75,16 @@ in
   config = {
     finalOutputs = mkMerge [
       { inherit nixosConfigurations nixosModules packages; }
-      {
+
+      (mkIf (config.packages != null) {
         packages = mapAttrs
           (system: pkgs:
-            mapAttrs (_: f: f (getAttrs (attrNames (functionArgs f)) { inherit lib pkgs system; })) config.packages)
+            mapAttrs (_: f: callWith f { inherit pkgs system; })
+              config.packages)
           config.pkgsBySystem;
-      }
+      })
+
+      (mkIf (config.perSystem != null) perSystemOutputs)
       (mkIf (config.outputs != null) config.outputs)
     ];
   };

@@ -6,8 +6,8 @@ in
 {
   options = {
     packages = mkOption {
-      type = types.attrsOf types.raw;
-      default = _: { };
+      type = types.nullOr (types.attrsOf types.raw);
+      default = null;
     };
   };
 }
