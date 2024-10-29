@@ -8,10 +8,26 @@ let
 
   inherit (config) inputs;
 
+  moduleArgs = mapAttrs (_: v: mkDefault v) {
+    inherit inputs;
+  };
+
+  callWith = callPackageWith (moduleArgs // { inherit lib; });
+
   packages = mapAttrs
-    (system: pkgs:
-      mapAttrs (_: v: pkgs.callPackage v { }) config.nixDirEntries.packages or { })
+    (system: pkgs: mapAttrs
+      (_: v: pkgs.callPackage v moduleArgs)
+      config.nixDirEntries.packages or { })
     config.pkgsBySystem;
+
+  homeModules = mapAttrs
+    (_: homeModule: (_: {
+      imports = [
+        { _module.args = moduleArgs; }
+        homeModule
+      ];
+    }))
+    config.nixDirEntries.homeModules or { };
 
   nixosConfigurations = mapAttrs
     (_: v: inputs.nixpkgs.lib.nixosSystem (
@@ -20,21 +36,13 @@ let
     config.nixDirEntries.nixos or { };
 
   nixosModules = mapAttrs
-    (_: nixosModule:
-      (_: {
-        imports = [
-          {
-            _module.args = mapAttrs (_: v: mkDefault v) {
-              inherit inputs;
-            };
-          }
-          nixosModule
-        ];
-      })
-    )
+    (_: nixosModule: (_: {
+      imports = [
+        { _module.args = moduleArgs; }
+        nixosModule
+      ];
+    }))
     config.nixDirEntries.nixosModules or { };
-
-  callWith = callPackageWith { inherit inputs lib; };
 
   perSystemOutputs = foldAttrs mergeAttrs { } (attrValues (mapAttrs
     (system: pkgs: mapAttrs
@@ -74,7 +82,7 @@ in
 
   config = {
     finalOutputs = mkMerge [
-      { inherit nixosConfigurations nixosModules packages; }
+      { inherit homeModules nixosConfigurations nixosModules packages; }
 
       (mkIf (config.packages != null) {
         packages = mapAttrs

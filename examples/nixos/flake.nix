@@ -1,28 +1,45 @@
 {
-  inputs.conflake = {
-    url = "../..";
-    inputs.nixpkgs.follows = "nixpkgs";
-  };
-  inputs.nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
-
-  inputs.greet = {
-    url = "../packages";
-    inputs.conflake.follows = "conflake";
-    inputs.nixpkgs.follows = "nixpkgs";
-  };
-
-  outputs = { conflake, ... }@inputs:
+  outputs = { conflake, home-manager, nixpkgs, self, ... }@inputs:
     conflake ./. inputs {
       outputs = {
-        nixosConfigurations.vm2 = inputs.nixpkgs.lib.nixosSystem {
+        nixosConfigurations.vm2 = nixpkgs.lib.nixosSystem {
           system = "x86_64-linux";
 
           modules = [
-            inputs.self.nixosModules.default
-            { system.stateVersion = "24.11"; }
+            self.nixosModules.default
+            home-manager.nixosModules.home-manager
+            {
+              home-manager.sharedModules = [
+                self.homeModules.default
+              ];
+
+              home-manager.users.root = {
+                programs.fish.enable = true;
+
+                home.stateVersion = "24.11";
+              };
+              system.stateVersion = "24.11";
+            }
           ];
         };
       };
-
     };
+
+  inputs = {
+    conflake = {
+      url = "../..";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
+    greet = {
+      url = "../packages";
+      inputs.conflake.follows = "conflake";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
+    home-manager = {
+      url = "github:nix-community/home-manager";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
+    nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
+  };
+
 }
