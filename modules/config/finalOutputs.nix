@@ -1,4 +1,4 @@
-{ config, lib, ... }:
+{ config, lib, conflake, ... }:
 
 let
   inherit (builtins) head mapAttrs match;
@@ -24,29 +24,6 @@ let
       config.nixDirEntries.packages or { })
     config.pkgsBySystem;
 
-  homeConfigurations = mapAttrs
-    (name: v: inputs.home-manager.lib.homeManagerConfiguration (
-      let
-        cfg = import v;
-        username = head (match "([^@]*)(@.*)?" name);
-      in
-      (removeAttrs cfg [ "system" ] // {
-        modules = [
-          { home.username = mkDefault username; }
-        ] ++ cfg.modules or [ ];
-        pkgs = inputs.nixpkgs.legacyPackages.${cfg.system};
-      })
-    ))
-    config.nixDirEntries.home or { };
-
-  homeModules = mapAttrs
-    (_: homeModule: (_: {
-      imports = [
-        { _module.args = moduleArgs; }
-        homeModule
-      ];
-    }))
-    config.nixDirEntries.homeModules or { };
 
   nixosConfigurations = mapAttrs
     (_: v: inputs.nixpkgs.lib.nixosSystem (
@@ -74,20 +51,7 @@ in
 {
   options = {
     finalOutputs = mkOption {
-      type = types.submodule {
-        freeformType = types.lazyAttrsOf types.raw;
-        options = {
-          homeConfigurations = mkOption {
-            type = types.attrsOf types.raw;
-          };
-          nixosConfigurations = mkOption {
-            type = types.attrsOf types.raw;
-          };
-          packages = mkOption {
-            type = types.attrsOf (types.attrsOf types.raw);
-          };
-        };
-      };
+      type = conflake.types.outputs;
       readOnly = true;
       visible = false;
     };
@@ -105,11 +69,38 @@ in
   config = {
     finalOutputs = mkMerge [
       {
-        inherit homeConfigurations homeModules
-          nixosConfigurations nixosModules packages;
+        inherit nixosConfigurations nixosModules packages;
 
         lib = libOutput;
       }
+
+      (mkIf (config.nixDirEntries ? home) {
+        homeConfigurations = mapAttrs
+          (name: v: inputs.home-manager.lib.homeManagerConfiguration (
+            let
+              cfg = import v;
+              username = head (match "([^@]*)(@.*)?" name);
+            in
+            (removeAttrs cfg [ "system" ] // {
+              modules = [
+                { home.username = mkDefault username; }
+              ] ++ cfg.modules or [ ];
+              pkgs = inputs.nixpkgs.legacyPackages.${cfg.system};
+            })
+          ))
+          config.nixDirEntries.home;
+      })
+
+      (mkIf (config.nixDirEntries ? homeModules) {
+        homeModules = mapAttrs
+          (_: homeModule: (_: {
+            imports = [
+              { _module.args = moduleArgs; }
+              homeModule
+            ];
+          }))
+          config.nixDirEntries.homeModules;
+      })
 
       (mkIf (config.packages != null) {
         packages = mapAttrs
