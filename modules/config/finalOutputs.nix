@@ -14,6 +14,10 @@ let
 
   callWith = callPackageWith (moduleArgs // { inherit lib; });
 
+  libOutput = mapAttrs
+    (_: v: import v)
+    config.nixDirEntries.lib or { };
+
   packages = mapAttrs
     (system: pkgs: mapAttrs
       (_: v: pkgs.callPackage v moduleArgs)
@@ -100,7 +104,12 @@ in
 
   config = {
     finalOutputs = mkMerge [
-      { inherit homeConfigurations homeModules nixosConfigurations nixosModules packages; }
+      {
+        inherit homeConfigurations homeModules
+          nixosConfigurations nixosModules packages;
+
+        lib = libOutput;
+      }
 
       (mkIf (config.packages != null) {
         packages = mapAttrs
