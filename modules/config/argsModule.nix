@@ -1,10 +1,18 @@
-{ config, lib, conflake, ... }:
+{ config, lib, conflake, ... }@args:
 
 let
   inherit (lib) mapAttrs mkDefault mkOption types;
 in
 {
   options = {
+    moduleArgs = mkOption {
+      type = types.attrs;
+      default = mapAttrs (_: v: mkDefault v) (
+        args // { inherit (config) inputs; }
+      );
+      readOnly = true;
+    };
+
     argsModule = mkOption {
       type = types.deferredModule;
       description = ''
@@ -20,12 +28,9 @@ in
         inherit (pkgs.stdenv.hostPlatform) system;
       in
       {
-        _module.args = mapAttrs (_: v: mkDefault v) {
-          inherit conflake;
-          inherit (config) inputs;
-
+        _module.args = config.moduleArgs // (mapAttrs (_: v: mkDefault v) {
           inputs' = mapAttrs (_: conflake.selectAttr system) config.inputs;
-        };
+        });
       };
   };
 }

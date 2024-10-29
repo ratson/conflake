@@ -3,50 +3,20 @@
 let
   inherit (builtins) head mapAttrs match;
 
-  inherit (lib) attrValues callPackageWith foldAttrs genAttrs
+  inherit (lib) attrValues foldAttrs genAttrs
     mergeAttrs mkDefault mkIf mkMerge mkOption types;
 
   inherit (config) inputs;
 
-  moduleArgs = mapAttrs (_: v: mkDefault v) {
-    inherit inputs;
-  };
+  genPkgs = f: mapAttrs
+    (system: pkgs: f {
+      inherit pkgs system;
 
-  callWith = callPackageWith (moduleArgs // { inherit lib; });
-
-  libOutput = mapAttrs
-    (_: v: import v)
-    config.nixDirEntries.lib or { };
-
-  packages = mapAttrs
-    (system: pkgs: mapAttrs
-      (_: v: pkgs.callPackage v moduleArgs)
-      config.nixDirEntries.packages or { })
+      callPackage = f: args: pkgs.callPackage f (
+        config.moduleArgs // { inherit pkgs system; } // args
+      );
+    })
     config.pkgsBySystem;
-
-
-  nixosConfigurations = mapAttrs
-    (_: v: inputs.nixpkgs.lib.nixosSystem (
-      import v
-    ))
-    config.nixDirEntries.nixos or { };
-
-  nixosModules = mapAttrs
-    (_: nixosModule: (_: {
-      imports = [
-        config.argsModule
-        nixosModule
-      ];
-    }))
-    config.nixDirEntries.nixosModules or { };
-
-  perSystemOutputs = foldAttrs mergeAttrs { } (attrValues (mapAttrs
-    (system: pkgs: mapAttrs
-      (_: v: { ${system} = v; })
-      (callWith config.perSystem {
-        inherit pkgs system;
-      }))
-    config.pkgsBySystem));
 in
 {
   options = {
@@ -58,9 +28,8 @@ in
 
     pkgsBySystem = mkOption {
       type = types.lazyAttrsOf types.raw;
-      default = genAttrs config.systems (system: import inputs.nixpkgs {
-        inherit system;
-      });
+      default = genAttrs config.systems (system:
+        inputs.nixpkgs.legacyPackages.${system});
       readOnly = true;
       visible = false;
     };
@@ -68,12 +37,6 @@ in
 
   config = {
     finalOutputs = mkMerge [
-      {
-        inherit nixosConfigurations nixosModules packages;
-
-        lib = libOutput;
-      }
-
       (mkIf (config.nixDirEntries ? home) {
         homeConfigurations = mapAttrs
           (name: v: inputs.home-manager.lib.homeManagerConfiguration (
@@ -103,15 +66,52 @@ in
           config.nixDirEntries.homeModules;
       })
 
-      (mkIf (config.packages != null) {
-        packages = mapAttrs
-          (system: pkgs:
-            mapAttrs (_: f: callWith f { inherit pkgs system; })
-              config.packages)
-          config.pkgsBySystem;
+      (mkIf (config.nixDirEntries ? lib) {
+        lib = mapAttrs (_: v: import v)
+          config.nixDirEntries.lib;
       })
 
-      (mkIf (config.perSystem != null) perSystemOutputs)
+      (mkIf (config.nixDirEntries ? nixos) {
+        nixosConfigurations = mapAttrs
+          (_: v: inputs.nixpkgs.lib.nixosSystem (
+            import v
+          ))
+          config.nixDirEntries.nixos;
+      })
+
+      (mkIf (config.nixDirEntries ? nixosModules) {
+        nixosModules = mapAttrs
+          (_: nixosModule: (_: {
+            imports = [
+              config.argsModule
+              nixosModule
+            ];
+          }))
+          config.nixDirEntries.nixosModules;
+      })
+
+      (mkIf (config.nixDirEntries ? packages) {
+        packages = genPkgs ({ callPackage, ... }:
+          mapAttrs (_: v: callPackage v { })
+            config.nixDirEntries.packages
+        );
+      })
+
+      (mkIf (config.packages != null) {
+        packages = genPkgs ({ callPackage, ... }:
+          mapAttrs (_: f: callPackage f { })
+            config.packages);
+      })
+
+      (mkIf (config.perSystem != null) (
+        foldAttrs mergeAttrs { } (attrValues (
+          genPkgs ({ system, callPackage, ... }:
+            mapAttrs (_: v: { ${system} = v; })
+              (callPackage config.perSystem { })
+          )
+        ))
+      ))
+
       (mkIf (config.outputs != null) config.outputs)
     ];
   };
