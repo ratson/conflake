@@ -6,7 +6,7 @@
   inputs.nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
 
   inputs.greet = {
-    url = "../named-package";
+    url = "../packages";
     inputs.conflake.follows = "conflake";
     inputs.nixpkgs.follows = "nixpkgs";
   };
