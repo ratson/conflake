@@ -1,11 +1,9 @@
-{ config, lib, ... }@args:
+{ config, lib, ... }:
 
 let
   inherit (builtins) attrValues foldl' mapAttrs pathExists readDir;
 
-  inherit (lib) removeSuffix flip genAttrs nameValuePair mkOption pipe remove types;
-
-  inherit (config) inputs;
+  inherit (lib) removeSuffix flip nameValuePair mkOption pipe remove types;
 
   loadDir = dir:
     let

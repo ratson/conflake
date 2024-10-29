@@ -6,7 +6,7 @@ let
   inherit (inputs.nixpkgs) lib;
 
   inherit (lib) evalModules getValues mapAttrs mkOptionType;
-  inherit (lib.options) mergeDefaultOption;
+  inherit (lib.options) showDefs showOption;
   inherit (lib.types) lazyAttrsOf;
 
   baseModules = import ../../modules/module-list.nix;
@@ -37,7 +37,7 @@ let
         else if all isAttrs (getValues defs) then
           (lazyAttrsOf outputsValue).merge loc defs
         else
-          mergeDefaultOption loc defs;
+          throw "The option `${showOption loc}' has conflicting definitions.\n\nDefinition values:${showDefs defs}\n";
     };
 
     outputs = lazyAttrsOf outputsValue;
