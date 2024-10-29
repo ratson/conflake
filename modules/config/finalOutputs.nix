@@ -1,7 +1,7 @@
-{ config, lib, ... }@args:
+{ config, lib, ... }:
 
 let
-  inherit (builtins) mapAttrs;
+  inherit (builtins) head mapAttrs match;
 
   inherit (lib) attrValues callPackageWith foldAttrs genAttrs
     mergeAttrs mkDefault mkIf mkMerge mkOption types;
@@ -20,6 +20,21 @@ let
       config.nixDirEntries.packages or { })
     config.pkgsBySystem;
 
+  homeConfigurations = mapAttrs
+    (name: v: inputs.home-manager.lib.homeManagerConfiguration (
+      let
+        cfg = import v;
+        username = head (match "([^@]*)(@.*)?" name);
+      in
+      (removeAttrs cfg [ "system" ] // {
+        modules = [
+          { home.username = mkDefault username; }
+        ] ++ cfg.modules or [ ];
+        pkgs = inputs.nixpkgs.legacyPackages.${cfg.system};
+      })
+    ))
+    config.nixDirEntries.home or { };
+
   homeModules = mapAttrs
     (_: homeModule: (_: {
       imports = [
@@ -31,7 +46,7 @@ let
 
   nixosConfigurations = mapAttrs
     (_: v: inputs.nixpkgs.lib.nixosSystem (
-      import v args
+      import v
     ))
     config.nixDirEntries.nixos or { };
 
@@ -58,6 +73,9 @@ in
       type = types.submodule {
         freeformType = types.lazyAttrsOf types.raw;
         options = {
+          homeConfigurations = mkOption {
+            type = types.attrsOf types.raw;
+          };
           nixosConfigurations = mkOption {
             type = types.attrsOf types.raw;
           };
@@ -82,7 +100,7 @@ in
 
   config = {
     finalOutputs = mkMerge [
-      { inherit homeModules nixosConfigurations nixosModules packages; }
+      { inherit homeConfigurations homeModules nixosConfigurations nixosModules packages; }
 
       (mkIf (config.packages != null) {
         packages = mapAttrs
