@@ -3,7 +3,7 @@
 let
   inherit (builtins) mapAttrs;
 
-  inherit (lib) genAttrs mkIf mkMerge mkOption types;
+  inherit (lib) genAttrs mkDefault mkIf mkMerge mkOption types;
 
   inherit (config) inputs;
 
@@ -21,6 +21,21 @@ let
       import v args
     ))
     config.nixDirEntries.nixos or { };
+
+  nixosModules = mapAttrs
+    (_: nixosModule:
+      (_: {
+        imports = [
+          {
+            _module.args = mapAttrs (_: v: mkDefault v) {
+              inherit inputs;
+            };
+          }
+          nixosModule
+        ];
+      })
+    )
+    config.nixDirEntries.nixosModules or { };
 in
 {
   options = {
@@ -43,7 +58,7 @@ in
 
   config = {
     finalOutputs = mkMerge [
-      { inherit nixosConfigurations packages; }
+      { inherit nixosConfigurations nixosModules packages; }
       (mkIf (config.outputs != null) config.outputs)
     ];
   };
