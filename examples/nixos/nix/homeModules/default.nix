@@ -1,8 +1,8 @@
-{ config, lib, pkgs, inputs, ... }:
+{ config, lib, pkgs, inputs, inputs', ... }:
 
 {
   home.packages = [
     pkgs.hello
-    inputs.greet.packages.${pkgs.system}.greet
+    inputs'.greet.packages.greet
   ];
 }

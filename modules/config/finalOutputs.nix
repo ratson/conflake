@@ -34,7 +34,7 @@ let
   nixosModules = mapAttrs
     (_: nixosModule: (_: {
       imports = [
-        { _module.args = moduleArgs; }
+        config.argsModule
         nixosModule
       ];
     }))
@@ -83,6 +83,7 @@ in
             in
             (removeAttrs cfg [ "system" ] // {
               modules = [
+                config.argsModule
                 { home.username = mkDefault username; }
               ] ++ cfg.modules or [ ];
               pkgs = inputs.nixpkgs.legacyPackages.${cfg.system};
@@ -95,7 +96,7 @@ in
         homeModules = mapAttrs
           (_: homeModule: (_: {
             imports = [
-              { _module.args = moduleArgs; }
+              config.argsModule
               homeModule
             ];
           }))

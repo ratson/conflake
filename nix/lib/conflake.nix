@@ -5,7 +5,7 @@ let
 
   inherit (inputs.nixpkgs) lib;
 
-  inherit (lib) evalModules getValues mkOptionType;
+  inherit (lib) evalModules getValues mapAttrs mkOptionType;
   inherit (lib.options) mergeDefaultOption;
   inherit (lib.types) lazyAttrsOf;
 
@@ -23,6 +23,8 @@ let
       ];
     }).config.finalOutputs;
   };
+
+  selectAttr = attr: mapAttrs (_: v: v.${attr} or { });
 
   types = rec {
     outputsValue = mkOptionType {
@@ -42,7 +44,7 @@ let
   };
 
   conflake = {
-    inherit mkOutputs types;
+    inherit mkOutputs selectAttr types;
   };
 in
 conflake

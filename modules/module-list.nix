@@ -1,4 +1,5 @@
 [
+  ./config/argsModule.nix
   ./config/finalOutputs.nix
   ./config/inputs.nix
   ./config/nixDir.nix
