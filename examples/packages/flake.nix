@@ -6,5 +6,8 @@
   inputs.nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
 
   outputs = { conflake, ... }@inputs:
-    conflake ./. inputs { };
+    conflake ./. inputs {
+
+      packages.hi = { pkgs }: pkgs.hello;
+    };
 }

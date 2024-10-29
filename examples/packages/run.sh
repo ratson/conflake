@@ -3,3 +3,4 @@ set -ex
 
 nix run
 nix run .#greet
+nix run .#hi

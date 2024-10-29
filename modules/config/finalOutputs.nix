@@ -3,18 +3,15 @@
 let
   inherit (builtins) mapAttrs;
 
-  inherit (lib) genAttrs mkDefault mkIf mkMerge mkOption types;
+  inherit (lib) attrNames functionArgs genAttrs getAttrs
+    mkDefault mkIf mkMerge mkOption types;
 
   inherit (config) inputs;
-
-  pkgsBySystem = genAttrs config.systems (system: import inputs.nixpkgs {
-    inherit system;
-  });
 
   packages = mapAttrs
     (system: pkgs:
       mapAttrs (_: v: pkgs.callPackage v { }) config.nixDirEntries.packages or { })
-    pkgsBySystem;
+    config.pkgsBySystem;
 
   nixosConfigurations = mapAttrs
     (_: v: inputs.nixpkgs.lib.nixosSystem (
@@ -47,10 +44,19 @@ in
             type = types.attrsOf types.raw;
           };
           packages = mkOption {
-            type = types.attrsOf types.raw;
+            type = types.attrsOf (types.attrsOf types.raw);
           };
         };
       };
+      readOnly = true;
+      visible = false;
+    };
+
+    pkgsBySystem = mkOption {
+      type = types.lazyAttrsOf types.raw;
+      default = genAttrs config.systems (system: import inputs.nixpkgs {
+        inherit system;
+      });
       readOnly = true;
       visible = false;
     };
@@ -59,6 +65,12 @@ in
   config = {
     finalOutputs = mkMerge [
       { inherit nixosConfigurations nixosModules packages; }
+      {
+        packages = mapAttrs
+          (system: pkgs:
+            mapAttrs (_: f: f (getAttrs (attrNames (functionArgs f)) { inherit lib pkgs system; })) config.packages)
+          config.pkgsBySystem;
+      }
       (mkIf (config.outputs != null) config.outputs)
     ];
   };

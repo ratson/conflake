@@ -6,11 +6,9 @@ in
 {
   options = {
     packages = mkOption {
-      type = types.functionTo types.str;
+      type = types.attrsOf types.raw;
       default = _: { };
     };
   };
-
-  config = { };
 }
 
