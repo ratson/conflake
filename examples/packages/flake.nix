@@ -11,10 +11,6 @@
 
       perSystem = { pkgs, ... }: {
         packages.haloha = pkgs.hello;
-
-        devShells.default = pkgs.mkShell {
-          packages = [ inputs.self.packages.${pkgs.system}.greet ];
-        };
       };
     };
 }

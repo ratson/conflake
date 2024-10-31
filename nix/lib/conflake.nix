@@ -4,8 +4,7 @@ let
   inherit (builtins) all head isAttrs length;
 
   inherit (inputs.nixpkgs) lib;
-
-  inherit (lib) evalModules getValues mapAttrs mkOptionType;
+  inherit (lib) composeManyExtensions evalModules getValues isFunction mapAttrs mkOptionType;
   inherit (lib.options) showDefs showOption;
   inherit (lib.types) lazyAttrsOf;
 
@@ -14,14 +13,12 @@ let
   mkOutputs = {
     __functor = self: src: inputs: module: (evalModules {
       modules = baseModules ++ [
-        {
-          inherit inputs src;
-
-          _module.args = { inherit conflake; };
-        }
+        { inherit inputs src; }
         module
       ];
-    }).config.finalOutputs;
+      specialArgs = { inherit conflake; };
+    }
+    ).config.outputs;
   };
 
   selectAttr = attr: mapAttrs (_: v: v.${attr} or { });
@@ -37,10 +34,18 @@ let
         else if all isAttrs (getValues defs) then
           (lazyAttrsOf outputsValue).merge loc defs
         else
-          throw "The option `${showOption loc}' has conflicting definitions.\n\nDefinition values:${showDefs defs}\n";
+          throw "The option `${showOption loc}' has conflicting definitions.\n\nDefinition values:${showDefs defs} \n";
     };
 
     outputs = lazyAttrsOf outputsValue;
+
+    overlay = mkOptionType {
+      name = "overlay";
+      description = "nixpkgs overlay";
+      descriptionClass = "noun";
+      check = isFunction;
+      merge = _: defs: composeManyExtensions (getValues defs);
+    };
   };
 
   conflake = {

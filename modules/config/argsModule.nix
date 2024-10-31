@@ -1,9 +1,44 @@
-{ config, lib, conflake, ... }@args:
+{ config, lib, inputs, conflake, ... }@args:
 
 let
-  inherit (lib) mapAttrs mkDefault mkOption types;
+  inherit (lib) genAttrs mapAttrs mkDefault mkOption types;
+
+  pkgsBySystem = genAttrs config.systems (system:
+    import inputs.nixpkgs {
+      inherit system;
+      overlays = [ config.packagesOverlay ];
+    }
+  );
+
+  genPkgs = f: mapAttrs
+    (system: pkgs: f {
+      inherit pkgs system;
+
+      callPackage = f: args: pkgs.callPackage f (
+        config._module.args // {
+          inherit pkgs system;
+          inputs' = mapAttrs (_: conflake.selectAttr system) config.inputs;
+        } // args
+      );
+    })
+    pkgsBySystem;
+
+  argsModule = { pkgs, ... }:
+    let
+      inherit (pkgs.stdenv.hostPlatform) system;
+    in
+    {
+      _module.args = mapAttrs (_: v: mkDefault v) {
+        inherit conflake;
+        inherit (config) inputs;
+
+        inputs' = mapAttrs (_: conflake.selectAttr system) config.inputs;
+      };
+    };
 in
 {
+  imports = [ argsModule ];
+
   options = {
     moduleArgs = mkOption {
       type = types.attrs;
@@ -23,14 +58,10 @@ in
   };
 
   config = {
-    argsModule = { pkgs, ... }:
-      let
-        inherit (pkgs.stdenv.hostPlatform) system;
-      in
-      {
-        _module.args = config.moduleArgs // (mapAttrs (_: v: mkDefault v) {
-          inputs' = mapAttrs (_: conflake.selectAttr system) config.inputs;
-        });
-      };
+    inherit argsModule;
+
+    _module.args = {
+      inherit genPkgs pkgsBySystem;
+    };
   };
 }
