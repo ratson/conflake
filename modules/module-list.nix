@@ -1,10 +1,18 @@
 [
-  ./config/finalOutputs.nix
+  ./config/argsModule.nix
+  ./config/devShells.nix
+  ./config/functor.nix
   ./config/inputs.nix
+  ./config/lib.nix
   ./config/nixDir.nix
+  ./config/nixosConfigurations.nix
+  ./config/nixosModules.nix
   ./config/outputs.nix
+  ./config/overlays.nix
   ./config/packages.nix
   ./config/perSystem.nix
   ./config/src.nix
   ./config/systems.nix
+  ./home-manager/homeConfigurations.nix
+  ./home-manager/homeModules.nix
 ]
