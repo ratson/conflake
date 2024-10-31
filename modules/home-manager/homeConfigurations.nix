@@ -1,16 +1,16 @@
 { config, lib, inputs, ... }:
 
 let
-  inherit (lib) head match mkDefault mapAttrs mkIf mkMerge mkOption types;
+  isHmConfig = x: x ? activationPackage;
 
   mkHmConfig = name: cfg: inputs.home-manager.lib.homeManagerConfiguration (
     let
-      username = head (match "([^@]*)(@.*)?" name);
+      username = builtins.head (builtins.match "([^@]*)(@.*)?" name);
     in
     (removeAttrs cfg [ "system" ] // {
       modules = [
         config.argsModule
-        { home.username = mkDefault username; }
+        { home.username = lib.mkDefault username; }
       ] ++ cfg.modules or [ ];
       pkgs = inputs.nixpkgs.legacyPackages.${cfg.system};
     })
@@ -18,25 +18,25 @@ let
 in
 {
   options = {
-    homeConfigurations = mkOption {
-      type = types.lazyAttrsOf types.raw;
+    homeConfigurations = lib.mkOption {
+      type = lib.types.lazyAttrsOf lib.types.raw;
       default = { };
     };
   };
 
-  config = mkMerge [
-    (mkIf (config.nixDirEntries ? home) {
-      homeConfigurations = mapAttrs
+  config = lib.mkMerge [
+    (lib.mkIf (config.nixDirEntries ? home) {
+      homeConfigurations = builtins.mapAttrs
         (name: v: import v)
         config.nixDirEntries.home;
     })
 
-    (mkIf (config.homeConfigurations != { }) {
-      outputs = {
-        homeConfigurations = mapAttrs
-          (hostname: cfg: mkHmConfig hostname cfg)
-          config.homeConfigurations;
-      };
+    (lib.mkIf (config.homeConfigurations != { }) {
+      outputs.homeConfigurations = builtins.mapAttrs
+        (hostname: cfg:
+          if isHmConfig cfg then cfg
+          else mkHmConfig hostname cfg)
+        config.homeConfigurations;
     })
   ];
 }

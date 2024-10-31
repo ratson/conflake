@@ -12,20 +12,21 @@ in
 
     homeModules = mkOption {
       type = types.lazyAttrsOf types.raw;
+      apply = modules: mapAttrs
+        (_: module: (_: {
+          imports = [
+            config.argsModule
+            module
+          ];
+        }))
+        modules;
       default = { };
     };
   };
 
   config = mkMerge [
     (mkIf (config.nixDirEntries ? homeModules) {
-      homeModules = mapAttrs
-        (_: homeModule: (_: {
-          imports = [
-            config.argsModule
-            homeModule
-          ];
-        }))
-        config.nixDirEntries.homeModules;
+      homeModules = config.nixDirEntries.homeModules;
     })
 
     (mkIf (config.homeModule != null) {

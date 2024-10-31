@@ -1,8 +1,6 @@
 { config, lib, inputs, ... }:
 
 let
-  inherit (lib) mapAttrs mkIf mkMerge mkOption types;
-
   isNixos = x: x ? config.system.build.toplevel;
 
   mkNixos = hostname: cfg: inputs.nixpkgs.lib.nixosSystem (cfg // {
@@ -12,27 +10,25 @@ let
 in
 {
   options = {
-    nixosConfigurations = mkOption {
-      type = types.lazyAttrsOf types.raw;
+    nixosConfigurations = lib.mkOption {
+      type = lib.types.lazyAttrsOf lib.types.raw;
       default = { };
     };
   };
 
-  config = mkMerge [
-    (mkIf (config.nixDirEntries ? nixos) {
-      nixosConfigurations = mapAttrs
+  config = lib.mkMerge [
+    (lib.mkIf (config.nixDirEntries ? nixos) {
+      nixosConfigurations = builtins.mapAttrs
         (_: v: import v)
         config.nixDirEntries.nixos;
     })
 
-    (mkIf (config.nixosConfigurations != { }) {
-      outputs = {
-        nixosConfigurations = mapAttrs
-          (hostname: cfg:
-            if isNixos cfg then cfg
-            else mkNixos hostname cfg)
-          config.nixosConfigurations;
-      };
+    (lib.mkIf (config.nixosConfigurations != { }) {
+      outputs.nixosConfigurations = builtins.mapAttrs
+        (hostname: cfg:
+          if isNixos cfg then cfg
+          else mkNixos hostname cfg)
+        config.nixosConfigurations;
     })
   ];
 }

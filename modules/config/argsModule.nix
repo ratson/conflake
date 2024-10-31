@@ -50,16 +50,16 @@ in
 
     argsModule = mkOption {
       type = types.deferredModule;
+      default = argsModule;
+      internal = true;
+      readOnly = true;
       description = ''
         Module to provide extra args.
       '';
-      internal = true;
     };
   };
 
   config = {
-    inherit argsModule;
-
     _module.args = {
       inherit genPkgs pkgsBySystem;
     };

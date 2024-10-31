@@ -1,38 +1,36 @@
 { config, lib, ... }:
 
-let
-  inherit (lib) mapAttrs mkIf mkMerge mkOption types;
-in
 {
   options = {
-    nixosModule = mkOption {
-      type = types.raw;
+    nixosModule = lib.mkOption {
+      type = lib.types.raw;
       default = null;
     };
 
-    nixosModules = mkOption {
-      type = types.lazyAttrsOf types.raw;
+    nixosModules = lib.mkOption {
+      type = lib.types.lazyAttrsOf lib.types.raw;
+      apply = modules: builtins.mapAttrs
+        (_: module: (_: {
+          imports = [
+            config.argsModule
+            module
+          ];
+        }))
+        modules;
       default = { };
     };
   };
 
-  config = mkMerge [
-    (mkIf (config.nixDirEntries ? nixosModules) {
-      nixosModules = mapAttrs
-        (_: nixosModule: (_: {
-          imports = [
-            config.argsModule
-            nixosModule
-          ];
-        }))
-        config.nixDirEntries.nixosModules;
+  config = lib.mkMerge [
+    (lib.mkIf (config.nixDirEntries ? nixosModules) {
+      nixosModules = config.nixDirEntries.nixosModules;
     })
 
-    (mkIf (config.nixosModule != null) {
+    (lib.mkIf (config.nixosModule != null) {
       nixosModules.default = config.nixosModule;
     })
 
-    (mkIf (config.nixosModules != { }) {
+    (lib.mkIf (config.nixosModules != { }) {
       outputs = { inherit (config) nixosModules; };
     })
   ];
