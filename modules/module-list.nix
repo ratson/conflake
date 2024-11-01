@@ -13,6 +13,7 @@
   ./config/perSystem.nix
   ./config/src.nix
   ./config/systems.nix
+  ./config/templates.nix
   ./home-manager/homeConfigurations.nix
   ./home-manager/homeModules.nix
 ]

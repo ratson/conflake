@@ -25,6 +25,7 @@ in
       outputs = { inherit conflake; };
     }))
     (f: f.conflake ? mkOutputs);
+
   inputs-arg = test
     (conflake' ({ inputs, ... }: {
       outputs = { inherit inputs; };
@@ -58,6 +59,20 @@ in
       };
     })
     (f: lib.isDerivation f.devShells.x86_64-linux.default);
+
+  # devShell-pkgs-arg = test
+  #   (conflake' {
+  #     devShell = { pkgs, ... }: {
+  #       inputsFrom = [ pkgs.hello ];
+  #       packages = [ pkgs.cowsay ];
+  #       shellHook = ''
+  #         echo Welcome to example shell!
+  #       '';
+  #       env.TEST_VAR = "test value";
+  #       stdenv = pkgs.clangStdenv;
+  #     };
+  #   })
+  #   (f: lib.isDerivation f.devShells.x86_64-linux.default);
 
   moduleArgs-add = test
     (conflake' {
@@ -200,6 +215,56 @@ in
     })
     (f: !((nixpkgs.legacyPackages.x86_64-linux.extend f.overlays.default)
       ? default));
+
+  template = test
+    (conflake' {
+      template = {
+        path = ./test;
+        description = "test template";
+      };
+    })
+    (f: f.templates.default == {
+      path = ./test;
+      description = "test template";
+    });
+
+  template-module = test
+    (conflake' {
+      template = { inputs, ... }: {
+        path = ./test;
+        description = "test template";
+      };
+    })
+    (f: f.templates.default == {
+      path = ./test;
+      description = "test template";
+    });
+
+  templates = test
+    (conflake' {
+      templates.test-template = {
+        path = ./test;
+        description = "test template";
+      };
+    })
+    (f: f.templates.test-template == {
+      path = ./test;
+      description = "test template";
+    });
+
+  templates-welcomeText = test
+    (conflake' {
+      templates.test-template = {
+        path = ./test;
+        description = "test template";
+        welcomeText = "hi";
+      };
+    })
+    (f: f.templates.test-template == {
+      path = ./test;
+      description = "test template";
+      welcomeText = "hi";
+    });
 
   systems = test
     (conflake' {

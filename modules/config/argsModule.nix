@@ -1,4 +1,4 @@
-{ config, lib, inputs, conflake, ... }@args:
+{ config, lib, inputs, conflake, ... }:
 
 let
   inherit (lib) genAttrs mapAttrs mkDefault mkOption types;
@@ -17,7 +17,7 @@ let
       callPackage = f: args: pkgs.callPackage f (
         config._module.args // {
           inherit pkgs system;
-          inputs' = mapAttrs (_: conflake.selectAttr system) config.inputs;
+          inputs' = mapAttrs (_: conflake.selectAttr system) inputs;
         } // args
       );
     })
@@ -32,7 +32,7 @@ let
         inherit conflake;
         inherit (config) inputs;
 
-        inputs' = mapAttrs (_: conflake.selectAttr system) config.inputs;
+        inputs' = mapAttrs (_: conflake.selectAttr system) inputs;
       };
     };
 in
@@ -40,14 +40,6 @@ in
   imports = [ argsModule ];
 
   options = {
-    moduleArgs = mkOption {
-      type = types.attrs;
-      default = mapAttrs (_: v: mkDefault v) (
-        args // { inherit (config) inputs; }
-      );
-      readOnly = true;
-    };
-
     argsModule = mkOption {
       type = types.deferredModule;
       default = argsModule;

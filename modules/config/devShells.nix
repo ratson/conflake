@@ -3,31 +3,6 @@
 let
   inherit (lib) mapAttrs mkIf mkMerge mkOption types;
 
-  devShellType2 = types.submodule {
-    freeformType = types.raw;
-
-    options = {
-      inputsFrom = mkOption {
-        type = types.listOf types.raw;
-        default = [ ];
-      };
-
-      packages = mkOption {
-        type = types.listOf types.raw;
-        default = [ ];
-      };
-
-      shellHook = mkOption {
-        type = types.lines;
-        default = "";
-      };
-    };
-
-    config = {
-      _module.args = config._module.args;
-    };
-  };
-
   devShellType = types.raw;
 in
 {
