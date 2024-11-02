@@ -1,14 +1,14 @@
 inputs:
 
 let
-  inherit (builtins) attrNames isAttrs isPath mapAttrs readDir;
+  inherit (builtins) all attrNames head isAttrs isPath length mapAttrs readDir;
   inherit (inputs) nixpkgs;
   inherit (nixpkgs) lib;
-  inherit (lib) all composeManyExtensions evalModules filter
-    findFirst fix genAttrs getValues hasSuffix isDerivation isFunction isList
+  inherit (lib) composeManyExtensions evalModules filter findFirst fix
+    genAttrs getFiles getValues hasSuffix isDerivation isFunction isList
     isStringLike mkDefault mkOptionType pathExists pipe
-    removePrefix removeSuffix singleton warn;
-  inherit (lib.types) coercedTo defaultFunctor functionTo listOf
+    removePrefix removeSuffix showFiles showOption singleton warn;
+  inherit (lib.types) coercedTo defaultFunctor functionTo lazyAttrsOf listOf
     optionDescriptionPhrase;
   inherit (lib.options) mergeEqualOption mergeOneOption;
 
@@ -40,6 +40,21 @@ let
   };
 
   types = rec {
+    outputs = lazyAttrsOf outputsValue;
+
+    outputsValue = mkOptionType {
+      name = "outputs";
+      description = "outputs value";
+      descriptionClass = "noun";
+      merge = loc: defs:
+        if (length defs) == 1 then
+          (head defs).value
+        else if all isAttrs (getValues defs) then
+          (lazyAttrsOf outputsValue).merge loc defs
+        else
+          throw "The option `${showOption loc}' has conflicting definitions in ${showFiles (getFiles defs)}";
+    };
+
     overlay = mkOptionType {
       name = "overlay";
       description = "nixpkgs overlay";

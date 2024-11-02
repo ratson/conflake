@@ -1,24 +1,10 @@
-{ config, inputs, lib, conflake, moduleArgs, ... }:
+{ config, inputs, lib, conflake, ... }:
 
 let
-  inherit (builtins) all head isAttrs length mapAttrs;
-  inherit (lib) foldAttrs genAttrs getFiles getValues mergeAttrs
-    mkOption mkOptionType showFiles showOption;
+  inherit (builtins) mapAttrs;
+  inherit (lib) foldAttrs genAttrs mergeAttrs mkOption;
   inherit (lib.types) functionTo lazyAttrsOf listOf nonEmptyStr raw uniq;
-  inherit (conflake.types) optCallWith optListOf overlay;
-
-  outputs = mkOptionType {
-    name = "outputs";
-    description = "output values";
-    descriptionClass = "noun";
-    merge = loc: defs:
-      if (length defs) == 1 then (head defs).value
-      else if all isAttrs (getValues defs) then
-        (lazyAttrsOf outputs).merge loc defs
-      else
-        throw ("The option `${showOption loc}' has conflicting definitions" +
-          " in ${showFiles (getFiles defs)}");
-  };
+  inherit (conflake.types) optListOf outputs overlay;
 
   pkgsFor = genAttrs config.systems (system: import inputs.nixpkgs {
     inherit system;
@@ -39,13 +25,8 @@ in
       default = [ "x86_64-linux" "aarch64-linux" ];
     };
 
-    outputs = mkOption {
-      type = optCallWith moduleArgs (lazyAttrsOf outputs);
-      default = { };
-    };
-
     perSystem = mkOption {
-      type = functionTo (lazyAttrsOf outputs);
+      type = functionTo outputs;
       default = _: { };
     };
 

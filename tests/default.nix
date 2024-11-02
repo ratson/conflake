@@ -160,6 +160,14 @@ in
     })
     (f: f.example.test);
 
+  outputs-fn = test
+    (conflake' {
+      outputs = { inputs, ... }: {
+        example.test = true;
+      };
+    })
+    (f: f.example.test);
+
   outputs-handled-attr = test
     (conflake' {
       outputs.overlays.test = final: prev: { testVal = true; };
