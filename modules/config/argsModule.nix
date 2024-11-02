@@ -13,11 +13,11 @@ let
       _file = ./argsModule.nix;
 
       config = {
-        _module.args = mapAttrs (_: v: mkDefault v) {
+        _module.args = mapAttrs (_: mkDefault) {
           inherit conflake inputs';
           inherit (config) inputs;
+          inherit (inputs) self;
 
-          self = inputs.self;
           self' = inputs'.self;
         };
       };
