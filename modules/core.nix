@@ -1,11 +1,11 @@
-{ config, inputs, lib, flakelight, moduleArgs, ... }:
+{ config, inputs, lib, conflake, moduleArgs, ... }:
 
 let
   inherit (builtins) all head isAttrs length mapAttrs;
   inherit (lib) foldAttrs genAttrs getFiles getValues mergeAttrs
     mkOption mkOptionType showFiles showOption;
   inherit (lib.types) functionTo lazyAttrsOf listOf nonEmptyStr raw uniq;
-  inherit (flakelight.types) optCallWith optListOf overlay;
+  inherit (conflake.types) optCallWith optListOf overlay;
 
   outputs = mkOptionType {
     name = "outputs";

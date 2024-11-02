@@ -1,11 +1,11 @@
-{ config, lib, flakelight, moduleArgs, ... }:
+{ config, lib, conflake, moduleArgs, ... }:
 
 let
   inherit (builtins) isPath isString;
   inherit (lib) mkOption mkOptionType mkIf mkMerge;
   inherit (lib.types) lazyAttrsOf;
   inherit (lib.options) mergeEqualOption;
-  inherit (flakelight.types) nullable optCallWith;
+  inherit (conflake.types) nullable optCallWith;
 
   template = mkOptionType {
     name = "template";

@@ -46,11 +46,11 @@ in
     }))
     (f: f.options ? package && f.options ? overlays);
 
-  flakelight-arg = test
-    (conflake' ({ flakelight, ... }: {
-      outputs = { inherit flakelight; };
+  conflake-arg = test
+    (conflake' ({ conflake, ... }: {
+      outputs = { inherit conflake; };
     }))
-    (f: f.flakelight ? mkFlake);
+    (f: f.conflake ? mkFlake);
 
   inputs-arg = test
     (conflake' ({ inputs, ... }: {
@@ -81,7 +81,7 @@ in
       && f.moduleArgs ? options
       && f.moduleArgs ? src
       && f.moduleArgs ? lib
-      && f.moduleArgs ? flakelight
+      && f.moduleArgs ? conflake
       && f.moduleArgs ? inputs
       && f.moduleArgs ? outputs
       && f.moduleArgs ? pkgsFor
@@ -105,7 +105,7 @@ in
         { src
         , inputs
         , outputs
-        , flakelight
+        , conflake
         , inputs'
         , outputs'
         , defaultMeta
@@ -649,13 +649,13 @@ in
 
   formatters-disable = test
     (conflake' {
-      flakelight.builtinFormatters = false;
+      conflake.builtinFormatters = false;
     })
     (f: ! f ? formatter.x86_64-linux);
 
   formatters-disable-only-builtin = test
     (conflake' {
-      flakelight.builtinFormatters = false;
+      conflake.builtinFormatters = false;
       formatters = { rustfmt, ... }: {
         "*.rs" = "rustfmt";
       };
@@ -760,17 +760,17 @@ in
     })
     (f: f ? homeModules.test);
 
-  flakelightModule = test
+  conflakeModule = test
     (conflake' {
-      flakelightModule = _: { };
+      conflakeModule = _: { };
     })
-    (f: f ? flakelightModules.default);
+    (f: f ? conflakeModules.default);
 
-  flakelightModules = test
+  conflakeModules = test
     (conflake' {
-      flakelightModules.test = _: { };
+      conflakeModules.test = _: { };
     })
-    (f: f ? flakelightModules.test);
+    (f: f ? conflakeModules.test);
 
   lib = test
     (conflake' {
@@ -830,7 +830,7 @@ in
 
   editorconfig-disabled = test
     (conflake ./editorconfig {
-      flakelight.editorconfig = false;
+      conflake.editorconfig = false;
     })
     (f: ! f ? checks.x86_64-linux.editorconfig);
 

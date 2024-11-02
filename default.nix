@@ -18,8 +18,8 @@ let
     __functor = self: src: root: (evalModules {
       modules = baseModules ++ self.extraModules ++ [
         { inputs.nixpkgs = mkDefault nixpkgs; }
-        { inputs.flakelight = mkDefault inputs.self; }
-        { _module.args = { inherit src flakelight; }; }
+        { inputs.conflake = mkDefault inputs.self; }
+        { _module.args = { inherit src conflake; }; }
         root
       ];
       specialArgs = {
@@ -35,7 +35,7 @@ let
     }))) mkFlake;
   };
 
-  flakelight = {
+  conflake = {
     inherit autoImport autoImportArgs importDir mkFlake selectAttr types;
   };
 
@@ -182,7 +182,7 @@ let
 
   autoImportArgs = dir: args: name: warn
     ("The autoImportArgs function is deprecated. " +
-      "Wrap the target type in flakelight.types.optCallWith instead.")
+      "Wrap the target type in conflake.types.optCallWith instead.")
     (
       let v = autoImport dir name; in
       if isFunction v then v args else v
@@ -190,4 +190,4 @@ let
 
   selectAttr = attr: mapAttrs (_: v: v.${attr} or { });
 in
-flakelight
+conflake

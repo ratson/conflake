@@ -1,9 +1,9 @@
-{ config, lib, flakelight, moduleArgs, ... }:
+{ config, lib, conflake, moduleArgs, ... }:
 
 let
   inherit (lib) mkOption mkIf;
   inherit (lib.types) attrsOf raw;
-  inherit (flakelight.types) optCallWith;
+  inherit (conflake.types) optCallWith;
 in
 {
   options.lib = mkOption {

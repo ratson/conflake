@@ -5,11 +5,11 @@
   ./builtinOverlay.nix
   ./bundlers.nix
   ./checks.nix
+  ./conflakeModules.nix
   ./core.nix
   ./devShells.nix
   ./devShells.nix
   ./editorconfig.nix
-  ./flakelightModules.nix
   ./formatter.nix
   ./functor.nix
   ./functor.nix

@@ -1,9 +1,9 @@
-{ config, lib, flakelight, genSystems, ... }:
+{ config, lib, conflake, genSystems, ... }:
 
 let
   inherit (lib) mkIf mkOption;
   inherit (lib.types) functionTo pkgs;
-  inherit (flakelight.types) nullable;
+  inherit (conflake.types) nullable;
 in
 {
   options.legacyPackages = mkOption {

@@ -1,11 +1,11 @@
-{ config, src, lib, inputs, outputs, flakelight, moduleArgs, ... }:
+{ config, src, lib, inputs, outputs, conflake, moduleArgs, ... }:
 
 let
   inherit (builtins) isList mapAttrs pathExists;
   inherit (lib) mkOption mkOrder optionalAttrs;
   inherit (lib.types) listOf oneOf str;
-  inherit (flakelight) selectAttr;
-  inherit (flakelight.types) nullable;
+  inherit (conflake) selectAttr;
+  inherit (conflake.types) nullable;
 in
 {
   options = {
@@ -25,7 +25,7 @@ in
 
   config.withOverlays = mkOrder 10 (final: prev:
     let inherit (prev.stdenv.hostPlatform) system; in {
-      inherit system moduleArgs src inputs outputs flakelight;
+      inherit system moduleArgs src inputs outputs conflake;
       inputs' = mapAttrs (_: selectAttr system) inputs;
       outputs' = selectAttr system outputs;
 

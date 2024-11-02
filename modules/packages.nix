@@ -1,11 +1,11 @@
-{ config, lib, inputs, flakelight, genSystems, moduleArgs, ... }:
+{ config, lib, inputs, conflake, genSystems, moduleArgs, ... }:
 
 let
   inherit (builtins) hasAttr mapAttrs parseDrvName tryEval;
   inherit (lib) findFirst functionArgs mapAttrs' mkIf mkMerge mkOption
     nameValuePair optionalAttrs optionals;
   inherit (lib.types) lazyAttrsOf str uniq;
-  inherit (flakelight.types) nullable optFunctionTo overlay packageDef;
+  inherit (conflake.types) nullable optFunctionTo overlay packageDef;
 
   genPkg = final: prev: name: pkg:
     let
@@ -65,7 +65,7 @@ in
 
           defaultPkgName = findFirst (x: (tryEval x).success)
             (throw ("Could not determine the name of the default package; " +
-              "please set the `pname` flakelight option to the intended name."))
+              "please set the `pname` conflake option to the intended name."))
             [
               (assert config.pname != null; config.pname)
               (getName (mockPkgs.callPackage pkgDefs.default { }))

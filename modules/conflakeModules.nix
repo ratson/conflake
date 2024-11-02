@@ -7,24 +7,24 @@ let
 in
 {
   options = {
-    homeModule = mkOption {
+    conflakeModule = mkOption {
       type = nullable module;
       default = null;
     };
 
-    homeModules = mkOption {
+    conflakeModules = mkOption {
       type = optCallWith moduleArgs (lazyAttrsOf module);
       default = { };
     };
   };
 
   config = mkMerge [
-    (mkIf (config.homeModule != null) {
-      homeModules.default = config.homeModule;
+    (mkIf (config.conflakeModule != null) {
+      conflakeModules.default = config.conflakeModule;
     })
 
-    (mkIf (config.homeModules != { }) {
-      outputs = { inherit (config) homeModules; };
+    (mkIf (config.conflakeModules != { }) {
+      outputs = { inherit (config) conflakeModules; };
     })
   ];
 }

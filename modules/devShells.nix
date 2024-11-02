@@ -1,11 +1,11 @@
-{ config, lib, flakelight, genSystems, moduleArgs, ... }:
+{ config, lib, conflake, genSystems, moduleArgs, ... }:
 
 let
   inherit (builtins) functionArgs mapAttrs;
   inherit (lib) mkIf mkMerge mkOption;
   inherit (lib.types) coercedTo lazyAttrsOf lines listOf
     package str submoduleWith;
-  inherit (flakelight.types) function nullable optCallWith optFunctionTo;
+  inherit (conflake.types) function nullable optCallWith optFunctionTo;
 
   devShellModule.options = {
     inputsFrom = mkOption {

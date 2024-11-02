@@ -1,11 +1,11 @@
-{ config, lib, inputs, flakelight, moduleArgs, ... }:
+{ config, lib, inputs, conflake, moduleArgs, ... }:
 
 let
   inherit (builtins) mapAttrs;
   inherit (lib) foldl mapAttrsToList mkIf mkOption recursiveUpdate;
   inherit (lib.types) attrs lazyAttrsOf;
-  inherit (flakelight) selectAttr;
-  inherit (flakelight.types) optCallWith;
+  inherit (conflake) selectAttr;
+  inherit (conflake.types) optCallWith;
 
   # Avoid checking if toplevel is a derivation as it causes the nixos modules
   # to be evaluated.

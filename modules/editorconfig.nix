@@ -5,11 +5,11 @@ let
   inherit (lib) mkEnableOption mkIf optionalString;
 in
 {
-  options.flakelight.editorconfig =
+  options.conflake.editorconfig =
     mkEnableOption "editorconfig check" // { default = true; };
 
   config.checks = mkIf
-    (config.flakelight.editorconfig && (pathExists (src + /.editorconfig)))
+    (config.conflake.editorconfig && (pathExists (src + /.editorconfig)))
     {
       # By default, high false-positive flags are disabled.
       editorconfig = { editorconfig-checker, ... }:

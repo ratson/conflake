@@ -1,18 +1,26 @@
-# flakelight -- Framework for simplifying flake setup
-# Copyright (C) 2023 Archit Gupta <archit@accelbread.com>
-# SPDX-License-Identifier: MIT
-
 {
-  description =
-    "A modular Nix flake framework for simplifying flake definitions";
-  inputs.nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
+  description = "A batteries included, convention-based configuration framework for Nix Flakes.";
+
   outputs = inputs:
-    let lib = import ./. inputs; in
+    let
+      lib = import ./. inputs;
+    in
     lib.mkFlake ./. {
       inherit lib;
-      functor = _: lib.mkFlake;
-      templates = import ./templates;
+
       checks.statix = pkgs: "${pkgs.statix}/bin/statix check";
+
+      functor = _: lib.mkFlake;
+
       outputs.tests = import ./tests inputs;
+
+      templates = {
+        default = {
+          path = ./default;
+          description = "Minimal Conflake flake.";
+        };
+      };
     };
+
+  inputs.nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
 }

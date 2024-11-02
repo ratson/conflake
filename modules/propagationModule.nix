@@ -1,12 +1,12 @@
 # This provides a module that can be added to module systems nested inside of
-# flakelight, for example NixOS or home-manager configurations.
-{ lib, config, flakelight, moduleArgs, inputs, outputs, ... }:
+# conflake, for example NixOS or home-manager configurations.
+{ lib, config, conflake, moduleArgs, inputs, outputs, ... }:
 
 let
   inherit (builtins) mapAttrs;
   inherit (lib) mkOption optional optionalAttrs;
-  inherit (flakelight) selectAttr;
-  inherit (flakelight.types) module;
+  inherit (conflake) selectAttr;
+  inherit (conflake.types) module;
   flakeConfig = config;
 in
 {
@@ -33,7 +33,7 @@ in
             [ flakeConfig.propagationModule ];
       })
       // {
-        # Give access to flakelight module args under `flake` arg.
+        # Give access to conflake module args under `flake` arg.
         # Also include inputs'/outputs' which depend on `pkgs`.
         _module.args.flake = {
           inputs' = mapAttrs (_: selectAttr system) inputs;

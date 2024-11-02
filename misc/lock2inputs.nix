@@ -1,10 +1,6 @@
-# flakelight -- Framework for simplifying flake setup
-# Copyright (C) 2023 Archit Gupta <archit@accelbread.com>
-# SPDX-License-Identifier: MIT
-
 # Get a flakes inputs
-{ lib, ... }:
-src:
+{ lib, ... }: src:
+
 let
   inherit (builtins) fromJSON head isString mapAttrs readFile tail;
   inherit (lib) fix;

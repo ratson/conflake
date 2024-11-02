@@ -1,4 +1,4 @@
-{ config, lib, flakelight, genSystems, ... }:
+{ config, lib, conflake, genSystems, ... }:
 
 let
   inherit (builtins) mapAttrs match storeDir;
@@ -6,7 +6,7 @@ let
     mkIf mkMerge mkOption mkOptionType;
   inherit (lib.types) coercedTo enum lazyAttrsOf
     optionDescriptionPhrase pathInStore submoduleWith;
-  inherit (flakelight.types) nullable optFunctionTo stringLike;
+  inherit (conflake.types) nullable optFunctionTo stringLike;
 
   isStorePath = s: match "${storeDir}/[^.][^ \n]*" s != null;
 

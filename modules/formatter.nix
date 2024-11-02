@@ -1,10 +1,10 @@
-{ config, src, lib, flakelight, genSystems, ... }:
+{ config, src, lib, conflake, genSystems, ... }:
 
 let
   inherit (builtins) all hasContext;
   inherit (lib) mkDefault mkMerge mkOption mkIf mapAttrsToList;
   inherit (lib.types) functionTo lazyAttrsOf package str;
-  inherit (flakelight.types) nullable optFunctionTo;
+  inherit (conflake.types) nullable optFunctionTo;
 in
 {
   options = {

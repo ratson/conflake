@@ -1,11 +1,11 @@
-{ config, lib, inputs, flakelight, moduleArgs, ... }:
+{ config, lib, inputs, conflake, moduleArgs, ... }:
 
 let
   inherit (builtins) head mapAttrs match;
   inherit (lib) foldl mapAttrsToList mkOption mkIf recursiveUpdate;
   inherit (lib.types) attrs lazyAttrsOf;
-  inherit (flakelight) selectAttr;
-  inherit (flakelight.types) optCallWith;
+  inherit (conflake) selectAttr;
+  inherit (conflake.types) optCallWith;
 
   isHome = x: x ? activationPackage;
 

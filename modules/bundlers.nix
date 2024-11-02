@@ -1,10 +1,10 @@
-{ config, lib, flakelight, genSystems, ... }:
+{ config, lib, conflake, genSystems, ... }:
 
 let
   inherit (builtins) isFunction mapAttrs;
   inherit (lib) mkMerge mkOption mkIf;
   inherit (lib.types) lazyAttrsOf;
-  inherit (flakelight.types) function nullable optFunctionTo;
+  inherit (conflake.types) function nullable optFunctionTo;
 
   wrapBundler = pkgs: bundler: drv:
     if isFunction (bundler (pkgs // drv))

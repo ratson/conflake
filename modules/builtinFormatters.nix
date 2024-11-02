@@ -4,11 +4,11 @@ let
   inherit (lib) mkDefault mkEnableOption mkIf;
 in
 {
-  options.flakelight.builtinFormatters =
+  options.conflake.builtinFormatters =
     mkEnableOption "default formatters" //
     { default = config.formatter == null; };
 
-  config = mkIf config.flakelight.builtinFormatters {
+  config = mkIf config.conflake.builtinFormatters {
     devShell.packages = pkgs: [
       pkgs.nixpkgs-fmt
       pkgs.nodePackages.prettier

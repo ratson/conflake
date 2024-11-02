@@ -1,9 +1,9 @@
-{ config, lib, flakelight, ... }:
+{ config, lib, conflake, ... }:
 
 let
   inherit (lib) mkOption mkIf;
   inherit (lib.types) functionTo raw uniq;
-  inherit (flakelight.types) nullable;
+  inherit (conflake.types) nullable;
 in
 {
   options.functor = mkOption {

@@ -1,28 +1,26 @@
-# flakelight -- Framework for simplifying flake setup
-# Copyright (C) 2023 Archit Gupta <archit@accelbread.com>
-# SPDX-License-Identifier: MIT
-
 # This is a fake pkgs set to enable efficiently extracting a derivation's name
-
 real:
+
 let
+  inherit (builtins) baseNameOf isFunction functionArgs intersectAttrs mapAttrs;
   inherit (real) lib;
+  inherit (lib) fix filterAttrs;
 
   callPackageWith = autoArgs: fn: args:
     let
-      f = if lib.isFunction fn then fn else import fn;
-      fargs = lib.functionArgs f;
-      mock = lib.mapAttrs (_: _: throw "") (lib.filterAttrs (_: v: !v) fargs);
+      f = if isFunction fn then fn else import fn;
+      fargs = functionArgs f;
+      mock = mapAttrs (_: _: throw "") (filterAttrs (_: v: !v) fargs);
     in
     assert fargs != { };
-    f (mock // builtins.intersectAttrs fargs autoArgs // args);
+    f (mock // intersectAttrs fargs autoArgs // args);
 
-  mockStdenv = builtins.mapAttrs (_: _: throw "") real.stdenv // {
+  mockStdenv = mapAttrs (_: _: throw "") real.stdenv // {
     mkDerivation = args:
-      if lib.isFunction args then lib.fix args else args;
+      if isFunction args then fix args else args;
   };
 in
-lib.fix (self: {
+fix (self: {
   lib = lib // { inherit callPackageWith; };
 
   callPackage = callPackageWith self;
@@ -46,7 +44,7 @@ lib.fix (self: {
   runCommandCC = name: _: _: { inherit name; };
   writeTextFile = args: args;
   writeText = name: _: { inherit name; };
-  writeTextDir = path: _: { name = builtins.baseNameOf path; };
+  writeTextDir = path: _: { name = baseNameOf path; };
   writeScript = name: _: { inherit name; };
   writeScriptBin = name: _: { inherit name; };
   writeShellScript = name: _: { inherit name; };

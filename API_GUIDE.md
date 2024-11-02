@@ -2,18 +2,18 @@
 
 ## lib
 
-This section covers important functions available in Flakelight's lib attribute.
+This section covers important functions available in Conflake's lib attribute.
 
 ### mkFlake
 
-The outputs of a flake using Flakelight are created using the `mkFlake` function.
-When called directly, Flakelight invokes `mkFlake`, as follows:
+The outputs of a flake using Conflake are created using the `mkFlake` function.
+When called directly, Conflake invokes `mkFlake`, as follows:
 
 ```nix
 {
-  inputs.flakelight.url = "github:nix-community/flakelight";
-  outputs = { flakelight, ... }:
-    flakelight ./. {
+  inputs.conflake.url = "github:ratson/conflake";
+  outputs = { conflake, ... }:
+    conflake ./. {
       # Your flake configuration here
     };
 }
@@ -23,24 +23,24 @@ To call `mkFlake` explicitly, you can do:
 
 ```nix
 {
-  inputs.flakelight.url = "github:nix-community/flakelight";
-  outputs = { flakelight, ... }:
-    flakelight.lib.mkFlake ./. {
+  inputs.conflake.url = "github:ratson/conflake";
+  outputs = { conflake, ... }:
+    conflake.lib.mkFlake ./. {
       # Your flake configuration here
     };
 }
 ```
 
-`mkFlake` takes two parameters: the path to the flake's source and a Flakelight
+`mkFlake` takes two parameters: the path to the flake's source and a Conflake
 module.
 
 If you need access to module args, you can write it as bellow:
 
 ```nix
 {
-  inputs.flakelight.url = "github:nix-community/flakelight";
-  outputs = { flakelight, ... }:
-    flakelight ./. ({ lib, config, ... }: {
+  inputs.conflake.url = "github:ratson/conflake";
+  outputs = { conflake, ... }:
+    conflake ./. ({ lib, config, ... }: {
       # Your flake configuration here
     });
 }
@@ -54,7 +54,7 @@ The following module arguments are available:
 - `lib`: nixpkgs lib attribute
 - `config`: configured option values
 - `options`: available options
-- `flakelight`: flakelight lib attribute
+- `conflake`: conflake lib attribute
 - `inputs`: value of inputs option
 - `outputs`: resulting output (i.e. final flake attributes)
 - `pkgsFor`: attrset mapping systems to the pkgs set for that system
@@ -66,7 +66,7 @@ Functions that take the package set as an argument, such as package definitions
 or `perSystem` values, have several additional values available in the package
 set.
 
-The `src`, `flakelight`, `inputs`, `outputs`, and `moduleArgs` attributes are
+The `src`, `conflake`, `inputs`, `outputs`, and `moduleArgs` attributes are
 the same as the above module arguments.
 
 `inputs'` and `outputs'` are transformed versions of `inputs` and `outputs` with
@@ -87,7 +87,7 @@ This section covers the options available to modules.
 Type: AttrsOf FlakeInput
 ```
 
-The `inputs` option is an attrset of the flake inputs used by flakelight
+The `inputs` option is an attrset of the flake inputs used by conflake
 modules. These inputs get passed as the `inputs` module argument, and are used
 for `inputs` and `inputs'` in the package set.
 
@@ -97,19 +97,19 @@ using `self`, use `inherit inputs` or otherwise define inputs. The default
 values also are not affected by nix command flags like `--override-input`, so
 inputs should be passed to enable full CLI functionality.
 
-Flakelight will add a recent `nixpkgs` input if your flake does not have one.
-Other flakelight modules may provide default inputs for their dependencies.
+Conflake will add a recent `nixpkgs` input if your flake does not have one.
+Other conflake modules may provide default inputs for their dependencies.
 
 To use a different nixpkgs from the built-in default (passing all inputs):
 
 ```nix
 {
   inputs = {
-    flakelight.url = "github:nix-community/flakelight";
+    conflake.url = "github:ratson/conflake";
     nixpkgs.url = "github:NixOS/nixpkgs/nixpkgs-unstable";
   };
-  outputs = { flakelight, ... }@inputs:
-    flakelight ./. {
+  outputs = { conflake, ... }@inputs:
+    conflake ./. {
       inherit inputs;
     };
 }
@@ -121,10 +121,10 @@ Or to just pass just the nixpkgs input:
 {
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/nixpkgs-unstable";
-    flakelight.url = "github:nix-community/flakelight";
+    conflake.url = "github:ratson/conflake";
   };
-  outputs = { flakelight, nixpkgs, ... }:
-    flakelight ./. {
+  outputs = { conflake, nixpkgs, ... }:
+    conflake ./. {
       inputs.nixpkgs = nixpkgs;
     };
 }
@@ -146,9 +146,9 @@ as follows:
 
 ```nix
 {
-  inputs.flakelight.url = "github:nix-community/flakelight";
-  outputs = { flakelight, ... }:
-    flakelight ./. {
+  inputs.conflake.url = "github:ratson/conflake";
+  outputs = { conflake, ... }:
+    conflake ./. {
       systems = [ "x86_64-linux" "aarch64-linux" "i686-linux" "armv7l-linux" ];
     };
 }
@@ -158,9 +158,9 @@ To support all systems supported by flakes, set `systems` as follows:
 
 ```nix
 {
-  inputs.flakelight.url = "github:nix-community/flakelight";
-  outputs = { flakelight, ... }:
-    flakelight ./. ({ lib, ... }: {
+  inputs.conflake.url = "github:ratson/conflake";
+  outputs = { conflake, ... }:
+    conflake ./. ({ lib, ... }: {
       systems = lib.systems.flakeExposed;
     });
 }
@@ -170,9 +170,9 @@ To support all Linux systems supported by flakes, set `systems` as follows:
 
 ```nix
 {
-  inputs.flakelight.url = "github:nix-community/flakelight";
-  outputs = { flakelight, ... }:
-    flakelight ./. ({ lib, ... }: {
+  inputs.conflake.url = "github:ratspm/conflake";
+  outputs = { conflake, ... }:
+    conflake ./. ({ lib, ... }: {
       systems = lib.intersectLists
         lib.systems.doubles.linux
         lib.systems.flakeExposed;
@@ -196,7 +196,7 @@ For a given option, the following is checked in order:
 - Else if `${nixDir}/option` is a directory, it results in an attrset with an
   attr for each importable item in the directory for which the values are the
   corresponding items imported. An importable item is a file ending with `.nix`
-  or a directory containing a `default.nix`. This is the same as the flakelight
+  or a directory containing a `default.nix`. This is the same as the conflake
   `importDir` function.
 
 To enable using a directory for an attrset that includes a `default` attribute,
@@ -211,7 +211,7 @@ described above.
 All options except for `nixDir` and `_module` can be configured this way.
 
 To apply transformations on the output of an autoloaded directory, you can use
-`option/default.nix` and load the directory with `flakelight.importDir`.
+`option/default.nix` and load the directory with `conflake.importDir`.
 
 ### outputs
 
@@ -221,7 +221,7 @@ Type: AttrSet | (ModuleArgs -> AttrSet)
 
 The `outputs` option allows you to directly configure flake outputs. This should
 be used for porting or for configuring output attrs not otherwise supported by
-Flakelight.
+Conflake.
 
 The option value may be an attrset or a function that takes `moduleArgs` and
 returns and attrset.
@@ -230,9 +230,9 @@ To add a `example.test` output to your flake you could do the following:
 
 ```nix
 {
-  inputs.flakelight.url = "github:nix-community/flakelight";
-  outputs = { flakelight, ... }:
-    flakelight ./. {
+  inputs.conflake.url = "github:ratspm/conflake";
+  outputs = { conflake, ... }:
+    conflake ./. {
       outputs = {
         example.test = "hello";
       };
@@ -247,9 +247,9 @@ overlay (though this can be configured with the `overlays` option):
 
 ```nix
 {
-  inputs.flakelight.url = "github:nix-community/flakelight";
-  outputs = { flakelight, ... }:
-    flakelight ./. {
+  inputs.conflake.url = "github:ratspm/conflake";
+  outputs = { conflake, ... }:
+    conflake ./. {
       outputs.overlays.clang = final: prev: { stdenv = final.clangStdenv; };
     };
 }
@@ -263,16 +263,16 @@ Type: Pkgs -> AttrSet
 
 The `perSystem` option allows you to directly configure per-system flake
 outputs, and gives you access to packages. This should be used for porting or
-for configuring output attrs not otherwise supported by Flakelight.
+for configuring output attrs not otherwise supported by Conflake.
 
 To add `example.${system}.test` outputs to your flake, you could do the
 following:
 
 ```nix
 {
-  inputs.flakelight.url = "github:nix-community/flakelight";
-  outputs = { flakelight, ... }:
-    flakelight ./. {
+  inputs.conflake.url = "github:ratspm/conflake";
+  outputs = { conflake, ... }:
+    conflake ./. {
       perSystem = pkgs: {
         example.test = pkgs.writeShellScript "test" "echo hello";
       };
@@ -297,9 +297,9 @@ option as follows:
 
 ```nix
 {
-  inputs.flakelight.url = "github:nix-community/flakelight";
-  outputs = { flakelight, ... }:
-    flakelight ./. {
+  inputs.conflake.url = "github:ratspm/conflake";
+  outputs = { conflake, ... }:
+    conflake ./. {
       nixpkgs.config = { allowBroken = true; allowUnsupportedSystem = true; };
     };
 }
@@ -322,11 +322,11 @@ the option as follows:
 ```nix
 {
   inputs = {
-    flakelight.url = "github:nix-community/flakelight";
+    conflake.url = "github:ratspm/conflake";
     emacs-overlay.url = "github:nix-community/emacs-overlay";
   };
-  outputs = { flakelight, emacs-overlay, ... }:
-    flakelight ./. {
+  outputs = { conflake, emacs-overlay, ... }:
+    conflake ./. {
       withOverlays = [
         emacs-overlay.overlays.default
         (final: prev: { zig = final.zig_0_9; })
@@ -339,9 +339,9 @@ You can use the values from the overlays with other options:
 
 ```nix
 {
-  inputs.flakelight.url = "github:nix-community/flakelight";
-  outputs = { flakelight, ... }:
-    flakelight ./. {
+  inputs.conflake.url = "github:ratspm/conflake";
+  outputs = { conflake, ... }:
+    conflake ./. {
       withOverlays = final: prev: { testValue = "hi"; };
 
       package = { writeShellScript, testValue }:
@@ -373,15 +373,15 @@ By default, the `packages.default` package's name (its attribute name in
 the package set and overlay) is automatically determined from the derivation's
 `pname`. In order to use a different attribute name from the package pname,
 to set it in cases where it cannot be automatically determined, or to speed up
-uncached evaluation, the flakelight `pname` option can be set.
+uncached evaluation, the conflake `pname` option can be set.
 
 To set the default package, you can set the options as follows:
 
 ```nix
 {
-  inputs.flakelight.url = "github:nix-community/flakelight";
-  outputs = { flakelight, ... }:
-    flakelight ./. {
+  inputs.conflake.url = "github:ratspm/conflake";
+  outputs = { conflake, ... }:
+    conflake ./. {
       package = { stdenv }:
         stdenv.mkDerivation {
           pname = "pkg1";
@@ -402,9 +402,9 @@ To set multiple packages, you can set the options as follows:
 
 ```nix
 {
-  inputs.flakelight.url = "github:nix-community/flakelight";
-  outputs = { flakelight, ... }:
-    flakelight ./. {
+  inputs.conflake.url = "github:ratspm/conflake";
+  outputs = { conflake, ... }:
+    conflake ./. {
       packages = {
         default = { stdenv }:
           stdenv.mkDerivation {
@@ -438,9 +438,9 @@ To use the first example, but manually specify the package name:
 
 ```nix
 {
-  inputs.flakelight.url = "github:nix-community/flakelight";
-  outputs = { flakelight, ... }:
-    flakelight ./. {
+  inputs.conflake.url = "github:ratspm/conflake";
+  outputs = { conflake, ... }:
+    conflake ./. {
       pname = "pkgs-attribute-name";
       package = { stdenv }:
         stdenv.mkDerivation {
@@ -458,9 +458,9 @@ follows:
 
 ```nix
 {
-  inputs.flakelight.url = "github:nix-community/flakelight";
-  outputs = { flakelight, ... }:
-    flakelight ./. {
+  inputs.conflake.url = "github:ratspm/conflake";
+  outputs = { conflake, ... }:
+    conflake ./. {
       packages = { system, ... }: if (system == "x86_64-linux") then {
         pkg1 = { stdenv }:
           stdenv.mkDerivation {
@@ -522,9 +522,9 @@ For example, these can be configured as follows:
 
 ```nix
 {
-  inputs.flakelight.url = "github:nix-community/flakelight";
-  outputs = { flakelight, ... }:
-    flakelight ./. {
+  inputs.conflake.url = "github:ratspm/conflake";
+  outputs = { conflake, ... }:
+    conflake ./. {
       devShell = pkgs: {
         # Include build deps of emacs
         inputsFrom = [ pkgs.emacs ];
@@ -548,9 +548,9 @@ To add the build inputs of one of your packages, you can do as follows:
 
 ```nix
 {
-  inputs.flakelight.url = "github:nix-community/flakelight";
-  outputs = { flakelight, ... }:
-    flakelight ./. {
+  inputs.conflake.url = "github:ratspm/conflake";
+  outputs = { conflake, ... }:
+    conflake ./. {
       package = { stdenv }:
         stdenv.mkDerivation {
           pname = "pkg1";
@@ -569,9 +569,9 @@ To override the devShell, you can use a package definition as such:
 
 ```nix
 {
-  inputs.flakelight.url = "github:nix-community/flakelight";
-  outputs = { flakelight, ... }:
-    flakelight ./. {
+  inputs.conflake.url = "github:ratspm/conflake";
+  outputs = { conflake, ... }:
+    conflake ./. {
       devShell = { mkShell, hello }: mkShell {
         packages = [ hello ];
       };
@@ -600,9 +600,9 @@ For example, using the configuration options:
 
 ```nix
 {
-  inputs.flakelight.url = "github:nix-community/flakelight";
-  outputs = { flakelight, ... }:
-    flakelight ./. {
+  inputs.conflake.url = "github:ratspm/conflake";
+  outputs = { conflake, ... }:
+    conflake ./. {
       devShells.testing = {
         packages = pkgs: [ pkgs.coreutils ];
         env.TEST_VAR = "in testing shell";
@@ -615,9 +615,9 @@ For example, using a package definition:
 
 ```nix
 {
-  inputs.flakelight.url = "github:nix-community/flakelight";
-  outputs = { flakelight, ... }:
-    flakelight ./. {
+  inputs.conflake.url = "github:ratspm/conflake";
+  outputs = { conflake, ... }:
+    conflake ./. {
       devShells.testing = { mkShell, coreutils }:
         mkShell {
           packages = [ coreutils ];
@@ -649,9 +649,9 @@ For example, to add an overlay to `overlays.default`, do the following:
 
 ```nix
 {
-  inputs.flakelight.url = "github:nix-community/flakelight";
-  outputs = { flakelight, ... }:
-    flakelight ./. {
+  inputs.conflake.url = "github:ratspm/conflake";
+  outputs = { conflake, ... }:
+    conflake ./. {
       overlay = final: prev: { testValue = "hello"; };
     };
 }
@@ -663,9 +663,9 @@ To configure other overlays:
 
 ```nix
 {
-  inputs.flakelight.url = "github:nix-community/flakelight";
-  outputs = { flakelight, ... }:
-    flakelight ./. {
+  inputs.conflake.url = "github:ratspm/conflake";
+  outputs = { conflake, ... }:
+    conflake ./. {
       overlays.cool = final: prev: { testValue = "cool"; };
     };
 }
@@ -699,9 +699,9 @@ For example:
 
 ```nix
 {
-  inputs.flakelight.url = "github:nix-community/flakelight";
-  outputs = { flakelight, ... }:
-    flakelight ./. {
+  inputs.conflake.url = "github:ratspm/conflake";
+  outputs = { conflake, ... }:
+    conflake ./. {
       checks = {
         # Check that succeeds if the source contains the string "hi"
         hi = { rg, ... }: "${rg}/bin/rg hi";
@@ -733,9 +733,9 @@ For example:
 
 ```nix
 {
-  inputs.flakelight.url = "github:nix-community/flakelight";
-  outputs = { flakelight, ... }:
-    flakelight ./. {
+  inputs.conflake.url = "github:ratspm/conflake";
+  outputs = { conflake, ... }:
+    conflake ./. {
       apps = {
         emacs = pkgs: "${pkgs.emacs}/bin/emacs";
         bash = pkgs: { type = "app"; program = "${pkgs.bash}/bin/bash"; };
@@ -748,9 +748,9 @@ Alternatively, the above can be written as:
 
 ```nix
 {
-  inputs.flakelight.url = "github:nix-community/flakelight";
-  outputs = { flakelight, ... }:
-    flakelight ./. {
+  inputs.conflake.url = "github:ratspm/conflake";
+  outputs = { conflake, ... }:
+    conflake ./. {
       apps = { emacs, bash, ... }: {
         emacs = "${emacs}/bin/emacs";
         bash = { type = "app"; program = "${bash}/bin/bash"; };
@@ -779,9 +779,9 @@ For example:
 
 ```nix
 {
-  inputs.flakelight.url = "github:nix-community/flakelight";
-  outputs = { flakelight, ... }:
-    flakelight ./. {
+  inputs.conflake.url = "github:ratspm/conflake";
+  outputs = { conflake, ... }:
+    conflake ./. {
       templates.test-template = {
         path = ./test;
         description = "test template";
@@ -805,11 +805,11 @@ For example:
 ```nix
 {
   inputs = {
-    flakelight.url = "github:nix-community/flakelight";
+    conflake.url = "github:ratspm/conflake";
     nixpkgs.url = "github:NixOS/nixpkgs/nixpkgs-unstable";
   };
-  outputs = { flakelight, nixpkgs, ... }:
-    flakelight ./. {
+  outputs = { conflake, nixpkgs, ... }:
+    conflake ./. {
       legacyPackages = pkgs: nixpkgs.legacyPackages.${pkgs.system};
     };
 }
@@ -820,9 +820,9 @@ that take functions passed the package set, you can do the following:
 
 ```nix
 {
-  inputs.flakelight.url = "github:nix-community/flakelight";
-  outputs = { flakelight, ... }:
-    flakelight ./. {
+  inputs.conflake.url = "github:ratspm/conflake";
+  outputs = { conflake, ... }:
+    conflake ./. {
       legacyPackages = pkgs: pkgs;
     };
 }
@@ -844,9 +844,9 @@ For example, to use a custom formatting command:
 
 ```nix
 {
-  inputs.flakelight.url = "github:nix-community/flakelight";
-  outputs = { flakelight, ... }:
-    flakelight ./. {
+  inputs.conflake.url = "github:ratspm/conflake";
+  outputs = { conflake, ... }:
+    conflake ./. {
       formatter = pkgs: pkgs.writeShellScriptBin "format-script" ''
         # Perform formatting (`nix fmt` calls the script with `.` as arg)
       '';
@@ -861,13 +861,13 @@ Type: (AttrsOf Str) | (Pkgs -> (AttrsOf Str))
 ```
 
 The `formatters` option allows you to configure formatting tools that will be
-used by `nix fmt`. If formatters are set, Flakelight will export
+used by `nix fmt`. If formatters are set, Conflake will export
 `formatter.${system}` outputs which apply all the configured formatters.
 
 By default, `nix` files are formatted with `nixpkgs-fmt` and `md`, `json`, and
 `yml` files are formatted with `prettier`.
 
-To disable default formatters, set the `flakelight.builtinFormatters` option to
+To disable default formatters, set the `conflake.builtinFormatters` option to
 false.
 
 You can set `formatters` to an attribute set, for which the keys are a file name
@@ -888,9 +888,9 @@ formatting option is set to a plain string.
 
 ```nix
 {
-  inputs.flakelight.url = "github:nix-community/flakelight";
-  outputs = { flakelight, ... }:
-    flakelight ./. {
+  inputs.conflake.url = "github:ratspm/conflake";
+  outputs = { conflake, ... }:
+    conflake ./. {
       devShell.packages = pkgs: [ pkgs.rustfmt pkgs.zig ];
       formatters = {
         "*.rs" = "rustfmt";
@@ -924,9 +924,9 @@ For example, a bundler that returns the passed package:
 
 ```nix
 {
-  inputs.flakelight.url = "github:nix-community/flakelight";
-  outputs = { flakelight, ... }:
-    flakelight ./. {
+  inputs.conflake.url = "github:ratspm/conflake";
+  outputs = { conflake, ... }:
+    conflake ./. {
       bundler = x: x;
     };
 }
@@ -936,9 +936,9 @@ As another example, a bundler that always returns `hello`:
 
 ```nix
 {
-  inputs.flakelight.url = "github:nix-community/flakelight";
-  outputs = { flakelight, ... }:
-    flakelight ./. {
+  inputs.conflake.url = "github:ratspm/conflake";
+  outputs = { conflake, ... }:
+    conflake ./. {
       bundlers = { hello, ... }: {
         hello = x: hello;
       };
@@ -971,8 +971,8 @@ or a function that takes `moduleArgs` and returns one of the prior.
 
 When using a set of `nixpkgs.lib.nixosSystem` args, NixOS modules will have
 access to a `flake` module arg equivalent to `moduleArgs` plus `inputs'` and
-`outputs'`. Flakelight's pkgs attributes, `withOverlays`, and `packages` will
-also be available in the NixOS instance's pkgs, and Flakelight's
+`outputs'`. Conflake's pkgs attributes, `withOverlays`, and `packages` will
+also be available in the NixOS instance's pkgs, and Conflake's
 `nixpkgs.config` will apply to it as well.
 
 When using the result of calling `nixpkgs.lib.nixosSystem`, the
@@ -983,9 +983,9 @@ For example:
 
 ```nix
 {
-  inputs.flakelight.url = "github:nix-community/flakelight";
-  outputs = { flakelight, ... }:
-    flakelight ./. ({ lib, config, ... }: {
+  inputs.conflake.url = "github:ratspm/conflake";
+  outputs = { conflake, ... }:
+    conflake ./. ({ lib, config, ... }: {
       nixosConfigurations.test-system = {
         system = "x86_64-linux";
         modules = [{ system.stateVersion = "24.05"; }];
@@ -1014,7 +1014,7 @@ It should be set to an attribute set. Each value should be a set of
 When using a set of `homeManagerConfiguration` args, it is required to include
 `system` (`pkgs` does not need to be included), and `inputs.home-manager` must
 be set. home-manager modules will have access to a `flake` module arg equivalent
-to `moduleArgs` plus `inputs'` and `outputs'`. Flakelight's pkgs attributes,
+to `moduleArgs` plus `inputs'` and `outputs'`. Conflake's pkgs attributes,
 `withOverlays`, and `packages` will also be available in the home-manager
 instance's pkgs.
 
@@ -1027,11 +1027,11 @@ For example:
 ```nix
 {
   inputs = {
-    flakelight.url = "github:nix-community/flakelight";
+    conflake.url = "github:ratspm/conflake";
     home-manger.url = "github:nix-community/home-manager";
   };
-  outputs = { flakelight, home-manager, ... }@inputs:
-    flakelight ./. ({ config, ... }: {
+  outputs = { conflake, home-manager, ... }@inputs:
+    conflake ./. ({ config, ... }: {
       inherit inputs;
       homeConfigurations.username = {
         system = "x86_64-linux";
@@ -1041,7 +1041,7 @@ For example:
 }
 ```
 
-### nixosModules, homeModules, and flakelightModules
+### nixosModules, homeModules, and conflakeModules
 
 ```
 Types:
@@ -1049,23 +1049,23 @@ Types:
   nixosModules: (AttrsOf Module) | (ModuleArgs -> (AttrsOf Module))
   homeModule: Module
   homeModules: (AttrsOf Module) | (ModuleArgs -> (AttrsOf Module))
-  flakelightModule: Module
-  flakelightModules: (AttrsOf Module) | (ModuleArgs -> (AttrsOf Module))
+  conflakeModule: Module
+  conflakeModules: (AttrsOf Module) | (ModuleArgs -> (AttrsOf Module))
 ```
 
-The `nixosModules`, `homeModules`, and `flakelightModules` options allow you to
+The `nixosModules`, `homeModules`, and `conflakeModules` options allow you to
 configure the corresponding outputs.
 
-The `nixosModule`, `homeModule`, and `flakelightModule` options set the
+The `nixosModule`, `homeModule`, and `conflakeModule` options set the
 `default` attribute of the corresponding above option.
 
 For example:
 
 ```nix
 {
-  inputs.flakelight.url = "github:nix-community/flakelight";
-  outputs = { flakelight, ... }:
-    flakelight ./. ({ lib, ... }: {
+  inputs.conflake.url = "github:ratspm/conflake";
+  outputs = { conflake, ... }:
+    conflake ./. ({ lib, ... }: {
       nixosModule = { system, lib, pkgs, ... }: {
         # nixos module configuration
       };
@@ -1077,9 +1077,9 @@ These can be paths, which is preferred as it results in better debug output:
 
 ```nix
 {
-  inputs.flakelight.url = "github:nix-community/flakelight";
-  outputs = { flakelight, ... }:
-    flakelight ./. ({ lib, ... }: {
+  inputs.conflake.url = "github:ratspm/conflake";
+  outputs = { conflake, ... }:
+    conflake ./. ({ lib, ... }: {
       nixosModule = ./module.nix;
       homeModules = {
         default = ./home.nix;
@@ -1101,9 +1101,9 @@ For example:
 
 ```nix
 {
-  inputs.flakelight.url = "github:nix-community/flakelight";
-  outputs = { flakelight, ... }:
-    flakelight ./. {
+  inputs.conflake.url = "github:ratspm/conflake";
+  outputs = { conflake, ... }:
+    conflake ./. {
       lib = {
         addFive = x: x + 5;
         addFour = x: x + 4;
@@ -1123,16 +1123,16 @@ The `functor` option allows you to make your flake callable.
 If it is set to a function, that function will be set as the `__functor`
 attribute of your flake outputs.
 
-Flakelight uses it so that calling your `flakelight` input calls
-`flakelight.lib.mkFlake`.
+Conflake uses it so that calling your `conflake` input calls
+`conflake.lib.mkFlake`.
 
 As an example:
 
 ```nix
 {
-  inputs.flakelight.url = "github:nix-community/flakelight";
-  outputs = { flakelight, ... }:
-    flakelight ./. {
+  inputs.conflake.url = "github:ratspm/conflake";
+  outputs = { conflake, ... }:
+    conflake ./. {
       outputs.testvalue = 5;
       functor = self: x: x + self.testvalue;
     }
@@ -1151,8 +1151,8 @@ Types:
 ```
 
 The following options are available for configuring the meta attributes of the
-default package for supported modules (such as flakelight-rust or
-flakelight-zig) or for use in your own packages through the `defaultMeta` pkgs
+default package for supported modules (such as conflake-rust or
+conflake-zig) or for use in your own packages through the `defaultMeta` pkgs
 value.
 
 `description` allows setting the package description. By default it uses the
@@ -1162,18 +1162,18 @@ flake description, if found.
 of strings. These strings may be Spdx license identifiers or Nixpkgs license
 attribute names.
 
-### flakelight
+### conflake
 
 ```
 Types:
-  flakelight.editorconfig: Bool
-  flakelight.builtinFormatters: Bool
+  conflake.editorconfig: Bool
+  conflake.builtinFormatters: Bool
 ```
 
-This option has options for configuring Flakelight's defaults.
+This option has options for configuring Conflake's defaults.
 
-`flakelight.editorconfig` can be set to false to disable the editorconfig
+`conflake.editorconfig` can be set to false to disable the editorconfig
 check that is added if editorconfig configuration is detected.
 
-`flakelight.builtinFormatters` can be set to false to disable the default
+`conflake.builtinFormatters` can be set to false to disable the default
 formatting configuration.

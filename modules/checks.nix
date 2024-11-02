@@ -1,10 +1,10 @@
-{ config, src, lib, flakelight, genSystems, ... }:
+{ config, src, lib, conflake, genSystems, ... }:
 
 let
   inherit (builtins) isFunction mapAttrs;
   inherit (lib) last mergeDefinitions mkIf mkOption mkOptionType;
   inherit (lib.types) lazyAttrsOf optionDescriptionPhrase;
-  inherit (flakelight.types) coercedTo' drv nullable optFunctionTo stringLike;
+  inherit (conflake.types) coercedTo' drv nullable optFunctionTo stringLike;
 
   mkCheck = name: pkgs: cmd:
     pkgs.runCommand "check-${name}" { } ''

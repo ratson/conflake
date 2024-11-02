@@ -1,9 +1,9 @@
-{ config, lib, flakelight, moduleArgs, ... }:
+{ config, lib, conflake, moduleArgs, ... }:
 
 let
   inherit (lib) mkMerge mkOption mkIf;
   inherit (lib.types) lazyAttrsOf;
-  inherit (flakelight.types) nullable optCallWith overlay;
+  inherit (conflake.types) nullable optCallWith overlay;
 in
 {
   options = {

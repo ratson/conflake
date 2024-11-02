@@ -1,11 +1,11 @@
-{ config, options, src, lib, flakelight, ... }:
+{ config, options, src, lib, conflake, ... }:
 
 let
   inherit (builtins) attrNames pathExists;
   inherit (lib) findFirst genAttrs mkIf mkOption subtractLists;
   inherit (lib.types) attrsOf listOf str;
-  inherit (flakelight) importDir;
-  inherit (flakelight.types) path;
+  inherit (conflake) importDir;
+  inherit (conflake.types) path;
 
   inherit (config) nixDir;
 
