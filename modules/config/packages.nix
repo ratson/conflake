@@ -61,7 +61,7 @@ in
         let
           pkgDefs = getPkgDefs prev;
           getName = pkg: pkg.pname or (parseDrvName pkg.name).name;
-          mockPkgs = import ../misc/nameMockedPkgs.nix prev;
+          mockPkgs = import ../../misc/nameMockedPkgs.nix prev;
 
           defaultPkgName = findFirst (x: (tryEval x).success)
             (throw ("Could not determine the name of the default package; " +

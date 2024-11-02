@@ -10,11 +10,16 @@ let
   flakeConfig = config;
 in
 {
-  options.propagationModule = mkOption { type = module; internal = true; };
+  options.propagationModule = mkOption {
+    type = module;
+    internal = true;
+  };
 
-  config.propagationModule =
-    { lib, pkgs, options, config, ... }:
-    let inherit (pkgs.stdenv.hostPlatform) system; in {
+  config.propagationModule = { lib, pkgs, options, config, ... }:
+    let
+      inherit (pkgs.stdenv.hostPlatform) system;
+    in
+    {
       config = (optionalAttrs (options ? nixpkgs) {
         nixpkgs = (optionalAttrs (options ? nixpkgs.overlays) {
           # Forward overlays to NixOS/home-manager configurations

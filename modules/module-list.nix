@@ -1,31 +1,32 @@
 [
-  ./config/argsModule.nix
-  ./config/outputs.nix
-  ./apps.nix
   ./autoInputs.nix
   ./builtinFormatters.nix
   ./builtinOverlay.nix
-  ./bundlers.nix
-  ./checks.nix
-  ./conflakeModules.nix
-  ./core.nix
-  ./devShells.nix
-  ./devShells.nix
+  ./config/apps.nix
+  ./config/argsModule.nix
+  ./config/bundlers.nix
+  ./config/checks.nix
+  ./config/conflakeModules.nix
+  ./config/devShells.nix
+  ./config/formatters.nix
+  ./config/functor.nix
+  ./config/inputs.nix
+  ./config/legacyPackages.nix
+  ./config/lib.nix
+  ./config/nixDir.nix
+  ./config/nixosConfigurations.nix
+  ./config/nixosModules.nix
+  ./config/nixpkgs.nix
+  ./config/outputs.nix
+  ./config/overlays.nix
+  ./config/packages.nix
+  ./config/perSystem.nix
+  ./config/propagationModule.nix
+  ./config/systems.nix
+  ./config/templates.nix
+  ./config/withOverlays.nix
   ./editorconfig.nix
-  ./formatter.nix
-  ./functor.nix
-  ./functor.nix
-  ./homeConfigurations.nix
-  ./homeModules.nix
-  ./legacyPackages.nix
-  ./lib.nix
-  ./lib.nix
+  ./home-manager/homeConfigurations.nix
+  ./home-manager/homeModules.nix
   ./moduleArgs.nix
-  ./nixDir.nix
-  ./nixosConfigurations.nix
-  ./nixosModules.nix
-  ./overlays.nix
-  ./packages.nix
-  ./propagationModule.nix
-  ./templates.nix
 ]

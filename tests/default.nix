@@ -856,7 +856,7 @@ in
 
   modulesPath = test
     (conflake' {
-      disabledModules = [ "functor.nix" "nixDir.nix" ];
+      disabledModules = [ "config/functor.nix" "config/nixDir.nix" ];
       functor = _: _: true;
     })
     (f: !(builtins.tryEval f).success);
