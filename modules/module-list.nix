@@ -1,4 +1,5 @@
 [
+  ./config/argsModule.nix
   ./apps.nix
   ./autoInputs.nix
   ./builtinFormatters.nix

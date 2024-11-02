@@ -589,6 +589,18 @@ in
       description = "test template";
     });
 
+  template-fn = test
+    (conflake' {
+      template = { inputs, ... }: {
+        path = ./test;
+        description = "test template";
+      };
+    })
+    (f: f.templates.default == {
+      path = ./test;
+      description = "test template";
+    });
+
   templates = test
     (conflake' {
       templates.test-template = {
@@ -707,7 +719,7 @@ in
     }))
     (f: f ? nixosConfigurations.test.config.system.build.toplevel);
 
-  nixosConfigurationsManual = test
+  nixosConfigurations-manual = test
     (conflake' ({ lib, ... }: {
       nixosConfigurations.test = nixpkgs.lib.nixosSystem {
         system = "x86_64-linux";
@@ -716,13 +728,13 @@ in
     }))
     (f: f ? nixosConfigurations.test.config.system.build.toplevel);
 
-  nixosConfigurationsManualWithProp = test
+  nixosConfigurations-manualWithProp = test
     (conflake' ({ lib, config, ... }: {
       nixosConfigurations.test = nixpkgs.lib.nixosSystem {
         system = "x86_64-linux";
         modules = [
           config.propagationModule
-          ({ flake, ... }: {
+          ({ flake, inputs', ... }: {
             system.stateVersion = "24.05";
             environment.variables = {
               TEST1 = flake.inputs.nixpkgs.legacyPackages.x86_64-linux.hello;

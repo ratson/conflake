@@ -1,6 +1,7 @@
 { config, lib, conflake, moduleArgs, ... }:
 
 let
+  inherit (builtins) mapAttrs;
   inherit (lib) mkOption mkIf mkMerge;
   inherit (lib.types) lazyAttrsOf;
   inherit (conflake.types) module nullable optCallWith;
@@ -14,6 +15,12 @@ in
 
     homeModules = mkOption {
       type = optCallWith moduleArgs (lazyAttrsOf module);
+      apply = mapAttrs (_: module: {
+        imports = [
+          config.argsModule
+          module
+        ];
+      });
       default = { };
     };
   };
