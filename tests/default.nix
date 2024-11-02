@@ -1,76 +1,80 @@
 { self, nixpkgs, ... }:
+
 let
-  flakelight = self;
-  test = flake: test: assert test flake; true;
   inherit (nixpkgs) lib;
+
+  test = flake: test: assert test flake; true;
+
+  conflake = self;
+  conflake' = conflake ./empty;
 in
 {
-  call-flakelight = test
-    (flakelight ./empty { outputs.test = true; })
+  call-conflake = test
+    (conflake' { outputs.test = true; })
     (f: f.test);
 
   explicit-mkFlake = test
-    (flakelight.lib.mkFlake ./empty { outputs.test = true; })
+    (conflake.lib.mkFlake ./empty { outputs.test = true; })
     (f: f.test);
 
   module-with-args = test
-    (flakelight ./empty ({ lib, config, ... }: { outputs.test = true; }))
+    (conflake' ({ lib, config, ... }: { outputs.test = true; }))
     (f: f.test);
 
   src-arg = test
-    (flakelight ./test-path ({ src, ... }: {
+    (conflake ./test-path ({ src, ... }: {
       outputs = { inherit src; };
     }))
     (f: f.src == ./test-path);
 
   lib-arg = test
-    (flakelight ./empty ({ lib, ... }: {
+    (conflake' ({ lib, ... }: {
       outputs = { inherit lib; };
     }))
     (f: f.lib ? fix);
 
   config-arg = test
-    (flakelight ./empty ({ config, ... }: {
+    (conflake' ({ config, ... }: {
       lib = { a = true; };
       outputs = { inherit config; };
     }))
     (f: f.config.lib.a);
 
   options-arg = test
-    (flakelight ./empty ({ options, ... }: {
+    (conflake' ({ options, ... }: {
       outputs = { inherit options; };
     }))
     (f: f.options ? package && f.options ? overlays);
 
   flakelight-arg = test
-    (flakelight ./empty ({ flakelight, ... }: {
+    (conflake' ({ flakelight, ... }: {
       outputs = { inherit flakelight; };
     }))
     (f: f.flakelight ? mkFlake);
 
   inputs-arg = test
-    (flakelight ./empty ({ inputs, ... }: {
+    (conflake' ({ inputs, ... }: {
       inputs.test = true;
       outputs = { inherit inputs; };
     }))
     (f: f.inputs.test);
 
   overridden-nixpkgs = test
-    (flakelight ./empty ({ inputs, ... }: {
+    (conflake' ({ inputs, ... }: {
       inputs.nixpkgs = nixpkgs // { testValue = true; };
       outputs = { inherit inputs; };
     }))
     (f: f.inputs.nixpkgs.testValue);
 
   outputs-arg = test
-    (flakelight ./empty ({ outputs, ... }: {
+    (conflake' ({ outputs, ... }: {
       lib.test = true;
       outputs.test = outputs.lib.test;
     }))
     (f: f.test);
 
   moduleArgs = test
-    (flakelight ./empty ({ moduleArgs, ... }: {
+    (conflake' ({ moduleArgs, ... }: {
       outputs = { inherit moduleArgs; };
     }))
     (f: f.moduleArgs ? config
@@ -87,7 +91,7 @@ in
     );
 
   moduleArgs-add = test
-    (flakelight ./empty {
+    (conflake' {
       _module.args.test-val = true;
       outputs = { test-val, ... }: {
         test = test-val;
@@ -96,7 +100,7 @@ in
     (f: f.test);
 
   extra-pkgs-vals = test
-    (flakelight ./empty {
+    (conflake' {
       package =
         { src
         , inputs
@@ -112,7 +116,7 @@ in
     (f: f.packages.x86_64-linux.default.name == "test");
 
   inputs' = test
-    (flakelight ./empty {
+    (conflake' {
       systems = [ "x86_64-linux" ];
       inputs.a.attr.x86_64-linux = true;
       perSystem = { inputs', ... }: { test = inputs'.a.attr && true; };
@@ -120,7 +124,7 @@ in
     (f: f.test.x86_64-linux);
 
   outputs' = test
-    (flakelight ./empty {
+    (conflake' {
       systems = [ "x86_64-linux" ];
       outputs.attr.x86_64-linux = true;
       perSystem = { outputs', ... }: { test = outputs'.attr && true; };
@@ -128,21 +132,21 @@ in
     (f: f.test.x86_64-linux);
 
   systems = test
-    (flakelight ./empty {
+    (conflake' {
       systems = [ "i686-linux" "armv7l-linux" ];
       perSystem = _: { test = true; };
     })
     (f: (builtins.attrNames f.test) == [ "armv7l-linux" "i686-linux" ]);
 
   all-flakes-systems = test
-    (flakelight ./empty ({ lib, ... }: {
+    (conflake' ({ lib, ... }: {
       systems = lib.systems.flakeExposed;
       perSystem = _: { test = true; };
     }))
     (f: builtins.deepSeq f.test f.test.x86_64-linux);
 
   all-linux-systems = test
-    (flakelight ./empty ({ lib, ... }: {
+    (conflake' ({ lib, ... }: {
       systems = lib.intersectLists
         lib.systems.doubles.linux
         lib.systems.flakeExposed;
@@ -151,32 +155,32 @@ in
     (f: builtins.deepSeq f.test f.test.x86_64-linux);
 
   outputs = test
-    (flakelight ./empty {
+    (conflake' {
       outputs.example.test = true;
     })
     (f: f.example.test);
 
   outputs-handled-attr = test
-    (flakelight ./empty {
+    (conflake' {
       outputs.overlays.test = final: prev: { testVal = true; };
     })
     (f: (nixpkgs.legacyPackages.x86_64-linux.extend f.overlays.test).testVal);
 
   perSystem = test
-    (flakelight ./empty {
+    (conflake' {
       perSystem = _: { test = true; };
     })
     (f: (builtins.attrNames f.test) == [ "aarch64-linux" "x86_64-linux" ]);
 
   withOverlays = test
-    (flakelight ./empty {
+    (conflake' {
       withOverlays = final: prev: { testValue = "true"; };
       package = { writeText, testValue }: writeText "test" "${testValue}";
     })
     (f: import f.packages.x86_64-linux.default);
 
   withOverlays-multiple = test
-    (flakelight ./empty {
+    (conflake' {
       withOverlays = [
         (final: prev: { testValue = "tr"; })
         (final: prev: { testValue2 = "ue"; })
@@ -187,19 +191,19 @@ in
     (f: import f.packages.x86_64-linux.default);
 
   package-no-named-args = test
-    (flakelight ./empty {
+    (conflake' {
       package = pkgs: pkgs.hello;
     })
     (f: f.packages.aarch64-linux.default.pname == "hello");
 
   package-prevent-recursion = test
-    (flakelight ./empty {
+    (conflake' {
       package = { hello }: hello;
     })
     (f: f.packages.aarch64-linux.default.pname == "hello");
 
   package = test
-    (flakelight ./empty {
+    (conflake' {
       package = { stdenv }:
         stdenv.mkDerivation {
           pname = "pkg1";
@@ -215,7 +219,7 @@ in
       && (f ? checks.aarch64-linux.packages-default));
 
   packages = test
-    (flakelight ./empty {
+    (conflake' {
       packages = {
         default = { stdenv }:
           stdenv.mkDerivation {
@@ -254,7 +258,7 @@ in
     );
 
   package-overlay-no-default = test
-    (flakelight ./empty {
+    (conflake' {
       package = { stdenv }:
         stdenv.mkDerivation {
           name = "pkg1";
@@ -266,7 +270,7 @@ in
       ? default));
 
   packages-refer-default-as-default = test
-    (flakelight ./empty {
+    (conflake' {
       packages = {
         default = { stdenv }:
           stdenv.mkDerivation {
@@ -285,7 +289,7 @@ in
     (f: (import f.packages.x86_64-linux.pkg2));
 
   packages-refer-default-as-name = test
-    (flakelight ./empty {
+    (conflake' {
       packages = {
         default = { stdenv }:
           stdenv.mkDerivation {
@@ -304,7 +308,7 @@ in
     (f: (import f.packages.x86_64-linux.pkg2));
 
   packages-fn-has-system = test
-    (flakelight ./empty {
+    (conflake' {
       packages = { system, ... }: (if system == "x86_64-linux" then {
         default = { stdenv }:
           stdenv.mkDerivation {
@@ -318,7 +322,7 @@ in
       && !(f.packages.aarch64-linux ? default));
 
   legacyPackages-set-pkgs = test
-    (flakelight ./empty {
+    (conflake' {
       inputs = { inherit nixpkgs; };
       legacyPackages = pkgs: pkgs;
     })
@@ -326,7 +330,7 @@ in
       == nixpkgs.legacyPackages.x86_64-linux.hello);
 
   legacyPackages-set-nixpkgs = test
-    (flakelight ./empty {
+    (conflake' {
       inputs = { inherit nixpkgs; };
       legacyPackages = pkgs: nixpkgs.legacyPackages.${pkgs.system};
     })
@@ -334,7 +338,7 @@ in
       == nixpkgs.legacyPackages.x86_64-linux.hello);
 
   devShell = test
-    (flakelight ./empty {
+    (conflake' {
       devShell = {
         inputsFrom = pkgs: [ pkgs.emacs ];
         packages = pkgs: [ pkgs.coreutils ];
@@ -349,27 +353,27 @@ in
     (f: lib.isDerivation f.devShells.x86_64-linux.default);
 
   devShell-empty = test
-    (flakelight ./empty {
+    (conflake' {
       disabledModules = [ "builtinFormatters.nix" ];
       devShell = { };
     })
     (f: lib.isDerivation f.devShells.x86_64-linux.default);
 
   devShell-pkgDef = test
-    (flakelight ./empty {
+    (conflake' {
       devShell = { mkShell }: mkShell { };
     })
     (f: lib.isDerivation f.devShells.x86_64-linux.default);
 
   devShell-pkgDef-empty = test
-    (flakelight ./empty {
+    (conflake' {
       disabledModules = [ "builtinFormatters.nix" ];
       devShell = { mkShell }: mkShell { };
     })
     (f: lib.isDerivation f.devShells.x86_64-linux.default);
 
   devShell-pkgs-arg = test
-    (flakelight ./empty {
+    (conflake' {
       devShell = pkgs: {
         inputsFrom = [ pkgs.emacs ];
         packages = [ pkgs.coreutils ];
@@ -383,7 +387,7 @@ in
     (f: lib.isDerivation f.devShells.x86_64-linux.default);
 
   devShell-pkgs-arg-set = test
-    (flakelight ./empty {
+    (conflake' {
       devShell = { emacs, coreutils, clangStdenv, ... }: {
         inputsFrom = [ emacs ];
         packages = [ coreutils ];
@@ -397,20 +401,20 @@ in
     (f: lib.isDerivation f.devShells.x86_64-linux.default);
 
   devShell-pkg = test
-    (flakelight ./empty ({ inputs, ... }: {
+    (conflake' ({ inputs, ... }: {
       systems = [ "x86_64-linux" ];
       devShell = inputs.nixpkgs.legacyPackages.x86_64-linux.hello;
     }))
     (f: lib.isDerivation f.devShells.x86_64-linux.default);
 
   devShell-pkg-fn = test
-    (flakelight ./empty {
+    (conflake' {
       devShell = pkgs: pkgs.hello;
     })
     (f: lib.isDerivation f.devShells.x86_64-linux.default);
 
   devShells = test
-    (flakelight ./empty {
+    (conflake' {
       devShell.inputsFrom = pkgs: [ pkgs.emacs ];
       devShells = {
         shell1 = { mkShell }: mkShell { };
@@ -426,13 +430,13 @@ in
       && (lib.isDerivation f.devShells.x86_64-linux.shell4));
 
   devShells-override = test
-    (flakelight ./empty {
+    (conflake' {
       devShells.default = { mkShell }: mkShell { };
     })
     (f: f ? devShells.x86_64-linux.default);
 
   devShells-import = test
-    (flakelight ./empty ({ config, ... }: {
+    (conflake' ({ config, ... }: {
       devShell.inputsFrom = pkgs: [ pkgs.emacs ];
       devShells.shell1 = pkgs: { imports = [ (config.devShell pkgs) ]; };
     }))
@@ -440,7 +444,7 @@ in
       && (lib.isDerivation f.devShells.x86_64-linux.shell1));
 
   overlay = test
-    (flakelight ./empty {
+    (conflake' {
       overlay = final: prev: { testValue = "hello"; };
     })
     (f:
@@ -449,7 +453,7 @@ in
     );
 
   overlays = test
-    (flakelight ./empty {
+    (conflake' {
       overlay = final: prev: { testValue = "hello"; };
       overlays.cool = final: prev: { testValue = "cool"; };
     })
@@ -460,7 +464,7 @@ in
       { testValue = "cool"; }));
 
   overlay-merge = test
-    (flakelight ./empty {
+    (conflake' {
       imports = [
         { overlay = final: prev: { testValue = "hello"; }; }
         { overlay = final: prev: { testValue2 = "hello2"; }; }
@@ -470,7 +474,7 @@ in
       { testValue = "hello"; testValue2 = "hello2"; }));
 
   overlays-merge = test
-    (flakelight ./empty {
+    (conflake' {
       imports = [
         { overlays.test = final: prev: { testValue = "hello"; }; }
         { overlays.test = final: prev: { testValue2 = "hello2"; }; }
@@ -480,7 +484,7 @@ in
       { testValue = "hello"; testValue2 = "hello2"; }));
 
   checks = test
-    (flakelight ./empty {
+    (conflake' {
       checks = {
         test-fail = pkgs: "exit 1";
         test-success = pkgs: pkgs.hello;
@@ -492,7 +496,7 @@ in
       && (lib.isDerivation f.checks.x86_64-linux.test-success));
 
   app = test
-    (flakelight ./empty {
+    (conflake' {
       app = {
         type = "app";
         program = "${nixpkgs.legacyPackages.x86_64-linux.hello}/bin/hello";
@@ -504,7 +508,7 @@ in
     }));
 
   app-fn = test
-    (flakelight ./empty {
+    (conflake' {
       app = pkgs: {
         type = "app";
         program = "${pkgs.hello}/bin/hello";
@@ -516,7 +520,7 @@ in
     }));
 
   app-string = test
-    (flakelight ./empty {
+    (conflake' {
       inputs = { inherit nixpkgs; };
       app = "${nixpkgs.legacyPackages.x86_64-linux.hello}/bin/hello";
     })
@@ -526,7 +530,7 @@ in
     }));
 
   app-string-fn = test
-    (flakelight ./empty {
+    (conflake' {
       inputs = { inherit nixpkgs; };
       app = pkgs: "${pkgs.hello}/bin/hello";
     })
@@ -536,7 +540,7 @@ in
     }));
 
   apps = test
-    (flakelight ./empty {
+    (conflake' {
       inputs = { inherit nixpkgs; };
       apps = {
         emacs = pkgs: "${pkgs.emacs}/bin/emacs";
@@ -555,7 +559,7 @@ in
     });
 
   apps-fn = test
-    (flakelight ./empty {
+    (conflake' {
       inputs = { inherit nixpkgs; };
       apps = { emacs, bash, ... }: {
         emacs = "${emacs}/bin/emacs";
@@ -574,7 +578,7 @@ in
     });
 
   template = test
-    (flakelight ./empty {
+    (conflake' {
       template = {
         path = ./test;
         description = "test template";
@@ -586,7 +590,7 @@ in
     });
 
   templates = test
-    (flakelight ./empty {
+    (conflake' {
       templates.test-template = {
         path = ./test;
         description = "test template";
@@ -598,7 +602,7 @@ in
     });
 
   templates-welcomeText = test
-    (flakelight ./empty {
+    (conflake' {
       templates.test-template = {
         path = ./test;
         description = "test template";
@@ -612,13 +616,13 @@ in
     });
 
   formatter = test
-    (flakelight ./empty {
+    (conflake' {
       formatter = pkgs: pkgs.hello;
     })
     (f: lib.isDerivation f.formatter.x86_64-linux);
 
   formatters = test
-    (flakelight ./empty {
+    (conflake' {
       devShell.packages = pkgs: [ pkgs.rustfmt ];
       formatters = {
         "*.rs" = "rustfmt";
@@ -627,7 +631,7 @@ in
     (f: lib.isDerivation f.formatter.x86_64-linux);
 
   formatters-fn = test
-    (flakelight ./empty {
+    (conflake' {
       formatters = { rustfmt, ... }: {
         "*.rs" = "${rustfmt}";
       };
@@ -635,7 +639,7 @@ in
     (f: lib.isDerivation f.formatter.x86_64-linux);
 
   formatters-no-devshell = test
-    (flakelight ./empty {
+    (conflake' {
       devShell = lib.mkForce null;
       formatters = { rustfmt, ... }: {
         "*.rs" = "${rustfmt}";
@@ -644,13 +648,13 @@ in
     (f: lib.isDerivation f.formatter.x86_64-linux);
 
   formatters-disable = test
-    (flakelight ./empty {
+    (conflake' {
       flakelight.builtinFormatters = false;
     })
     (f: ! f ? formatter.x86_64-linux);
 
   formatters-disable-only-builtin = test
-    (flakelight ./empty {
+    (conflake' {
       flakelight.builtinFormatters = false;
       formatters = { rustfmt, ... }: {
         "*.rs" = "rustfmt";
@@ -659,7 +663,7 @@ in
     (f: f ? formatter.x86_64-linux);
 
   bundler = test
-    (flakelight ./empty {
+    (conflake' {
       bundler = x: x;
     })
     (f: (f.bundlers.x86_64-linux.default
@@ -667,7 +671,7 @@ in
     == nixpkgs.legacyPackages.x86_64-linux.hello);
 
   bundler-fn = test
-    (flakelight ./empty {
+    (conflake' {
       bundler = pkgs: x: pkgs.hello;
     })
     (f: (f.bundlers.x86_64-linux.default
@@ -675,7 +679,7 @@ in
     == nixpkgs.legacyPackages.x86_64-linux.hello);
 
   bundlers = test
-    (flakelight ./empty {
+    (conflake' {
       bundlers = {
         hello = x: x;
       };
@@ -685,7 +689,7 @@ in
     == nixpkgs.legacyPackages.x86_64-linux.hello);
 
   bundlers-fn = test
-    (flakelight ./empty {
+    (conflake' {
       bundlers = { hello, ... }: {
         hello = x: hello;
       };
@@ -695,7 +699,7 @@ in
     == nixpkgs.legacyPackages.x86_64-linux.hello);
 
   nixosConfigurations = test
-    (flakelight ./empty ({ lib, ... }: {
+    (conflake' ({ lib, ... }: {
       nixosConfigurations.test = {
         system = "x86_64-linux";
         modules = [{ system.stateVersion = "24.05"; }];
@@ -704,7 +708,7 @@ in
     (f: f ? nixosConfigurations.test.config.system.build.toplevel);
 
   nixosConfigurationsManual = test
-    (flakelight ./empty ({ lib, ... }: {
+    (conflake' ({ lib, ... }: {
       nixosConfigurations.test = nixpkgs.lib.nixosSystem {
         system = "x86_64-linux";
         modules = [{ system.stateVersion = "24.05"; }];
@@ -713,7 +717,7 @@ in
     (f: f ? nixosConfigurations.test.config.system.build.toplevel);
 
   nixosConfigurationsManualWithProp = test
-    (flakelight ./empty ({ lib, config, ... }: {
+    (conflake' ({ lib, config, ... }: {
       nixosConfigurations.test = nixpkgs.lib.nixosSystem {
         system = "x86_64-linux";
         modules = [
@@ -733,56 +737,56 @@ in
       f.nixosConfigurations.test.config.environment.variables.TEST2));
 
   nixosModule = test
-    (flakelight ./empty {
+    (conflake' {
       nixosModule = _: { };
     })
     (f: f ? nixosModules.default);
 
   nixosModules = test
-    (flakelight ./empty {
+    (conflake' {
       nixosModules.test = _: { };
     })
     (f: f ? nixosModules.test);
 
   homeModule = test
-    (flakelight ./empty {
+    (conflake' {
       homeModule = _: { };
     })
     (f: f ? homeModules.default);
 
   homeModules = test
-    (flakelight ./empty {
+    (conflake' {
       homeModules.test = _: { };
     })
     (f: f ? homeModules.test);
 
   flakelightModule = test
-    (flakelight ./empty {
+    (conflake' {
       flakelightModule = _: { };
     })
     (f: f ? flakelightModules.default);
 
   flakelightModules = test
-    (flakelight ./empty {
+    (conflake' {
       flakelightModules.test = _: { };
     })
     (f: f ? flakelightModules.test);
 
   lib = test
-    (flakelight ./empty {
+    (conflake' {
       lib.addFive = x: x + 5;
     })
     (f: f.lib.addFive 4 == 9);
 
   functor = test
-    (flakelight ./empty {
+    (conflake' {
       outputs.testvalue = 5;
       functor = self: x: x + self.testvalue;
     })
     (f: f 4 == 9);
 
   meta = test
-    (flakelight ./empty {
+    (conflake' {
       description = "aaa";
       license = "AGPL-3.0-only";
       packages.test = { writeTextFile, defaultMeta }:
@@ -797,7 +801,7 @@ in
       == "AGPL-3.0-only"));
 
   meta-license-attrname = test
-    (flakelight ./empty {
+    (conflake' {
       license = "agpl3Only";
       packages.test = { writeTextFile, defaultMeta }:
         writeTextFile {
@@ -809,7 +813,7 @@ in
     (f: f.packages.x86_64-linux.test.meta.license.spdxId == "AGPL-3.0-only");
 
   meta-licenses = test
-    (flakelight ./empty {
+    (conflake' {
       license = [ "agpl3Only" "AGPL-3.0-or-later" ];
       packages.test = { writeTextFile, defaultMeta }:
         writeTextFile {
@@ -821,37 +825,37 @@ in
     (f: builtins.isList f.packages.x86_64-linux.test.meta.license);
 
   editorconfig = test
-    (flakelight ./editorconfig { })
+    (conflake ./editorconfig { })
     (f: f ? checks.x86_64-linux.editorconfig);
 
   editorconfig-disabled = test
-    (flakelight ./editorconfig {
+    (conflake ./editorconfig {
       flakelight.editorconfig = false;
     })
     (f: ! f ? checks.x86_64-linux.editorconfig);
 
   modulesPath = test
-    (flakelight ./empty {
+    (conflake' {
       disabledModules = [ "functor.nix" "nixDir.nix" ];
       functor = _: _: true;
     })
     (f: !(builtins.tryEval f).success);
 
   empty-flake = test
-    (flakelight ./empty {
+    (conflake' {
       disabledModules = [ "builtinFormatters.nix" ];
     })
     (f: f == { });
 
   default-nixpkgs = test
-    (flakelight ./empty ({ inputs, ... }: {
+    (conflake' ({ inputs, ... }: {
       outputs = { inherit inputs; };
     }))
     (f: f.inputs ? nixpkgs.lib);
 
   extend-mkFlake =
     let
-      extended = flakelight.lib.mkFlake.extend [{ outputs.test = true; }];
+      extended = conflake.lib.mkFlake.extend [{ outputs.test = true; }];
     in
     test
       (extended ./empty { })
@@ -859,7 +863,7 @@ in
 
   extend-mkFlake-nested =
     let
-      extended = flakelight.lib.mkFlake.extend [{ outputs.test = true; }];
+      extended = conflake.lib.mkFlake.extend [{ outputs.test = true; }];
       extended2 = extended.extend [{ outputs.test2 = true; }];
       extended3 = extended2.extend [{ outputs.test3 = true; }];
     in
