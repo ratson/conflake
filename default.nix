@@ -14,7 +14,7 @@ let
 
   baseModules = import ./modules/module-list.nix;
 
-  mkFlake = {
+  mkOutputs = {
     __functor = self: src: root: (evalModules {
       modules = baseModules ++ self.extraModules ++ [
         { inputs.nixpkgs = mkDefault nixpkgs; }
@@ -27,16 +27,16 @@ let
       };
     }).config.outputs;
 
-    # Attributes to allow module flakes to extend mkFlake
+    # Attributes to allow module flakes to extend mkOutputs
     extraModules = [ ];
-    extend = (fix (extend': mkFlake': modules: fix (self: mkFlake' // {
-      extraModules = mkFlake'.extraModules ++ modules;
+    extend = (fix (extend': mkOutputs': modules: fix (self: mkOutputs' // {
+      extraModules = mkOutputs'.extraModules ++ modules;
       extend = extend' self;
-    }))) mkFlake;
+    }))) mkOutputs;
   };
 
   conflake = {
-    inherit autoImport autoImportArgs importDir mkFlake selectAttr types;
+    inherit autoImport autoImportArgs importDir mkOutputs selectAttr types;
   };
 
   types = rec {

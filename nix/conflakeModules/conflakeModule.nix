@@ -2,11 +2,11 @@
 { conflake, outputs, src, ... }:
 
 {
-  functor = self: self.lib.mkFlake;
+  functor = self: self.lib.mkOutputs;
 
   nixDir = src;
 
-  lib.mkFlake = conflake.mkFlake.extend [
+  lib.mkOutputs = conflake.mkOutputs.extend [
     outputs.conflakeModules.default
   ];
 }

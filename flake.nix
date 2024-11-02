@@ -5,18 +5,18 @@
     let
       lib = import ./. inputs;
     in
-    lib.mkFlake ./. {
+    lib.mkOutputs ./. {
       inherit lib;
 
       checks.statix = pkgs: "${pkgs.statix}/bin/statix check";
 
-      functor = _: lib.mkFlake;
+      functor = _: lib.mkOutputs;
 
       outputs.tests = import ./tests inputs;
 
       templates = {
         default = {
-          path = ./default;
+          path = ./templates/default;
           description = "Minimal Conflake flake.";
         };
       };

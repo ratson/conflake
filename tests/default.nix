@@ -13,8 +13,8 @@ in
     (conflake' { outputs.test = true; })
     (f: f.test);
 
-  explicit-mkFlake = test
-    (conflake.lib.mkFlake ./empty { outputs.test = true; })
+  explicit-mkOutputs = test
+    (conflake.lib.mkOutputs ./empty { outputs.test = true; })
     (f: f.test);
 
   module-with-args = test
@@ -50,7 +50,7 @@ in
     (conflake' ({ conflake, ... }: {
       outputs = { inherit conflake; };
     }))
-    (f: f.conflake ? mkFlake);
+    (f: f.conflake ? mkOutputs);
 
   inputs-arg = test
     (conflake' ({ inputs, ... }: {
@@ -853,17 +853,17 @@ in
     }))
     (f: f.inputs ? nixpkgs.lib);
 
-  extend-mkFlake =
+  extend-mkOutputs =
     let
-      extended = conflake.lib.mkFlake.extend [{ outputs.test = true; }];
+      extended = conflake.lib.mkOutputs.extend [{ outputs.test = true; }];
     in
     test
       (extended ./empty { })
       (f: f.test);
 
-  extend-mkFlake-nested =
+  extend-mkOutputs-nested =
     let
-      extended = conflake.lib.mkFlake.extend [{ outputs.test = true; }];
+      extended = conflake.lib.mkOutputs.extend [{ outputs.test = true; }];
       extended2 = extended.extend [{ outputs.test2 = true; }];
       extended3 = extended2.extend [{ outputs.test3 = true; }];
     in

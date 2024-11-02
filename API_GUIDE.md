@@ -4,10 +4,10 @@
 
 This section covers important functions available in Conflake's lib attribute.
 
-### mkFlake
+### mkOutputs
 
-The outputs of a flake using Conflake are created using the `mkFlake` function.
-When called directly, Conflake invokes `mkFlake`, as follows:
+The outputs of a flake using Conflake are created using the `mkOutputs` function.
+When called directly, Conflake invokes `mkOutputs`, as follows:
 
 ```nix
 {
@@ -19,19 +19,19 @@ When called directly, Conflake invokes `mkFlake`, as follows:
 }
 ```
 
-To call `mkFlake` explicitly, you can do:
+To call `mkOutputs` explicitly, you can do:
 
 ```nix
 {
   inputs.conflake.url = "github:ratson/conflake";
   outputs = { conflake, ... }:
-    conflake.lib.mkFlake ./. {
+    conflake.lib.mkOutputs ./. {
       # Your flake configuration here
     };
 }
 ```
 
-`mkFlake` takes two parameters: the path to the flake's source and a Conflake
+`mkOutputs` takes two parameters: the path to the flake's source and a Conflake
 module.
 
 If you need access to module args, you can write it as bellow:
@@ -1124,7 +1124,7 @@ If it is set to a function, that function will be set as the `__functor`
 attribute of your flake outputs.
 
 Conflake uses it so that calling your `conflake` input calls
-`conflake.lib.mkFlake`.
+`conflake.lib.mkOutputs`.
 
 As an example:
 
