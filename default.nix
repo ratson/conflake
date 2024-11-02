@@ -15,14 +15,17 @@ let
   baseModules = import ./modules/module-list.nix;
 
   mkOutputs = {
-    __functor = self: src: root: (evalModules {
+    __functor = self: src: module: (evalModules {
       modules = baseModules ++ self.extraModules ++ [
-        { inputs.nixpkgs = mkDefault nixpkgs; }
-        { inputs.conflake = mkDefault inputs.self; }
-        { _module.args = { inherit src conflake; }; }
-        root
+        {
+          inputs.nixpkgs = mkDefault nixpkgs;
+          inputs.conflake = mkDefault inputs.self;
+        }
+        module
       ];
       specialArgs = {
+        inherit conflake src;
+
         modulesPath = ./modules;
       };
     }).config.outputs;
