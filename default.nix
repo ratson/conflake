@@ -4,10 +4,10 @@ let
   inherit (builtins) all attrNames head isAttrs isPath length mapAttrs readDir;
   inherit (inputs) nixpkgs;
   inherit (nixpkgs) lib;
-  inherit (lib) composeManyExtensions evalModules filter findFirst fix
-    genAttrs getFiles getValues hasSuffix isDerivation isFunction isList
+  inherit (lib) composeManyExtensions evalModules filter fix
+    genAttrs getFiles getValues hasSuffix isDerivation isFunction
     isStringLike mkDefault mkOptionType pathExists pipe
-    removePrefix removeSuffix showFiles showOption singleton warn;
+    removePrefix removeSuffix showFiles showOption singleton;
   inherit (lib.types) coercedTo defaultFunctor functionTo lazyAttrsOf listOf
     optionDescriptionPhrase;
   inherit (lib.options) mergeEqualOption mergeOneOption;
@@ -39,7 +39,7 @@ let
   };
 
   conflake = {
-    inherit autoImport autoImportArgs importDir mkOutputs selectAttr types;
+    inherit importDir mkOutputs selectAttr types;
   };
 
   types = rec {
@@ -183,28 +183,6 @@ let
       (if pathExists (path + "/_${p}.nix") then "/_${p}.nix"
       else if pathExists (path + "/${p}.nix") then "/${p}.nix"
       else "/${p}")));
-
-  autoImport = dir: name: warn
-    ("The autoImport function is deprecated. " +
-      "All options are now automatically auto-loaded.")
-    (if isList name
-    then findFirst (x: x != null) null (map (autoImport dir) name)
-    else
-      if pathExists (dir + "/${name}.nix")
-      then import (dir + "/${name}.nix")
-      else if pathExists (dir + "/${name}/default.nix")
-      then import (dir + "/${name}")
-      else if pathExists (dir + "/${name}")
-      then importDir (dir + "/${name}")
-      else null);
-
-  autoImportArgs = dir: args: name: warn
-    ("The autoImportArgs function is deprecated. " +
-      "Wrap the target type in conflake.types.optCallWith instead.")
-    (
-      let v = autoImport dir name; in
-      if isFunction v then v args else v
-    );
 
   selectAttr = attr: mapAttrs (_: v: v.${attr} or { });
 in
