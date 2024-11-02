@@ -1,7 +1,8 @@
 { config, lib, genPkgs, ... }:
 
 let
-  inherit (lib) mapAttrs mkIf mkMerge mkOption types;
+  inherit (builtins) mapAttrs;
+  inherit (lib) mkIf mkMerge mkOption types;
 
   devShellType = types.raw;
 in
@@ -28,12 +29,10 @@ in
     })
 
     (mkIf (config.devShells != { }) {
-      outputs = {
-        devShells = genPkgs
-          ({ pkgs, callPackage, ... }: mapAttrs
-            (_: cfg: callPackage cfg { })
-            config.devShells);
-      };
+      outputs.devShells = genPkgs
+        ({ pkgs, callPackage, ... }: mapAttrs
+          (_: cfg: callPackage cfg { })
+          config.devShells);
     })
   ];
 }

@@ -1,10 +1,10 @@
 inputs:
 
 let
-  inherit (builtins) all head isAttrs length;
+  inherit (builtins) all head isAttrs length mapAttrs;
 
   inherit (inputs.nixpkgs) lib;
-  inherit (lib) composeManyExtensions evalModules getValues isFunction mapAttrs mkOptionType;
+  inherit (lib) composeManyExtensions evalModules getValues isFunction mkOptionType;
   inherit (lib.options) showDefs showOption;
   inherit (lib.types) lazyAttrsOf;
 

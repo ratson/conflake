@@ -1,7 +1,8 @@
 { config, lib, conflake, genPkgs, ... }:
 
 let
-  inherit (lib) attrValues foldAttrs mapAttrs mergeAttrs mkIf mkOption types;
+  inherit (builtins) attrValues mapAttrs;
+  inherit (lib) foldAttrs mergeAttrs mkIf mkOption types;
 in
 {
   options = {

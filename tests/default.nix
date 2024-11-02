@@ -101,7 +101,7 @@ in
     }))
     (f: f ? nixosConfigurations.test.config.system.build.toplevel);
 
-  nixosConfigurations-mnualWithProp = test
+  nixosConfigurations-manualWithProp = test
     (conflake' ({ lib, config, ... }: {
       nixosConfigurations.test = nixpkgs.lib.nixosSystem {
         system = "x86_64-linux";
