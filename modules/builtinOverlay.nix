@@ -1,12 +1,9 @@
-# flakelight -- Framework for simplifying flake setup
-# Copyright (C) 2023 Archit Gupta <archit@accelbread.com>
-# SPDX-License-Identifier: MIT
-
 { config, src, lib, inputs, outputs, flakelight, moduleArgs, ... }:
+
 let
-  inherit (lib) isList mkOption mkOrder mapAttrs optionalAttrs;
+  inherit (builtins) isList mapAttrs pathExists;
+  inherit (lib) mkOption mkOrder optionalAttrs;
   inherit (lib.types) listOf oneOf str;
-  inherit (builtins) pathExists;
   inherit (flakelight) selectAttr;
   inherit (flakelight.types) nullable;
 in

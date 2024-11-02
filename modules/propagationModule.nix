@@ -1,13 +1,10 @@
-# flakelight -- Framework for simplifying flake setup
-# Copyright (C) 2023 Archit Gupta <archit@accelbread.com>
-# SPDX-License-Identifier: MIT
-
 # This provides a module that can be added to module systems nested inside of
 # flakelight, for example NixOS or home-manager configurations.
-
 { lib, config, flakelight, moduleArgs, inputs, outputs, ... }:
+
 let
-  inherit (lib) mapAttrs mkOption optional optionalAttrs;
+  inherit (builtins) mapAttrs;
+  inherit (lib) mkOption optional optionalAttrs;
   inherit (flakelight) selectAttr;
   inherit (flakelight.types) module;
   flakeConfig = config;

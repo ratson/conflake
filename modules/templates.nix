@@ -1,8 +1,5 @@
-# flakelight -- Framework for simplifying flake setup
-# Copyright (C) 2023 Archit Gupta <archit@accelbread.com>
-# SPDX-License-Identifier: MIT
-
 { config, lib, flakelight, moduleArgs, ... }:
+
 let
   inherit (builtins) isPath isString;
   inherit (lib) mkOption mkOptionType mkIf mkMerge;

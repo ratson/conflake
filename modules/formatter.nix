@@ -1,8 +1,5 @@
-# flakelight -- Framework for simplifying flake setup
-# Copyright (C) 2023 Archit Gupta <archit@accelbread.com>
-# SPDX-License-Identifier: MIT
-
 { config, src, lib, flakelight, genSystems, ... }:
+
 let
   inherit (builtins) all hasContext;
   inherit (lib) mkDefault mkMerge mkOption mkIf mapAttrsToList;

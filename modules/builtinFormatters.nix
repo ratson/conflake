@@ -1,8 +1,5 @@
-# flakelight -- Framework for simplifying flake setup
-# Copyright (C) 2023 Archit Gupta <archit@accelbread.com>
-# SPDX-License-Identifier: MIT
-
 { config, lib, ... }:
+
 let
   inherit (lib) mkDefault mkEnableOption mkIf;
 in

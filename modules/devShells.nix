@@ -1,10 +1,8 @@
-# flakelight -- Framework for simplifying flake setup
-# Copyright (C) 2023 Archit Gupta <archit@accelbread.com>
-# SPDX-License-Identifier: MIT
-
 { config, lib, flakelight, genSystems, moduleArgs, ... }:
+
 let
-  inherit (lib) functionArgs mapAttrs mkIf mkMerge mkOption;
+  inherit (builtins) functionArgs mapAttrs;
+  inherit (lib) mkIf mkMerge mkOption;
   inherit (lib.types) coercedTo lazyAttrsOf lines listOf
     package str submoduleWith;
   inherit (flakelight.types) function nullable optCallWith optFunctionTo;

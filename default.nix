@@ -1,31 +1,30 @@
-# flakelight -- Framework for simplifying flake setup
-# Copyright (C) 2023 Archit Gupta <archit@accelbread.com>
-# SPDX-License-Identifier: MIT
-
 inputs:
-let
-  inherit (inputs) nixpkgs;
-  inherit (builtins) isAttrs isPath readDir;
-  inherit (nixpkgs.lib) all attrNames composeManyExtensions evalModules filter
-    findFirst fix genAttrs getValues hasSuffix isDerivation isFunction isList
-    isStringLike mapAttrs mapAttrsToList mkDefault mkOptionType pathExists pipe
-    removePrefix removeSuffix singleton warn;
-  inherit (nixpkgs.lib.types) coercedTo defaultFunctor functionTo listOf
-    optionDescriptionPhrase;
-  inherit (nixpkgs.lib.options) mergeEqualOption mergeOneOption;
 
-  builtinModules = mapAttrsToList (k: _: ./builtinModules + ("/" + k))
-    (readDir ./builtinModules);
+let
+  inherit (builtins) attrNames isAttrs isPath mapAttrs readDir;
+  inherit (inputs) nixpkgs;
+  inherit (nixpkgs) lib;
+  inherit (lib) all composeManyExtensions evalModules filter
+    findFirst fix genAttrs getValues hasSuffix isDerivation isFunction isList
+    isStringLike mkDefault mkOptionType pathExists pipe
+    removePrefix removeSuffix singleton warn;
+  inherit (lib.types) coercedTo defaultFunctor functionTo listOf
+    optionDescriptionPhrase;
+  inherit (lib.options) mergeEqualOption mergeOneOption;
+
+  baseModules = import ./modules/module-list.nix;
 
   mkFlake = {
     __functor = self: src: root: (evalModules {
-      specialArgs.modulesPath = ./builtinModules;
-      modules = builtinModules ++ self.extraModules ++ [
+      modules = baseModules ++ self.extraModules ++ [
         { inputs.nixpkgs = mkDefault nixpkgs; }
         { inputs.flakelight = mkDefault inputs.self; }
         { _module.args = { inherit src flakelight; }; }
         root
       ];
+      specialArgs = {
+        modulesPath = ./modules;
+      };
     }).config.outputs;
 
     # Attributes to allow module flakes to extend mkFlake

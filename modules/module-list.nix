@@ -1,0 +1,29 @@
+[
+  ./apps.nix
+  ./autoInputs.nix
+  ./builtinFormatters.nix
+  ./builtinOverlay.nix
+  ./bundlers.nix
+  ./checks.nix
+  ./core.nix
+  ./devShells.nix
+  ./devShells.nix
+  ./editorconfig.nix
+  ./flakelightModules.nix
+  ./formatter.nix
+  ./functor.nix
+  ./functor.nix
+  ./homeConfigurations.nix
+  ./homeModules.nix
+  ./legacyPackages.nix
+  ./lib.nix
+  ./lib.nix
+  ./moduleArgs.nix
+  ./nixDir.nix
+  ./nixosConfigurations.nix
+  ./nixosModules.nix
+  ./overlays.nix
+  ./packages.nix
+  ./propagationModule.nix
+  ./templates.nix
+]

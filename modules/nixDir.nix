@@ -1,11 +1,8 @@
-# flakelight -- Framework for simplifying flake setup
-# Copyright (C) 2023 Archit Gupta <archit@accelbread.com>
-# SPDX-License-Identifier: MIT
-
 { config, options, src, lib, flakelight, ... }:
+
 let
-  inherit (builtins) attrNames;
-  inherit (lib) findFirst genAttrs mkIf mkOption pathExists subtractLists;
+  inherit (builtins) attrNames pathExists;
+  inherit (lib) findFirst genAttrs mkIf mkOption subtractLists;
   inherit (lib.types) attrsOf listOf str;
   inherit (flakelight) importDir;
   inherit (flakelight.types) path;

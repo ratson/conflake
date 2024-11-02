@@ -1,10 +1,8 @@
-# flakelight -- Framework for simplifying flake setup
-# Copyright (C) 2023 Archit Gupta <archit@accelbread.com>
-# SPDX-License-Identifier: MIT
-
 { config, lib, src, ... }:
+
 let
-  inherit (lib) mkEnableOption mkIf optionalString pathExists;
+  inherit (builtins) pathExists;
+  inherit (lib) mkEnableOption mkIf optionalString;
 in
 {
   options.flakelight.editorconfig =

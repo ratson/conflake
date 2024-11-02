@@ -1,11 +1,8 @@
-# flakelight -- Framework for simplifying flake setup
-# Copyright (C) 2023 Archit Gupta <archit@accelbread.com>
-# SPDX-License-Identifier: MIT
-
 { config, lib, flakelight, genSystems, ... }:
+
 let
-  inherit (builtins) match storeDir;
-  inherit (lib) defaultFunctor fix isFunction last mapAttrs mergeDefinitions
+  inherit (builtins) mapAttrs match storeDir;
+  inherit (lib) defaultFunctor fix isFunction last mergeDefinitions
     mkIf mkMerge mkOption mkOptionType;
   inherit (lib.types) coercedTo enum lazyAttrsOf
     optionDescriptionPhrase pathInStore submoduleWith;

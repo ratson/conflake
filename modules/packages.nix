@@ -1,11 +1,8 @@
-# flakelight -- Framework for simplifying flake setup
-# Copyright (C) 2023 Archit Gupta <archit@accelbread.com>
-# SPDX-License-Identifier: MIT
-
 { config, lib, inputs, flakelight, genSystems, moduleArgs, ... }:
+
 let
-  inherit (builtins) hasAttr parseDrvName tryEval;
-  inherit (lib) findFirst functionArgs mapAttrs' mapAttrs mkIf mkMerge mkOption
+  inherit (builtins) hasAttr mapAttrs parseDrvName tryEval;
+  inherit (lib) findFirst functionArgs mapAttrs' mkIf mkMerge mkOption
     nameValuePair optionalAttrs optionals;
   inherit (lib.types) lazyAttrsOf str uniq;
   inherit (flakelight.types) nullable optFunctionTo overlay packageDef;
