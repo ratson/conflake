@@ -870,4 +870,20 @@ in
     test
       (extended3 ./empty { })
       (f: f.test && f.test2 && f.test3);
+
+  nixos-example = test
+    (conflake ../examples/nixos { })
+    (f: f.nixosConfigurations ? vm.config.system.build.toplevel
+      && f.nixosModules ? default
+      && f.homeModules ? default);
+
+  packages-example = test
+    (conflake ../examples/packages { })
+    (f: f.packages.x86_64-linux ? greet
+      && f.devShells.x86_64-linux ? default);
+
+  self-outputs = test
+    self
+    (f: f ? __functor
+      && f ? lib.mkOutputs);
 }
