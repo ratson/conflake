@@ -66,4 +66,5 @@ This is a fork of [Flakelight](https://github.com/nix-community/flakelight) with
 the following changes,
 
 - Change `lib.mkFlake` to `lib.mkOutputs`
-- Fix https://github.com/nix-community/flakelight/issues/22
+- Fix <https://github.com/nix-community/flakelight/issues/22>
+- Load `packages/default.nix` as `packages.default` instead of `packages`

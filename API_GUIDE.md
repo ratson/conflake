@@ -195,13 +195,10 @@ For a given option, the following is checked in order:
 - Else if `${nixDir}/option` is a directory with a `default.nix`, it is imported
 - Else if `${nixDir}/option` is a directory, it results in an attrset with an
   attr for each importable item in the directory for which the values are the
-  corresponding items imported. An importable item is a file ending with `.nix`
-  or a directory containing a `default.nix`. This is the same as the conflake
-  `importDir` function.
+  corresponding items imported. An importable item is a file ending with `.nix`.
 
-To enable using a directory for an attrset that includes a `default` attribute,
-attr names can be escaped with an underscore. For example,
-`${nixDir}/nix/packages/_default.nix` will be loaded as `packages.default`.
+For example,
+`${nixDir}/nix/packages/default.nix` will be loaded as `packages.default`.
 
 Aliases for options can be set with the `nixDirAliases` option. For example,
 by default `nixDirAliases.nixosConfigurations = [ "nixos" ];` is set which means
@@ -209,9 +206,6 @@ by default `nixDirAliases.nixosConfigurations = [ "nixos" ];` is set which means
 described above.
 
 All options except for `nixDir` and `_module` can be configured this way.
-
-To apply transformations on the output of an autoloaded directory, you can use
-`option/default.nix` and load the directory with `conflake.importDir`.
 
 ### outputs
 

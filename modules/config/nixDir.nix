@@ -2,8 +2,8 @@
 
 let
   inherit (builtins) attrNames attrValues filter foldl' isPath mapAttrs readDir;
-  inherit (lib) findFirst flip genAttrs getAttrFromPath hasAttrByPath hasPrefix hasSuffix mkIf mkOption
-    nameValuePair pipe remove removePrefix removeSuffix
+  inherit (lib) findFirst flip genAttrs getAttrFromPath hasAttrByPath
+    hasPrefix hasSuffix mkIf mkOption nameValuePair pipe remove removeSuffix
     optionalAttrs pathIsDirectory subtractLists;
   inherit (lib.types) attrsOf lazyAttrsOf listOf raw str;
   inherit (conflake.types) path;
@@ -39,23 +39,18 @@ let
   importDir = entries: genAttrs
     (pipe entries [
       attrNames
-      (filter (s: s != "default.nix"))
-      (filter (s: (hasSuffix ".nix" s)
-        || (isFileEntry [ s "default.nix" ] entries)))
+      (filter (hasSuffix ".nix"))
       (map (removeSuffix ".nix"))
-      (map (removePrefix "_"))
     ])
-    (p: import
-      (if isFileEntry [ "_${p}.nix" ] entries then entries."_${p}.nix"
-      else if isFileEntry [ "${p}.nix" ] entries then entries."${p}.nix"
-      else entries."${p}")
+    (p: import (
+      if isFileEntry [ "${p}.nix" ] entries then entries."${p}.nix"
+      else entries."${p}"
+    )
     );
 
   importName = name:
     if isFileEntry [ "${name}.nix" ] nixDirEntries then
       { success = true; value = import nixDirEntries."${name}.nix"; }
-    else if isFileEntry [ name "default.nix" ] nixDirEntries then
-      { success = true; value = import nixDirEntries.${name}."default.nix"; }
     else if nixDirEntries ? ${name} then
       { success = true; value = importDir nixDirEntries.${name}; }
     else
