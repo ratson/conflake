@@ -8,11 +8,7 @@
     lib.mkOutputs ./. {
       inherit lib;
 
-      checks.statix = pkgs: "${pkgs.statix}/bin/statix check";
-
       functor = _: lib.mkOutputs;
-
-      outputs.tests = import ./tests inputs;
 
       templates = {
         default = {
