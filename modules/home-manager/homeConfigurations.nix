@@ -44,6 +44,6 @@ in
         })
         configs);
     };
-    nixDirAliases.homeConfigurations = [ "home" ];
+    nixDir.aliases.homeConfigurations = [ "home" ];
   };
 }

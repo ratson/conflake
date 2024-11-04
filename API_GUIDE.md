@@ -183,25 +183,25 @@ To support all Linux systems supported by flakes, set `systems` as follows:
 ### nixDir
 
 ```
-Type: Path
+Type: { src = Path; aliases = AttrsSet; }
 ```
 
-The `nixDir` option is `./nix` by default and sets which directory to use to
+The `nixDir.src` option is `./nix` by default and sets which directory to use to
 automatically load nix files to configure flake options from.
 
 For a given option, the following is checked in order:
 
-- If `${nixDir}/option.nix` exists, it is imported as the value
-- Else if `${nixDir}/option` is a directory with a `default.nix`, it is imported
-- Else if `${nixDir}/option` is a directory, it results in an attrset with an
+- If `${nixDir.src}/option.nix` exists, it is imported as the value
+- Else if `${nixDir.src}/option` is a directory with a `default.nix`, it is imported
+- Else if `${nixDir.src}/option` is a directory, it results in an attrset with an
   attr for each importable item in the directory for which the values are the
   corresponding items imported. An importable item is a file ending with `.nix`.
 
 For example,
-`${nixDir}/nix/packages/default.nix` will be loaded as `packages.default`.
+`${nixDir.src}/nix/packages/default.nix` will be loaded as `packages.default`.
 
-Aliases for options can be set with the `nixDirAliases` option. For example,
-by default `nixDirAliases.nixosConfigurations = [ "nixos" ];` is set which means
+Aliases for options can be set with the `nixDir.aliases` option. For example,
+by default `nixDir.aliases.nixosConfigurations = [ "nixos" ];` is set which means
 "nixos" can be used instead of "nixosConfigurations" for loading the files as
 described above.
 

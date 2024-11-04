@@ -5,12 +5,11 @@ let
   inherit (lib) findFirst flip genAttrs getAttrFromPath hasAttrByPath
     hasPrefix hasSuffix mkIf mkOption nameValuePair pipe remove removeSuffix
     optionalAttrs pathIsDirectory subtractLists;
-  inherit (lib.types) attrsOf lazyAttrsOf listOf raw str;
+  inherit (lib.types) attrsOf lazyAttrsOf listOf raw str submodule;
   inherit (conflake.types) path;
 
-  inherit (config) nixDirEntries;
-
-  nixDirExists = pathIsDirectory config.nixDir;
+  nixDirEntries = config.nixDir.entries;
+  nixDirExists = pathIsDirectory config.nixDir.src;
 
   loadDir = dir:
     let
@@ -62,20 +61,24 @@ in
 {
   options = {
     nixDir = mkOption {
-      type = path;
-      default = src + /nix;
-    };
-
-    nixDirAliases = mkOption {
-      type = attrsOf (listOf str);
-      default = { };
-    };
-
-    nixDirEntries = mkOption {
-      type = lazyAttrsOf raw;
-      internal = true;
-      readOnly = true;
-      default = optionalAttrs nixDirExists (loadDir config.nixDir);
+      type = submodule {
+        options = {
+          src = mkOption {
+            type = path;
+            default = src + /nix;
+          };
+          aliases = mkOption {
+            type = attrsOf (listOf str);
+            default = { };
+          };
+          entries = mkOption {
+            type = lazyAttrsOf raw;
+            internal = true;
+            readOnly = true;
+            default = optionalAttrs nixDirExists (loadDir config.nixDir.src);
+          };
+        };
+      };
     };
   };
 
@@ -85,9 +88,7 @@ in
     (subtractLists [ "_module" "nixDir" ])
     (x: genAttrs x (name:
       let
-        val = importNames
-          (if name == "nixDirAliases" then [ name ] else
-          ([ name ] ++ config.nixDirAliases.${name} or [ ]));
+        val = importNames ([ name ] ++ config.nixDir.aliases.${name} or [ ]);
       in
       mkIf val.success (optionalAttrs val.success val.value)
     ))

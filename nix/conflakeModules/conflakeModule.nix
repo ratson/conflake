@@ -4,7 +4,7 @@
 {
   functor = self: self.lib.mkOutputs;
 
-  nixDir = src;
+  nixDir.src = src;
 
   lib.mkOutputs = conflake.mkOutputs.extend [
     outputs.conflakeModules.default
