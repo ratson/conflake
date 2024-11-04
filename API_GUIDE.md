@@ -170,7 +170,7 @@ To support all Linux systems supported by flakes, set `systems` as follows:
 
 ```nix
 {
-  inputs.conflake.url = "github:ratspm/conflake";
+  inputs.conflake.url = "github:ratson/conflake";
   outputs = { conflake, ... }:
     conflake ./. ({ lib, ... }: {
       systems = lib.intersectLists
@@ -224,7 +224,7 @@ To add a `example.test` output to your flake you could do the following:
 
 ```nix
 {
-  inputs.conflake.url = "github:ratspm/conflake";
+  inputs.conflake.url = "github:ratson/conflake";
   outputs = { conflake, ... }:
     conflake ./. {
       outputs = {
@@ -241,7 +241,7 @@ overlay (though this can be configured with the `overlays` option):
 
 ```nix
 {
-  inputs.conflake.url = "github:ratspm/conflake";
+  inputs.conflake.url = "github:ratson/conflake";
   outputs = { conflake, ... }:
     conflake ./. {
       outputs.overlays.clang = final: prev: { stdenv = final.clangStdenv; };
@@ -264,7 +264,7 @@ following:
 
 ```nix
 {
-  inputs.conflake.url = "github:ratspm/conflake";
+  inputs.conflake.url = "github:ratson/conflake";
   outputs = { conflake, ... }:
     conflake ./. {
       perSystem = pkgs: {
@@ -291,7 +291,7 @@ option as follows:
 
 ```nix
 {
-  inputs.conflake.url = "github:ratspm/conflake";
+  inputs.conflake.url = "github:ratson/conflake";
   outputs = { conflake, ... }:
     conflake ./. {
       nixpkgs.config = { allowBroken = true; allowUnsupportedSystem = true; };
@@ -316,7 +316,7 @@ the option as follows:
 ```nix
 {
   inputs = {
-    conflake.url = "github:ratspm/conflake";
+    conflake.url = "github:ratson/conflake";
     emacs-overlay.url = "github:nix-community/emacs-overlay";
   };
   outputs = { conflake, emacs-overlay, ... }:
@@ -333,7 +333,7 @@ You can use the values from the overlays with other options:
 
 ```nix
 {
-  inputs.conflake.url = "github:ratspm/conflake";
+  inputs.conflake.url = "github:ratson/conflake";
   outputs = { conflake, ... }:
     conflake ./. {
       withOverlays = final: prev: { testValue = "hi"; };
@@ -373,7 +373,7 @@ To set the default package, you can set the options as follows:
 
 ```nix
 {
-  inputs.conflake.url = "github:ratspm/conflake";
+  inputs.conflake.url = "github:ratson/conflake";
   outputs = { conflake, ... }:
     conflake ./. {
       package = { stdenv }:
@@ -396,7 +396,7 @@ To set multiple packages, you can set the options as follows:
 
 ```nix
 {
-  inputs.conflake.url = "github:ratspm/conflake";
+  inputs.conflake.url = "github:ratson/conflake";
   outputs = { conflake, ... }:
     conflake ./. {
       packages = {
@@ -432,7 +432,7 @@ To use the first example, but manually specify the package name:
 
 ```nix
 {
-  inputs.conflake.url = "github:ratspm/conflake";
+  inputs.conflake.url = "github:ratson/conflake";
   outputs = { conflake, ... }:
     conflake ./. {
       pname = "pkgs-attribute-name";
@@ -452,7 +452,7 @@ follows:
 
 ```nix
 {
-  inputs.conflake.url = "github:ratspm/conflake";
+  inputs.conflake.url = "github:ratson/conflake";
   outputs = { conflake, ... }:
     conflake ./. {
       packages = { system, ... }: if (system == "x86_64-linux") then {
@@ -516,7 +516,7 @@ For example, these can be configured as follows:
 
 ```nix
 {
-  inputs.conflake.url = "github:ratspm/conflake";
+  inputs.conflake.url = "github:ratson/conflake";
   outputs = { conflake, ... }:
     conflake ./. {
       devShell = pkgs: {
@@ -542,7 +542,7 @@ To add the build inputs of one of your packages, you can do as follows:
 
 ```nix
 {
-  inputs.conflake.url = "github:ratspm/conflake";
+  inputs.conflake.url = "github:ratson/conflake";
   outputs = { conflake, ... }:
     conflake ./. {
       package = { stdenv }:
@@ -563,7 +563,7 @@ To override the devShell, you can use a package definition as such:
 
 ```nix
 {
-  inputs.conflake.url = "github:ratspm/conflake";
+  inputs.conflake.url = "github:ratson/conflake";
   outputs = { conflake, ... }:
     conflake ./. {
       devShell = { mkShell, hello }: mkShell {
@@ -594,7 +594,7 @@ For example, using the configuration options:
 
 ```nix
 {
-  inputs.conflake.url = "github:ratspm/conflake";
+  inputs.conflake.url = "github:ratson/conflake";
   outputs = { conflake, ... }:
     conflake ./. {
       devShells.testing = {
@@ -609,7 +609,7 @@ For example, using a package definition:
 
 ```nix
 {
-  inputs.conflake.url = "github:ratspm/conflake";
+  inputs.conflake.url = "github:ratson/conflake";
   outputs = { conflake, ... }:
     conflake ./. {
       devShells.testing = { mkShell, coreutils }:
@@ -643,7 +643,7 @@ For example, to add an overlay to `overlays.default`, do the following:
 
 ```nix
 {
-  inputs.conflake.url = "github:ratspm/conflake";
+  inputs.conflake.url = "github:ratson/conflake";
   outputs = { conflake, ... }:
     conflake ./. {
       overlay = final: prev: { testValue = "hello"; };
@@ -657,7 +657,7 @@ To configure other overlays:
 
 ```nix
 {
-  inputs.conflake.url = "github:ratspm/conflake";
+  inputs.conflake.url = "github:ratson/conflake";
   outputs = { conflake, ... }:
     conflake ./. {
       overlays.cool = final: prev: { testValue = "cool"; };
@@ -693,7 +693,7 @@ For example:
 
 ```nix
 {
-  inputs.conflake.url = "github:ratspm/conflake";
+  inputs.conflake.url = "github:ratson/conflake";
   outputs = { conflake, ... }:
     conflake ./. {
       checks = {
@@ -727,7 +727,7 @@ For example:
 
 ```nix
 {
-  inputs.conflake.url = "github:ratspm/conflake";
+  inputs.conflake.url = "github:ratson/conflake";
   outputs = { conflake, ... }:
     conflake ./. {
       apps = {
@@ -742,7 +742,7 @@ Alternatively, the above can be written as:
 
 ```nix
 {
-  inputs.conflake.url = "github:ratspm/conflake";
+  inputs.conflake.url = "github:ratson/conflake";
   outputs = { conflake, ... }:
     conflake ./. {
       apps = { emacs, bash, ... }: {
@@ -773,7 +773,7 @@ For example:
 
 ```nix
 {
-  inputs.conflake.url = "github:ratspm/conflake";
+  inputs.conflake.url = "github:ratson/conflake";
   outputs = { conflake, ... }:
     conflake ./. {
       templates.test-template = {
@@ -799,7 +799,7 @@ For example:
 ```nix
 {
   inputs = {
-    conflake.url = "github:ratspm/conflake";
+    conflake.url = "github:ratson/conflake";
     nixpkgs.url = "github:NixOS/nixpkgs/nixpkgs-unstable";
   };
   outputs = { conflake, nixpkgs, ... }:
@@ -814,7 +814,7 @@ that take functions passed the package set, you can do the following:
 
 ```nix
 {
-  inputs.conflake.url = "github:ratspm/conflake";
+  inputs.conflake.url = "github:ratson/conflake";
   outputs = { conflake, ... }:
     conflake ./. {
       legacyPackages = pkgs: pkgs;
@@ -838,7 +838,7 @@ For example, to use a custom formatting command:
 
 ```nix
 {
-  inputs.conflake.url = "github:ratspm/conflake";
+  inputs.conflake.url = "github:ratson/conflake";
   outputs = { conflake, ... }:
     conflake ./. {
       formatter = pkgs: pkgs.writeShellScriptBin "format-script" ''
@@ -882,7 +882,7 @@ formatting option is set to a plain string.
 
 ```nix
 {
-  inputs.conflake.url = "github:ratspm/conflake";
+  inputs.conflake.url = "github:ratson/conflake";
   outputs = { conflake, ... }:
     conflake ./. {
       devShell.packages = pkgs: [ pkgs.rustfmt pkgs.zig ];
@@ -918,7 +918,7 @@ For example, a bundler that returns the passed package:
 
 ```nix
 {
-  inputs.conflake.url = "github:ratspm/conflake";
+  inputs.conflake.url = "github:ratson/conflake";
   outputs = { conflake, ... }:
     conflake ./. {
       bundler = x: x;
@@ -930,7 +930,7 @@ As another example, a bundler that always returns `hello`:
 
 ```nix
 {
-  inputs.conflake.url = "github:ratspm/conflake";
+  inputs.conflake.url = "github:ratson/conflake";
   outputs = { conflake, ... }:
     conflake ./. {
       bundlers = { hello, ... }: {
@@ -977,7 +977,7 @@ For example:
 
 ```nix
 {
-  inputs.conflake.url = "github:ratspm/conflake";
+  inputs.conflake.url = "github:ratson/conflake";
   outputs = { conflake, ... }:
     conflake ./. ({ lib, config, ... }: {
       nixosConfigurations.test-system = {
@@ -1021,7 +1021,7 @@ For example:
 ```nix
 {
   inputs = {
-    conflake.url = "github:ratspm/conflake";
+    conflake.url = "github:ratson/conflake";
     home-manger.url = "github:nix-community/home-manager";
   };
   outputs = { conflake, home-manager, ... }@inputs:
@@ -1057,7 +1057,7 @@ For example:
 
 ```nix
 {
-  inputs.conflake.url = "github:ratspm/conflake";
+  inputs.conflake.url = "github:ratson/conflake";
   outputs = { conflake, ... }:
     conflake ./. ({ lib, ... }: {
       nixosModule = { system, lib, pkgs, ... }: {
@@ -1071,7 +1071,7 @@ These can be paths, which is preferred as it results in better debug output:
 
 ```nix
 {
-  inputs.conflake.url = "github:ratspm/conflake";
+  inputs.conflake.url = "github:ratson/conflake";
   outputs = { conflake, ... }:
     conflake ./. ({ lib, ... }: {
       nixosModule = ./module.nix;
@@ -1095,7 +1095,7 @@ For example:
 
 ```nix
 {
-  inputs.conflake.url = "github:ratspm/conflake";
+  inputs.conflake.url = "github:ratson/conflake";
   outputs = { conflake, ... }:
     conflake ./. {
       lib = {
@@ -1124,7 +1124,7 @@ As an example:
 
 ```nix
 {
-  inputs.conflake.url = "github:ratspm/conflake";
+  inputs.conflake.url = "github:ratson/conflake";
   outputs = { conflake, ... }:
     conflake ./. {
       outputs.testvalue = 5;
