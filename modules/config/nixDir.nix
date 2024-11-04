@@ -3,13 +3,12 @@
 let
   inherit (builtins) attrNames attrValues filter foldl' isPath mapAttrs readDir;
   inherit (lib) findFirst flip genAttrs getAttrFromPath hasAttrByPath
-    hasPrefix hasSuffix mkIf mkOption nameValuePair pipe remove removeSuffix
-    optionalAttrs pathIsDirectory subtractLists;
+    hasPrefix hasSuffix mkEnableOption mkIf mkOption nameValuePair
+    pipe remove removeSuffix optionalAttrs pathIsDirectory subtractLists;
   inherit (lib.types) attrsOf lazyAttrsOf listOf raw str submodule;
   inherit (conflake.types) path;
 
-  nixDirEntries = config.nixDir.entries;
-  nixDirExists = pathIsDirectory config.nixDir.src;
+  cfg = config.nixDir;
 
   loadDir = dir:
     let
@@ -48,10 +47,10 @@ let
     );
 
   importName = name:
-    if isFileEntry [ "${name}.nix" ] nixDirEntries then
-      { success = true; value = import nixDirEntries."${name}.nix"; }
-    else if nixDirEntries ? ${name} then
-      { success = true; value = importDir nixDirEntries.${name}; }
+    if isFileEntry [ "${name}.nix" ] cfg.entries then
+      { success = true; value = import cfg.entries."${name}.nix"; }
+    else if cfg.entries ? ${name} then
+      { success = true; value = importDir cfg.entries.${name}; }
     else
       { success = false; };
 
@@ -63,6 +62,7 @@ in
     nixDir = mkOption {
       type = submodule {
         options = {
+          enable = mkEnableOption "nixDir" // { default = true; };
           src = mkOption {
             type = path;
             default = src + /nix;
@@ -75,20 +75,22 @@ in
             type = lazyAttrsOf raw;
             internal = true;
             readOnly = true;
-            default = optionalAttrs nixDirExists (loadDir config.nixDir.src);
+            default = optionalAttrs
+              (cfg.enable && pathIsDirectory cfg.src)
+              (loadDir cfg.src);
           };
         };
       };
     };
   };
 
-  config = mkIf nixDirExists (pipe options [
+  config = mkIf (cfg.entries != { }) (pipe options [
     attrNames
     (filter (name: ! (options.${name}.internal or false)))
     (subtractLists [ "_module" "nixDir" ])
     (x: genAttrs x (name:
       let
-        val = importNames ([ name ] ++ config.nixDir.aliases.${name} or [ ]);
+        val = importNames ([ name ] ++ cfg.aliases.${name} or [ ]);
       in
       mkIf val.success (optionalAttrs val.success val.value)
     ))
