@@ -43,6 +43,108 @@ let
   };
 
   types = rec {
+    coercedTo' = coercedType: coerceFunc: finalType:
+      (coercedTo coercedType coerceFunc finalType) // {
+        merge = loc: defs:
+          let
+            coerceVal = val:
+              if finalType.check val then val
+              else coerceFunc val;
+          in
+          finalType.merge loc
+            (map (def: def // { value = coerceVal def.value; }) defs);
+      };
+
+    drv = mkOptionType {
+      name = "drv";
+      description = "derivation";
+      descriptionClass = "noun";
+      check = isDerivation;
+      merge = mergeOneOption;
+    };
+
+    fileset = mkOptionType {
+      name = "fileset";
+      description = "fileset";
+      descriptionClass = "noun";
+      check = x: isPath x || x._type or null == "fileset";
+    };
+
+    function = mkOptionType {
+      name = "function";
+      description = "function";
+      descriptionClass = "noun";
+      check = isFunction;
+      merge = mergeOneOption;
+    };
+
+    module = mkOptionType {
+      name = "module";
+      description = "module";
+      descriptionClass = "noun";
+      check = x: isPath x || isFunction x || isAttrs x;
+      merge = _: defs: { imports = getValues defs; };
+    };
+
+    # `lib.types.nullOr`'s merge function requires definitions
+    # to all be null or all be non-null.
+    #
+    # It was being used where the intent was that null be used as a
+    # value representing unset, and as such the merge should return null
+    # if all definitions are null and ignore nulls otherwise.
+    #
+    # This adds a type with that merge semantics.
+    nullable = elemType: mkOptionType {
+      name = "nullable";
+      description = "nullable ${optionDescriptionPhrase
+        (class: class == "noun" || class == "composite") elemType}";
+      descriptionClass = "noun";
+      check = x: x == null || elemType.check x;
+      merge = loc: defs:
+        if all (def: def.value == null) defs then null
+        else elemType.merge loc (filter (def: def.value != null) defs);
+      emptyValue.value = null;
+      inherit (elemType) getSubOptions getSubModules;
+      substSubModules = m: nullable (elemType.substSubModules m);
+      functor = (defaultFunctor "nullable") // {
+        type = nullable;
+        wrapped = elemType;
+      };
+      nestedTypes = { inherit elemType; };
+    };
+
+    packageDef = mkOptionType {
+      name = "packageDef";
+      description = "package definition";
+      descriptionClass = "noun";
+      check = isFunction;
+      merge = mergeOneOption;
+    };
+
+    path = mkOptionType {
+      name = "path";
+      description = "path";
+      descriptionClass = "noun";
+      check = isPath;
+      merge = mergeEqualOption;
+    };
+
+    optCallWith = args: elemType: coercedTo function (x: x args) elemType;
+
+    optFunctionTo =
+      let
+        nonFunction = mkOptionType {
+          name = "nonFunction";
+          description = "non-function";
+          descriptionClass = "noun";
+          check = x: ! isFunction x;
+          merge = mergeOneOption;
+        };
+      in
+      elemType: coercedTo nonFunction (x: _: x)
+        (functionTo elemType);
+    optListOf = elemType: coercedTo elemType singleton (listOf elemType);
+
     outputs = lazyAttrsOf outputsValue;
 
     outputsValue = mkOptionType {
@@ -66,107 +168,12 @@ let
       merge = _: defs: composeManyExtensions (getValues defs);
     };
 
-    packageDef = mkOptionType {
-      name = "packageDef";
-      description = "package definition";
-      descriptionClass = "noun";
-      check = isFunction;
-      merge = mergeOneOption;
-    };
-
-    path = mkOptionType {
-      name = "path";
-      description = "path";
-      descriptionClass = "noun";
-      check = isPath;
-      merge = mergeEqualOption;
-    };
-
-    function = mkOptionType {
-      name = "function";
-      description = "function";
-      descriptionClass = "noun";
-      check = isFunction;
-      merge = mergeOneOption;
-    };
-
-    drv = mkOptionType {
-      name = "drv";
-      description = "derivation";
-      descriptionClass = "noun";
-      check = isDerivation;
-      merge = mergeOneOption;
-    };
-
     stringLike = mkOptionType {
       name = "stringLike";
       description = "string-convertible value";
       descriptionClass = "noun";
       check = isStringLike;
       merge = mergeEqualOption;
-    };
-
-    module = mkOptionType {
-      name = "module";
-      description = "module";
-      descriptionClass = "noun";
-      check = x: isPath x || isFunction x || isAttrs x;
-      merge = _: defs: { imports = getValues defs; };
-    };
-
-    fileset = mkOptionType {
-      name = "fileset";
-      description = "fileset";
-      descriptionClass = "noun";
-      check = x: isPath x || x._type or null == "fileset";
-    };
-
-    optListOf = elemType: coercedTo elemType singleton (listOf elemType);
-
-    coercedTo' = coercedType: coerceFunc: finalType:
-      (coercedTo coercedType coerceFunc finalType) // {
-        merge = loc: defs:
-          let
-            coerceVal = val:
-              if finalType.check val then val
-              else coerceFunc val;
-          in
-          finalType.merge loc
-            (map (def: def // { value = coerceVal def.value; }) defs);
-      };
-
-    optFunctionTo =
-      let
-        nonFunction = mkOptionType {
-          name = "nonFunction";
-          description = "non-function";
-          descriptionClass = "noun";
-          check = x: ! isFunction x;
-          merge = mergeOneOption;
-        };
-      in
-      elemType: coercedTo nonFunction (x: _: x)
-        (functionTo elemType);
-
-    optCallWith = args: elemType: coercedTo function (x: x args) elemType;
-
-    nullable = elemType: mkOptionType {
-      name = "nullable";
-      description = "nullable ${optionDescriptionPhrase
-        (class: class == "noun" || class == "composite") elemType}";
-      descriptionClass = "noun";
-      check = x: x == null || elemType.check x;
-      merge = loc: defs:
-        if all (def: def.value == null) defs then null
-        else elemType.merge loc (filter (def: def.value != null) defs);
-      emptyValue.value = null;
-      inherit (elemType) getSubOptions getSubModules;
-      substSubModules = m: nullable (elemType.substSubModules m);
-      functor = (defaultFunctor "nullable") // {
-        type = nullable;
-        wrapped = elemType;
-      };
-      nestedTypes = { inherit elemType; };
     };
   };
 
