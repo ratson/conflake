@@ -867,11 +867,12 @@ runTests {
     })
     (f: !(builtins.tryEval f).success);
 
-  empty-flake = test
-    (conflake' {
+  empty-flake = {
+    expr = conflake' {
       disabledModules = [ "builtinFormatters.nix" ];
-    })
-    (f: f == { });
+    };
+    expected = { };
+  };
 
   default-nixpkgs = test
     (conflake' ({ inputs, ... }: {
@@ -911,5 +912,6 @@ runTests {
   self-outputs = test
     self
     (f: f ? __functor
-      && f ? lib.mkOutputs);
+      && f ? lib.mkOutputs
+      && f ? templates.default.path);
 }

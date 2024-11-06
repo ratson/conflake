@@ -24,6 +24,7 @@
   ./config/propagationModule.nix
   ./config/systems.nix
   ./config/templates.nix
+  ./config/templatesDir.nix
   ./config/withOverlays.nix
   ./editorconfig.nix
   ./home-manager/homeConfigurations.nix
