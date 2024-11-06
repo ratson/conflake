@@ -12,7 +12,7 @@
 
       functor = _: lib.mkOutputs;
 
-      outputs.tests = import ./tests inputs;
+      outputs.tests = import ./tests/run.nix inputs;
 
       templates = {
         default = {

@@ -3,12 +3,18 @@
 let
   inherit (nixpkgs) lib;
 
-  test = flake: test: assert test flake; true;
+  test = flake: test: {
+    expr = test flake;
+    expected = true;
+  };
+  runTests = tests: lib.runTests (lib.mapAttrs'
+    (k: v: lib.nameValuePair "test-${k}" v)
+    tests);
 
   conflake = self;
   conflake' = conflake ./empty;
 in
-{
+runTests {
   call-conflake = test
     (conflake' { outputs.test = true; })
     (f: f.test);
