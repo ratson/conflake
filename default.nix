@@ -6,8 +6,9 @@ let
   inherit (nixpkgs) lib;
   inherit (lib) composeManyExtensions evalModules filter fix
     genAttrs getFiles getValues hasSuffix isDerivation isFunction
-    isStringLike mkDefault mkOptionType pathExists pipe
+    isStringLike mapAttrs' mkDefault mkOptionType nameValuePair pathExists pipe
     removePrefix removeSuffix showFiles showOption singleton;
+  inherit (lib.modules) importApply;
   inherit (lib.types) coercedTo defaultFunctor functionTo lazyAttrsOf listOf
     optionDescriptionPhrase;
   inherit (lib.options) mergeEqualOption mergeOneOption;
@@ -39,7 +40,7 @@ let
   };
 
   conflake = {
-    inherit importDir mkOutputs selectAttr types;
+    inherit loadModules mkOutputs selectAttr types;
   };
 
   types = rec {
@@ -177,19 +178,13 @@ let
     };
   };
 
-  importDir = path: genAttrs
-    (pipe (readDir path) [
-      attrNames
-      (filter (s: s != "default.nix"))
-      (filter (s: (hasSuffix ".nix" s)
-        || pathExists (path + "/${s}/default.nix")))
-      (map (removeSuffix ".nix"))
-      (map (removePrefix "_"))
-    ])
-    (p: import (path +
-      (if pathExists (path + "/_${p}.nix") then "/_${p}.nix"
-      else if pathExists (path + "/${p}.nix") then "/${p}.nix"
-      else "/${p}")));
+  loadModules = entries: args: mapAttrs'
+    (k: v:
+      if hasSuffix ".fn.nix" k then
+        nameValuePair (removeSuffix ".fn.nix" k) (importApply v args)
+      else
+        nameValuePair (removeSuffix ".nix" k) v)
+    entries;
 
   selectAttr = attr: mapAttrs (_: v: v.${attr} or { });
 in

@@ -9,10 +9,12 @@
 
           modules = [
             self.nixosModules.default
+            self.nixosModules.greet
             home-manager.nixosModules.home-manager
             {
               home-manager.sharedModules = [
                 self.homeModules.default
+                self.homeModules.greet
               ];
 
               home-manager.users.root = {

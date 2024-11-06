@@ -3,7 +3,6 @@
   ./builtinFormatters.nix
   ./builtinOverlay.nix
   ./config/apps.nix
-  ./config/argsModule.nix
   ./config/bundlers.nix
   ./config/checks.nix
   ./config/conflakeModules.nix

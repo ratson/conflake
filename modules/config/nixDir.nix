@@ -16,10 +16,10 @@ let
         let
           path = dir + /${name};
         in
-        if hasPrefix "." path then null
+        if hasPrefix "." name then null
         else if type == "directory" then
           nameValuePair name (loadDir path)
-        else if type == "regular" && hasSuffix ".nix" path then
+        else if type == "regular" && hasSuffix ".nix" name then
           nameValuePair name path
         else null;
     in
@@ -87,7 +87,7 @@ in
   config = mkIf (cfg.entries != { }) (pipe options [
     attrNames
     (filter (name: ! (options.${name}.internal or false)))
-    (subtractLists [ "_module" "nixDir" ])
+    (subtractLists [ "_module" "homeModules" "nixDir" "nixosModules" ])
     (x: genAttrs x (name:
       let
         val = importNames ([ name ] ++ cfg.aliases.${name} or [ ]);

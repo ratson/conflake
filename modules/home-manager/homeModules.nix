@@ -1,31 +1,30 @@
 { config, lib, conflake, moduleArgs, ... }:
 
 let
-  inherit (builtins) mapAttrs;
   inherit (lib) mkOption mkIf mkMerge;
-  inherit (lib.types) lazyAttrsOf;
-  inherit (conflake.types) module nullable optCallWith;
+  inherit (lib.types) lazyAttrsOf deferredModule;
+  inherit (conflake.types) nullable optCallWith;
 in
 {
   options = {
     homeModule = mkOption {
-      type = nullable module;
+      type = nullable deferredModule;
       default = null;
     };
 
     homeModules = mkOption {
-      type = optCallWith moduleArgs (lazyAttrsOf module);
-      apply = mapAttrs (_: module: {
-        imports = [
-          config.argsModule
-          module
-        ];
-      });
+      type = optCallWith moduleArgs (lazyAttrsOf deferredModule);
       default = { };
     };
   };
 
   config = mkMerge [
+    (mkIf (config.nixDir.entries ? homeModules) {
+      homeModules = conflake.loadModules
+        config.nixDir.entries.homeModules
+        moduleArgs;
+    })
+
     (mkIf (config.homeModule != null) {
       homeModules.default = config.homeModule;
     })
