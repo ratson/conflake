@@ -1,13 +1,13 @@
 inputs:
 
 let
-  inherit (builtins) all attrNames head isAttrs isPath length mapAttrs readDir;
+  inherit (builtins) all head isAttrs isPath length mapAttrs;
   inherit (inputs) nixpkgs;
   inherit (nixpkgs) lib;
   inherit (lib) composeManyExtensions evalModules filter fix
-    genAttrs getFiles getValues hasSuffix isDerivation isFunction
-    isStringLike mapAttrs' mkDefault mkOptionType nameValuePair pathExists pipe
-    removePrefix removeSuffix showFiles showOption singleton;
+    getFiles getValues hasSuffix isDerivation isFunction
+    isStringLike mapAttrs' mkDefault mkOptionType nameValuePair
+    removeSuffix showFiles showOption singleton;
   inherit (lib.modules) importApply;
   inherit (lib.types) coercedTo defaultFunctor functionTo lazyAttrsOf listOf
     optionDescriptionPhrase;
@@ -17,6 +17,7 @@ let
 
   mkOutputs = {
     __functor = self: src: module: (evalModules {
+      class = "conflake";
       modules = baseModules ++ self.extraModules ++ [
         {
           inputs.nixpkgs = mkDefault nixpkgs;
