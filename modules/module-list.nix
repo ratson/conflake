@@ -26,6 +26,8 @@
   ./config/templatesDir.nix
   ./config/withOverlays.nix
   ./editorconfig.nix
+  ./darwin/darwinConfigurations.nix
+  ./darwin/darwinModules.nix
   ./home-manager/homeConfigurations.nix
   ./home-manager/homeModules.nix
   ./moduleArgs.nix

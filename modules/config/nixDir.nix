@@ -87,7 +87,7 @@ in
   config = mkIf (cfg.entries != { }) (pipe options [
     attrNames
     (filter (name: ! (options.${name}.internal or false)))
-    (subtractLists [ "_module" "homeModules" "nixDir" "nixosModules" ])
+    (subtractLists [ "_module" "darwinModules" "homeModules" "nixDir" "nixosModules" ])
     (x: genAttrs x (name:
       let
         val = importNames ([ name ] ++ cfg.aliases.${name} or [ ]);
