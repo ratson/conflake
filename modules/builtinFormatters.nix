@@ -1,4 +1,4 @@
-{ config, lib, ... }:
+{ config, lib, src, ... }:
 
 let
   inherit (lib) getExe mkDefault mkEnableOption mkIf;
@@ -17,7 +17,7 @@ in
     formatters = pkgs:
       let
         nixpkgs-fmt = "${getExe pkgs.nixpkgs-fmt}";
-        prettier = "${getExe pkgs.nodePackages.prettier} --write";
+        prettier = "cd ${src} && ${getExe pkgs.nodePackages.prettier} --write";
       in
       {
         "*.nix" = mkDefault nixpkgs-fmt;
