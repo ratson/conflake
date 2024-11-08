@@ -3,7 +3,6 @@
   ./builtinFormatters.nix
   ./builtinOverlay.nix
   ./config/apps.nix
-  ./config/argsModule.nix
   ./config/bundlers.nix
   ./config/checks.nix
   ./config/conflakeModules.nix
@@ -24,8 +23,11 @@
   ./config/propagationModule.nix
   ./config/systems.nix
   ./config/templates.nix
+  ./config/templatesDir.nix
   ./config/withOverlays.nix
   ./editorconfig.nix
+  ./darwin/darwinConfigurations.nix
+  ./darwin/darwinModules.nix
   ./home-manager/homeConfigurations.nix
   ./home-manager/homeModules.nix
   ./moduleArgs.nix

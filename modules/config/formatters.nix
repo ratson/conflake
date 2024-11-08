@@ -2,7 +2,7 @@
 
 let
   inherit (builtins) all hasContext;
-  inherit (lib) mkDefault mkMerge mkOption mkIf mapAttrsToList;
+  inherit (lib) getExe mkDefault mkMerge mkOption mkIf mapAttrsToList;
   inherit (lib.types) functionTo lazyAttrsOf package str;
   inherit (conflake.types) nullable optFunctionTo;
 in
@@ -41,7 +41,7 @@ in
             PATH=${if fullContext then "" else makeBinPath packages}
             for f in "$@"; do
               if [ -d "$f" ]; then
-                ${fd}/bin/fd "$f" -Htf -x "$0" &
+                ${getExe fd} "$f" -Htf -x "$0" &
               else
                 case "$(${coreutils}/bin/basename "$f")" in${caseArms}
                 esac
@@ -53,7 +53,7 @@ in
 
     (mkIf ((config.formatters != null) || (config.formatter != null)) {
       checks.formatting = { lib, outputs', diffutils, ... }: ''
-        ${lib.getExe outputs'.formatter} .
+        ${getExe outputs'.formatter} .
         ${diffutils}/bin/diff -qr ${src} . |\
           sed 's/Files .* and \(.*\) differ/File \1 not formatted/g'
       '';

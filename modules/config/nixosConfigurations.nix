@@ -42,6 +42,6 @@ in
         })
         configs);
     };
-    nixDirAliases.nixosConfigurations = [ "nixos" ];
+    nixDir.aliases.nixosConfigurations = [ "nixos" ];
   };
 }

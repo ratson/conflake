@@ -3,14 +3,12 @@
 let
   inherit (builtins) attrNames attrValues filter foldl' isPath mapAttrs readDir;
   inherit (lib) findFirst flip genAttrs getAttrFromPath hasAttrByPath
-    hasPrefix hasSuffix mkIf mkOption nameValuePair pipe remove removeSuffix
-    optionalAttrs pathIsDirectory subtractLists;
-  inherit (lib.types) attrsOf lazyAttrsOf listOf raw str;
+    hasPrefix hasSuffix mkEnableOption mkIf mkOption nameValuePair
+    pipe remove removeSuffix optionalAttrs pathIsDirectory subtractLists;
+  inherit (lib.types) attrsOf lazyAttrsOf listOf raw str submodule;
   inherit (conflake.types) path;
 
-  inherit (config) nixDirEntries;
-
-  nixDirExists = pathIsDirectory config.nixDir;
+  cfg = config.nixDir;
 
   loadDir = dir:
     let
@@ -18,10 +16,10 @@ let
         let
           path = dir + /${name};
         in
-        if hasPrefix "." path then null
+        if hasPrefix "." name then null
         else if type == "directory" then
           nameValuePair name (loadDir path)
-        else if type == "regular" && hasSuffix ".nix" path then
+        else if type == "regular" && hasSuffix ".nix" name then
           nameValuePair name path
         else null;
     in
@@ -49,10 +47,10 @@ let
     );
 
   importName = name:
-    if isFileEntry [ "${name}.nix" ] nixDirEntries then
-      { success = true; value = import nixDirEntries."${name}.nix"; }
-    else if nixDirEntries ? ${name} then
-      { success = true; value = importDir nixDirEntries.${name}; }
+    if isFileEntry [ "${name}.nix" ] cfg.entries then
+      { success = true; value = import cfg.entries."${name}.nix"; }
+    else if cfg.entries ? ${name} then
+      { success = true; value = importDir cfg.entries.${name}; }
     else
       { success = false; };
 
@@ -62,32 +60,37 @@ in
 {
   options = {
     nixDir = mkOption {
-      type = path;
-      default = src + /nix;
-    };
-
-    nixDirAliases = mkOption {
-      type = attrsOf (listOf str);
-      default = { };
-    };
-
-    nixDirEntries = mkOption {
-      type = lazyAttrsOf raw;
-      internal = true;
-      readOnly = true;
-      default = optionalAttrs nixDirExists (loadDir config.nixDir);
+      type = submodule {
+        options = {
+          enable = mkEnableOption "nixDir" // { default = true; };
+          src = mkOption {
+            type = path;
+            default = src + /nix;
+          };
+          aliases = mkOption {
+            type = attrsOf (listOf str);
+            default = { };
+          };
+          entries = mkOption {
+            type = lazyAttrsOf raw;
+            internal = true;
+            readOnly = true;
+            default = optionalAttrs
+              (cfg.enable && pathIsDirectory cfg.src)
+              (loadDir cfg.src);
+          };
+        };
+      };
     };
   };
 
-  config = mkIf nixDirExists (pipe options [
+  config = mkIf (cfg.entries != { }) (pipe options [
     attrNames
     (filter (name: ! (options.${name}.internal or false)))
-    (subtractLists [ "_module" "nixDir" ])
+    (subtractLists [ "_module" "darwinModules" "homeModules" "nixDir" "nixosModules" ])
     (x: genAttrs x (name:
       let
-        val = importNames
-          (if name == "nixDirAliases" then [ name ] else
-          ([ name ] ++ config.nixDirAliases.${name} or [ ]));
+        val = importNames ([ name ] ++ cfg.aliases.${name} or [ ]);
       in
       mkIf val.success (optionalAttrs val.success val.value)
     ))

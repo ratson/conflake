@@ -12,7 +12,6 @@
 
       templates = {
         default = {
-          path = ./templates/default;
           description = "Minimal Conflake flake.";
         };
       };

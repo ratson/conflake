@@ -11,8 +11,7 @@ let
     name = "template";
     description = "template definition";
     descriptionClass = "noun";
-    check = x: (x ? path) && (isPath x.path) &&
-      (x ? description) && (isString x.description) &&
+    check = x: (x ? description) && (isString x.description) &&
       ((! x ? welcomeText) || (isString x.welcomeText));
     merge = mergeEqualOption;
   };

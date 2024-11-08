@@ -1,7 +1,7 @@
-{ config, lib, ... }:
+{ config, lib, src, ... }:
 
 let
-  inherit (lib) mkDefault mkEnableOption mkIf;
+  inherit (lib) getExe mkDefault mkEnableOption mkIf;
 in
 {
   options.conflake.builtinFormatters =
@@ -16,8 +16,8 @@ in
 
     formatters = pkgs:
       let
-        nixpkgs-fmt = "${pkgs.nixpkgs-fmt}/bin/nixpkgs-fmt";
-        prettier = "${pkgs.nodePackages.prettier}/bin/prettier --write";
+        nixpkgs-fmt = "${getExe pkgs.nixpkgs-fmt}";
+        prettier = "cd ${src} && ${getExe pkgs.nodePackages.prettier} --write";
       in
       {
         "*.nix" = mkDefault nixpkgs-fmt;

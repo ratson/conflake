@@ -7,30 +7,30 @@ let
 in
 {
   options = {
-    homeModule = mkOption {
+    darwinModule = mkOption {
       type = nullable deferredModule;
       default = null;
     };
 
-    homeModules = mkOption {
+    darwinModules = mkOption {
       type = optCallWith moduleArgs (lazyAttrsOf deferredModule);
       default = { };
     };
   };
 
   config = mkMerge [
-    (mkIf (config.nixDir.entries ? homeModules) {
-      homeModules = conflake.loadModules
-        config.nixDir.entries.homeModules
+    (mkIf (config.nixDir.entries ? darwinModules) {
+      darwinModules = conflake.loadModules
+        config.nixDir.entries.darwinModules
         moduleArgs;
     })
 
-    (mkIf (config.homeModule != null) {
-      homeModules.default = config.homeModule;
+    (mkIf (config.darwinModule != null) {
+      darwinModules.default = config.darwinModule;
     })
 
-    (mkIf (config.homeModules != { }) {
-      outputs = { inherit (config) homeModules; };
+    (mkIf (config.darwinModules != { }) {
+      outputs = { inherit (config) darwinModules; };
     })
   ];
 }

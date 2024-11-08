@@ -2,7 +2,7 @@
 
 let
   inherit (builtins) pathExists;
-  inherit (lib) mkEnableOption mkIf optionalString;
+  inherit (lib) getExe mkEnableOption mkIf optionalString;
 in
 {
   options.conflake.editorconfig =
@@ -13,7 +13,7 @@ in
     {
       # By default, high false-positive flags are disabled.
       editorconfig = { editorconfig-checker, ... }:
-        "${editorconfig-checker}/bin/editorconfig-checker"
+        "${getExe editorconfig-checker}"
         + optionalString (!pathExists (src + /.ecrc))
           " -disable-indent-size -disable-max-line-length";
     };
