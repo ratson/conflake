@@ -21,44 +21,7 @@ A batteries included, convention-based configuration framework for Nix Flakes.
 
 ## Documentation
 
-See the [API docs](./API_GUIDE.md) for available options and example usage.
-
-## Examples
-
-### Shell
-
-The following is an example flake.nix for a devshell, using the passed in
-nixpkgs. It outputs `devShell.${system}.default` attributes for each configured
-system. `systems` can be set to change configured systems from the default.
-
-```nix
-{
-  inputs.conflake.url = "github:ratson/conflake";
-  outputs = { conflake, ... }:
-    conflake ./. {
-      devShell.packages = pkgs: [ pkgs.hello pkgs.coreutils ];
-    };
-}
-```
-
-With this flake, calling `nix develop` will make `hello` and `coreutils`
-available.
-
-To use a different nixpkgs, you can instead use:
-
-```nix
-{
-  inputs = {
-    nixpkgs.url = "github:NixOS/nixpkgs/nixpkgs-unstable";
-    conflake.url = "github:ratson/conflake";
-  };
-  outputs = { conflake, ... }@inputs:
-    conflake ./. {
-      inherit inputs;
-      devShell.packages = pkgs: [ pkgs.hello pkgs.coreutils ];
-    };
-}
-```
+See the [Quick-start Guide](https://ratson.github.io/conflake/guide/getting-started.html) and [API docs](https://ratson.github.io/conflake/reference/api.html) for available options and example usage.
 
 ## Credits
 
