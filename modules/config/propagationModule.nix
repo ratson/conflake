@@ -18,7 +18,7 @@ in
     '';
   };
 
-  config.propagationModule = { config, options, lib, pkgs, ... }:
+  config.propagationModule = { config, options, pkgs, ... }:
     let
       inherit (pkgs.stdenv.hostPlatform) system;
     in

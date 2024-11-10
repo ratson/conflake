@@ -52,7 +52,7 @@ in
     })
 
     (mkIf ((config.formatters != null) || (config.formatter != null)) {
-      checks.formatting = { lib, outputs', diffutils, ... }: ''
+      checks.formatting = { outputs', diffutils, ... }: ''
         ${getExe outputs'.formatter} .
         ${diffutils}/bin/diff -qr ${src} . |\
           sed 's/Files .* and \(.*\) differ/File \1 not formatted/g'
