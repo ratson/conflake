@@ -764,7 +764,7 @@ runTests {
 
   nixosModule = test
     (conflake' {
-      nixosModule = _: { };
+      nixosModule = { inputs, inputs', ... }: { };
     })
     (f: f ? nixosModules.default);
 
