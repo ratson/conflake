@@ -747,12 +747,11 @@ runTests {
       nixosConfigurations.test = nixpkgs.lib.nixosSystem {
         system = "x86_64-linux";
         modules = [
-          config.propagationModule
-          ({ flake, inputs', ... }: {
+          ({ pkgs, ... }: {
             system.stateVersion = "24.05";
             environment.variables = {
-              TEST1 = flake.inputs.nixpkgs.legacyPackages.x86_64-linux.hello;
-              TEST2 = flake.inputs'.nixpkgs.legacyPackages.hello;
+              TEST1 = config.inputs.nixpkgs.legacyPackages.x86_64-linux.hello;
+              TEST2 = config.inputs.nixpkgs.legacyPackages.${pkgs.system}.hello;
             };
           })
         ];

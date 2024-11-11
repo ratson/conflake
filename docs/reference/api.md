@@ -969,10 +969,6 @@ access to a `flake` module arg equivalent to `moduleArgs` plus `inputs'` and
 also be available in the NixOS instance's pkgs, and Conflake's
 `nixpkgs.config` will apply to it as well.
 
-When using the result of calling `nixpkgs.lib.nixosSystem`, the
-`config.propagationModule` value can be used as a NixOS module to gain the above
-benefits.
-
 For example:
 
 ```nix

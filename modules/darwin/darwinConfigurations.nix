@@ -14,7 +14,6 @@ let
       inherit inputs hostname;
       inputs' = mapAttrs (_: selectAttr cfg.system) inputs;
     } // cfg.specialArgs or { };
-    modules = [ config.propagationModule ] ++ cfg.modules or [ ];
   });
 
   configs = mapAttrs

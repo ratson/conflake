@@ -20,7 +20,6 @@
   ./config/overlays.nix
   ./config/packages.nix
   ./config/perSystem.nix
-  ./config/propagationModule.nix
   ./config/systems.nix
   ./config/templates.nix
   ./config/templatesDir.nix
