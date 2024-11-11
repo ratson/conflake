@@ -1,7 +1,7 @@
 { config, lib, conflake, moduleArgs, ... }:
 
 let
-  inherit (builtins) isPath isString;
+  inherit (builtins) isString;
   inherit (lib) mkOption mkOptionType mkIf mkMerge;
   inherit (lib.types) lazyAttrsOf;
   inherit (lib.options) mergeEqualOption;

@@ -19,7 +19,6 @@ let
         ({ lib, ... }: {
           home.username = lib.mkDefault (head (match "([^@]*)(@.*)?" name));
         })
-        config.propagationModule
       ] ++ cfg.modules or [ ];
       pkgs = inputs.nixpkgs.legacyPackages.${cfg.system};
     }

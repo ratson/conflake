@@ -1,13 +1,14 @@
 inputs:
 
 let
-  inherit (builtins) all head isAttrs isPath length mapAttrs;
+  inherit (builtins) all functionArgs head isAttrs isPath length mapAttrs;
   inherit (inputs) nixpkgs;
   inherit (nixpkgs) lib;
   inherit (lib) composeManyExtensions evalModules filter fix
     getFiles getValues hasSuffix isDerivation isFunction
     isStringLike mapAttrs' mkDefault mkOptionType nameValuePair
-    removeSuffix showFiles showOption singleton;
+    pipe removeSuffix setDefaultModuleLocation setFunctionArgs
+    showFiles showOption singleton toFunction;
   inherit (lib.modules) importApply;
   inherit (lib.types) coercedTo defaultFunctor functionTo lazyAttrsOf listOf
     optionDescriptionPhrase;
@@ -179,12 +180,30 @@ let
     };
   };
 
+  mkModule = path: { inputs, outputs, ... }@moduleArgs:
+    let
+      f = toFunction (import path);
+      g = { pkgs, ... }@args:
+        let
+          inherit (pkgs.stdenv.hostPlatform) system;
+          inputs' = mapAttrs (_: selectAttr system) inputs;
+        in
+        f (moduleArgs // { inherit inputs'; } // args);
+    in
+    pipe f [
+      functionArgs
+      (x: removeAttrs x [ "conflake" "inputs" "inputs'" "moduleArgs" ])
+      (x: x // { pkgs = true; })
+      (setFunctionArgs g)
+      (setDefaultModuleLocation path)
+    ];
+
   loadModules = entries: args: mapAttrs'
     (k: v:
       if hasSuffix ".fn.nix" k then
         nameValuePair (removeSuffix ".fn.nix" k) (importApply v args)
       else
-        nameValuePair (removeSuffix ".nix" k) v)
+        nameValuePair (removeSuffix ".nix" k) (mkModule v args))
     entries;
 
   selectAttr = attr: mapAttrs (_: v: v.${attr} or { });
