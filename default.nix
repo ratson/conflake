@@ -124,12 +124,8 @@ let
       merge = mergeOneOption;
     };
 
-    path = mkOptionType {
-      name = "path";
-      description = "path";
-      descriptionClass = "noun";
+    path = lib.types.path // {
       check = isPath;
-      merge = mergeEqualOption;
     };
 
     optCallWith = args: elemType: coercedTo function (x: x args) elemType;

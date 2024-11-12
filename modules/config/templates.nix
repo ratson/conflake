@@ -1,18 +1,18 @@
 { config, lib, conflake, moduleArgs, ... }:
 
 let
-  inherit (builtins) baseNameOf isPath mapAttrs;
+  inherit (builtins) mapAttrs;
   inherit (lib) filterAttrs mkOption mkIf mkMerge types;
-  inherit (conflake.types) nullable optCallWith;
+  inherit (conflake.types) nullable optCallWith path;
 
   template = types.submodule ({ name, ... }: {
     options = {
       path = mkOption {
-        type = types.path // { check = isPath; };
+        type = path;
       };
       description = mkOption {
         type = types.str;
-        default = baseNameOf config.templates.${name}.path;
+        default = name;
       };
       welcomeText = mkOption {
         type = types.nullOr types.lines;
