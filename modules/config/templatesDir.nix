@@ -1,22 +1,23 @@
 { config, src, lib, conflake, ... }:
 
 let
-  inherit (builtins) mapAttrs;
-  inherit (lib) filterAttrs mkEnableOption mkIf mkOption;
-  inherit (lib.types) submodule;
+  inherit (builtins) mapAttrs pathExists readDir;
+  inherit (lib) filterAttrs mkEnableOption mkDefault mkIf mkOption optionalAttrs pipe types;
   inherit (conflake.types) path;
 
   cfg = config.templatesDir;
-
-  templates = filterAttrs (_: v: ! (v ? path)) config.templates;
 in
 {
   options = {
     templatesDir = mkOption {
-      type = submodule {
+      type = types.submodule {
         options = {
           enable = mkEnableOption "templatesDir" // {
             default = true;
+          };
+          fromKeys = mkOption {
+            type = types.bool;
+            default = false;
           };
           src = mkOption {
             type = path;
@@ -28,11 +29,22 @@ in
     };
   };
 
-  config = mkIf (cfg.enable && templates != { }) {
-    outputs.templates = mapAttrs
-      (k: _: {
-        path = cfg.src + /${k};
-      })
-      templates;
+  config = mkIf cfg.enable {
+    templates =
+      if cfg.fromKeys then
+        mapAttrs
+          (name: _: {
+            path = mkDefault (cfg.src + /${name});
+          })
+          config.templates
+      else
+        optionalAttrs (pathExists cfg.src) (pipe
+          cfg.src [
+          readDir
+          (filterAttrs (_: type: type == "directory"))
+          (mapAttrs (name: _: {
+            path = mkDefault (cfg.src + /${name});
+          }))
+        ]);
   };
 }

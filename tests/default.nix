@@ -603,17 +603,19 @@ runTests {
       };
     });
 
-  template = test
-    (conflake' {
+  template = {
+    expr = (conflake' {
       template = {
         path = ./test;
         description = "test template";
       };
-    })
-    (f: f.templates.default == {
+    }).templates.default;
+
+    expected = {
       path = ./test;
       description = "test template";
-    });
+    };
+  };
 
   template-fn = test
     (conflake' {
@@ -924,5 +926,6 @@ runTests {
     self
     (f: f ? __functor
       && f ? lib.mkOutputs
-      && f ? templates.default.path);
+      && f ? templates.default.path
+      && f.templates.default.description != "default");
 }

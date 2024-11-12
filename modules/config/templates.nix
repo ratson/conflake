@@ -1,20 +1,25 @@
 { config, lib, conflake, moduleArgs, ... }:
 
 let
-  inherit (builtins) isString;
-  inherit (lib) mkOption mkOptionType mkIf mkMerge;
-  inherit (lib.types) lazyAttrsOf;
-  inherit (lib.options) mergeEqualOption;
+  inherit (builtins) baseNameOf isPath mapAttrs;
+  inherit (lib) filterAttrs mkOption mkIf mkMerge types;
   inherit (conflake.types) nullable optCallWith;
 
-  template = mkOptionType {
-    name = "template";
-    description = "template definition";
-    descriptionClass = "noun";
-    check = x: (x ? description) && (isString x.description) &&
-      ((! x ? welcomeText) || (isString x.welcomeText));
-    merge = mergeEqualOption;
-  };
+  template = types.submodule ({ name, ... }: {
+    options = {
+      path = mkOption {
+        type = types.path // { check = isPath; };
+      };
+      description = mkOption {
+        type = types.str;
+        default = baseNameOf config.templates.${name}.path;
+      };
+      welcomeText = mkOption {
+        type = types.nullOr types.lines;
+        default = null;
+      };
+    };
+  });
 in
 {
   options = {
@@ -25,8 +30,9 @@ in
 
     templates = mkOption {
       type = optCallWith moduleArgs
-        (lazyAttrsOf (optCallWith moduleArgs template));
+        (types.lazyAttrsOf (optCallWith moduleArgs template));
       default = { };
+      apply = mapAttrs (_: filterAttrs (_: v: v != null));
     };
   };
 
