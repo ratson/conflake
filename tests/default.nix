@@ -65,6 +65,18 @@ runTests {
     }))
     (f: f.inputs.test);
 
+  moduleArgs-arg = {
+    expr = (conflake' ({ inputs, ... }: {
+      moduleArgs.extra = {
+        username = "user";
+      };
+      outputs = { username, ... }: {
+        test = username;
+      };
+    })).test;
+    expected = "user";
+  };
+
   overridden-nixpkgs = test
     (conflake' ({ inputs, ... }: {
       inputs.nixpkgs = nixpkgs // { testValue = true; };

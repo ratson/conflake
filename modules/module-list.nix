@@ -12,6 +12,7 @@
   ./config/inputs.nix
   ./config/legacyPackages.nix
   ./config/lib.nix
+  ./config/moduleArgs.nix
   ./config/nixDir.nix
   ./config/nixosConfigurations.nix
   ./config/nixosModules.nix
@@ -29,5 +30,4 @@
   ./darwin/darwinModules.nix
   ./home-manager/homeConfigurations.nix
   ./home-manager/homeModules.nix
-  ./moduleArgs.nix
 ]

@@ -1,7 +1,7 @@
 inputs:
 
 let
-  inherit (builtins) all functionArgs head isAttrs isPath length mapAttrs;
+  inherit (builtins) all attrNames functionArgs head isAttrs isPath length mapAttrs;
   inherit (inputs) nixpkgs;
   inherit (nixpkgs) lib;
   inherit (lib) composeManyExtensions evalModules filter fix
@@ -176,23 +176,31 @@ let
     };
   };
 
-  mkModule = path: { inputs, outputs, ... }@moduleArgs:
+  mkModule = path: { config, inputs, outputs, ... }@flakeArgs:
     let
+      inherit (config) moduleArgs;
       f = toFunction (import path);
       g = { pkgs, ... }@args:
         let
           inherit (pkgs.stdenv.hostPlatform) system;
           inputs' = mapAttrs (_: selectAttr system) inputs;
         in
-        f (moduleArgs // { inherit inputs'; } // args);
+        f (flakeArgs // moduleArgs.extra // { inherit inputs'; } // args);
     in
-    pipe f [
-      functionArgs
-      (x: removeAttrs x [ "conflake" "inputs" "inputs'" "moduleArgs" ])
-      (x: x // { pkgs = true; })
-      (setFunctionArgs g)
-      (setDefaultModuleLocation path)
-    ];
+    if moduleArgs.enable then
+      pipe f [
+        functionArgs
+        (x: removeAttrs x ([
+          "conflake"
+          "inputs"
+          "inputs'"
+          "moduleArgs"
+        ] ++ (attrNames moduleArgs.extra)))
+        (x: x // { pkgs = true; })
+        (setFunctionArgs g)
+        (setDefaultModuleLocation path)
+      ]
+    else path;
 
   loadModules = entries: args: mapAttrs'
     (k: v:
