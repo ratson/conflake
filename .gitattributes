@@ -1,0 +1,3 @@
+docs/* merge=ours
+examples/* merge=ours
+tests/* merge=ours
