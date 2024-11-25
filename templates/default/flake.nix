@@ -1,7 +1,8 @@
 {
   description = "Description for the project";
 
-  outputs = { conflake, ... }@inputs:
+  outputs =
+    { conflake, ... }@inputs:
     conflake ./. {
       inherit inputs;
 

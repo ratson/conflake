@@ -1,4 +1,9 @@
-{ lib, conflake, moduleArgs, ... }:
+{
+  lib,
+  conflake,
+  moduleArgs,
+  ...
+}:
 
 let
   inherit (lib) mkOption;

@@ -1,11 +1,30 @@
-{ config, lib, conflake, genSystems, moduleArgs, ... }:
+{
+  config,
+  lib,
+  conflake,
+  genSystems,
+  moduleArgs,
+  ...
+}:
 
 let
   inherit (builtins) functionArgs mapAttrs;
   inherit (lib) mkIf mkMerge mkOption;
-  inherit (lib.types) coercedTo lazyAttrsOf lines listOf
-    package str submoduleWith;
-  inherit (conflake.types) function nullable optCallWith optFunctionTo;
+  inherit (lib.types)
+    coercedTo
+    lazyAttrsOf
+    lines
+    listOf
+    package
+    str
+    submoduleWith
+    ;
+  inherit (conflake.types)
+    function
+    nullable
+    optCallWith
+    optFunctionTo
+    ;
 
   devShellModule.options = {
     inputsFrom = mkOption {
@@ -45,27 +64,38 @@ let
     };
   };
 
-  wrapFn = fn: pkgs:
-    let val = pkgs.callPackage fn { }; in
-    if (functionArgs fn == { }) || !(package.check val)
-    then fn pkgs
-    else val;
+  wrapFn =
+    fn: pkgs:
+    let
+      val = pkgs.callPackage fn { };
+    in
+    if (functionArgs fn == { }) || !(package.check val) then fn pkgs else val;
 
   packageOverride = p: { overrideShell = p; };
 
-  devShellType = coercedTo function wrapFn
-    (optFunctionTo (coercedTo package packageOverride
-      (submoduleWith { modules = [ devShellModule ]; })));
+  devShellType = coercedTo function wrapFn (
+    optFunctionTo (
+      coercedTo package packageOverride (submoduleWith {
+        modules = [ devShellModule ];
+      })
+    )
+  );
 
-  genDevShell = pkgs: cfg:
-    if cfg.overrideShell != null then cfg.overrideShell
+  genDevShell =
+    pkgs: cfg:
+    if cfg.overrideShell != null then
+      cfg.overrideShell
     else
-      let cfg' = mapAttrs (_: v: v pkgs) cfg; in
-      pkgs.mkShell.override { inherit (cfg') stdenv; }
-        (cfg'.env // {
+      let
+        cfg' = mapAttrs (_: v: v pkgs) cfg;
+      in
+      pkgs.mkShell.override { inherit (cfg') stdenv; } (
+        cfg'.env
+        // {
           inherit (cfg') inputsFrom packages shellHook;
           inherit (cfg) hardeningDisable;
-        });
+        }
+      );
 in
 {
   options = {
@@ -86,8 +116,7 @@ in
     })
 
     (mkIf (config.devShells != { }) {
-      outputs.devShells = genSystems (pkgs:
-        mapAttrs (_: v: genDevShell pkgs (v pkgs)) config.devShells);
+      outputs.devShells = genSystems (pkgs: mapAttrs (_: v: genDevShell pkgs (v pkgs)) config.devShells);
     })
   ];
 }

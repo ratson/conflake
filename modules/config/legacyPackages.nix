@@ -1,4 +1,10 @@
-{ config, lib, conflake, genSystems, ... }:
+{
+  config,
+  lib,
+  conflake,
+  genSystems,
+  ...
+}:
 
 let
   inherit (lib) mkIf mkOption;

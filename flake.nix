@@ -1,7 +1,8 @@
 {
   description = "A batteries included, convention-based configuration framework for Nix Flakes.";
 
-  outputs = inputs:
+  outputs =
+    inputs:
     let
       lib = import ./. inputs;
     in

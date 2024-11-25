@@ -1,4 +1,9 @@
-{ config, lib, conflake, ... }:
+{
+  config,
+  lib,
+  conflake,
+  ...
+}:
 
 let
   inherit (lib) mkOption mkIf;

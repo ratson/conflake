@@ -1,5 +1,12 @@
 {
-  outputs = { conflake, home-manager, nixpkgs, self, ... }@inputs:
+  outputs =
+    {
+      conflake,
+      home-manager,
+      nixpkgs,
+      self,
+      ...
+    }@inputs:
     conflake ./. {
       inherit inputs;
 

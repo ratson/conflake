@@ -1,12 +1,32 @@
-{ config, src, lib, conflake, genSystems, ... }:
+{
+  config,
+  src,
+  lib,
+  conflake,
+  genSystems,
+  ...
+}:
 
 let
   inherit (builtins) isFunction mapAttrs;
-  inherit (lib) last mergeDefinitions mkIf mkOption mkOptionType;
+  inherit (lib)
+    last
+    mergeDefinitions
+    mkIf
+    mkOption
+    mkOptionType
+    ;
   inherit (lib.types) lazyAttrsOf optionDescriptionPhrase;
-  inherit (conflake.types) coercedTo' drv nullable optFunctionTo stringLike;
+  inherit (conflake.types)
+    coercedTo'
+    drv
+    nullable
+    optFunctionTo
+    stringLike
+    ;
 
-  mkCheck = name: pkgs: cmd:
+  mkCheck =
+    name: pkgs: cmd:
     pkgs.runCommand "check-${name}" { } ''
       cp --no-preserve=mode -r ${src} src
       cd src
@@ -18,23 +38,24 @@ let
     name = "checkType";
     description =
       let
-        targetDesc = optionDescriptionPhrase
-          (class: class == "noun" || class == "composite")
-          (coercedTo' stringLike (abort "") drv);
+        targetDesc = optionDescriptionPhrase (class: class == "noun" || class == "composite") (
+          coercedTo' stringLike (abort "") drv
+        );
       in
       "${targetDesc} or function that evaluates to it";
     descriptionClass = "composite";
     check = x: isFunction x || drv.check x || stringLike.check x;
-    merge = loc: defs: pkgs:
+    merge =
+      loc: defs: pkgs:
       let
         targetType = coercedTo' stringLike (mkCheck (last loc) pkgs) drv;
       in
-      (mergeDefinitions loc targetType (map
-        (fn: {
+      (mergeDefinitions loc targetType (
+        map (fn: {
           inherit (fn) file;
           value = if isFunction fn.value then fn.value pkgs else fn.value;
-        })
-        defs)).mergedValue;
+        }) defs
+      )).mergedValue;
   };
 in
 {

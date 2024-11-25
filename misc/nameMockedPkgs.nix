@@ -2,11 +2,18 @@
 real:
 
 let
-  inherit (builtins) baseNameOf isFunction functionArgs intersectAttrs mapAttrs;
+  inherit (builtins)
+    baseNameOf
+    isFunction
+    functionArgs
+    intersectAttrs
+    mapAttrs
+    ;
   inherit (real) lib;
   inherit (lib) fix filterAttrs;
 
-  callPackageWith = autoArgs: fn: args:
+  callPackageWith =
+    autoArgs: fn: args:
     let
       f = if isFunction fn then fn else import fn;
       fargs = functionArgs f;
@@ -16,12 +23,13 @@ let
     f (mock // intersectAttrs fargs autoArgs // args);
 
   mockStdenv = mapAttrs (_: _: throw "") real.stdenv // {
-    mkDerivation = args:
-      if isFunction args then fix args else args;
+    mkDerivation = args: if isFunction args then fix args else args;
   };
 in
 fix (self: {
-  lib = lib // { inherit callPackageWith; };
+  lib = lib // {
+    inherit callPackageWith;
+  };
 
   callPackage = callPackageWith self;
 

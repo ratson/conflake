@@ -1,8 +1,23 @@
-{ config, src, lib, conflake, ... }:
+{
+  config,
+  src,
+  lib,
+  conflake,
+  ...
+}:
 
 let
   inherit (builtins) mapAttrs readDir;
-  inherit (lib) filterAttrs mkEnableOption mkDefault mkIf mkOption pathIsDirectory pipe types;
+  inherit (lib)
+    filterAttrs
+    mkEnableOption
+    mkDefault
+    mkIf
+    mkOption
+    pathIsDirectory
+    pipe
+    types
+    ;
   inherit (conflake.types) path;
 
   cfg = config.templatesDir;
@@ -29,9 +44,11 @@ in
     pipe cfg.src [
       readDir
       (filterAttrs (_: type: type == "directory"))
-      (mapAttrs (name: _: {
-        path = mkDefault (cfg.src + /${name});
-      }))
+      (mapAttrs (
+        name: _: {
+          path = mkDefault (cfg.src + /${name});
+        }
+      ))
     ]
   );
 }

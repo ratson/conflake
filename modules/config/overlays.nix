@@ -1,4 +1,10 @@
-{ config, lib, conflake, moduleArgs, ... }:
+{
+  config,
+  lib,
+  conflake,
+  moduleArgs,
+  ...
+}:
 
 let
   inherit (lib) mkMerge mkOption mkIf;
@@ -24,7 +30,9 @@ in
     })
 
     (mkIf (config.overlays != { }) {
-      outputs = { inherit (config) overlays; };
+      outputs = {
+        inherit (config) overlays;
+      };
     })
   ];
 }

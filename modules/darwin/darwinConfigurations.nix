@@ -1,4 +1,11 @@
-{ config, lib, inputs, conflake, moduleArgs, ... }:
+{
+  config,
+  lib,
+  inputs,
+  conflake,
+  moduleArgs,
+  ...
+}:
 
 let
   inherit (builtins) mapAttrs;
@@ -9,16 +16,21 @@ let
 
   isDarwin = x: x ? config.system.builder;
 
-  mkDarwin = hostname: cfg: inputs.nix-darwin.lib.darwinSystem (cfg // {
-    specialArgs = {
-      inherit inputs hostname;
-      inputs' = mapAttrs (_: selectAttr cfg.system) inputs;
-    } // cfg.specialArgs or { };
-  });
+  mkDarwin =
+    hostname: cfg:
+    inputs.nix-darwin.lib.darwinSystem (
+      cfg
+      // {
+        specialArgs = {
+          inherit inputs hostname;
+          inputs' = mapAttrs (_: selectAttr cfg.system) inputs;
+        } // cfg.specialArgs or { };
+      }
+    );
 
-  configs = mapAttrs
-    (hostname: cfg: if isDarwin cfg then cfg else mkDarwin hostname cfg)
-    config.darwinConfigurations;
+  configs = mapAttrs (
+    hostname: cfg: if isDarwin cfg then cfg else mkDarwin hostname cfg
+  ) config.darwinConfigurations;
 in
 {
   options.darwinConfigurations = mkOption {

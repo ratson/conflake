@@ -1,4 +1,10 @@
-{ config, lib, conflake, genSystems, ... }:
+{
+  config,
+  lib,
+  conflake,
+  genSystems,
+  ...
+}:
 
 let
   inherit (builtins) isFunction mapAttrs;
@@ -6,10 +12,9 @@ let
   inherit (lib.types) lazyAttrsOf;
   inherit (conflake.types) function nullable optFunctionTo;
 
-  wrapBundler = pkgs: bundler: drv:
-    if isFunction (bundler (pkgs // drv))
-    then bundler pkgs drv
-    else bundler drv;
+  wrapBundler =
+    pkgs: bundler: drv:
+    if isFunction (bundler (pkgs // drv)) then bundler pkgs drv else bundler drv;
 in
 {
   options = {
@@ -30,8 +35,7 @@ in
     })
 
     (mkIf (config.bundlers != null) {
-      outputs.bundlers = genSystems (pkgs:
-        mapAttrs (_: wrapBundler pkgs) (config.bundlers pkgs));
+      outputs.bundlers = genSystems (pkgs: mapAttrs (_: wrapBundler pkgs) (config.bundlers pkgs));
     })
   ];
 }

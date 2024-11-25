@@ -1,4 +1,10 @@
-{ config, lib, conflake, pkgsFor, ... }:
+{
+  config,
+  lib,
+  conflake,
+  pkgsFor,
+  ...
+}:
 
 let
   inherit (builtins) mapAttrs;
@@ -15,10 +21,10 @@ in
   };
 
   config = {
-    outputs = foldAttrs mergeAttrs { } (map
-      (system: mapAttrs
-        (_: v: { ${system} = v; })
-        (config.perSystem pkgsFor.${system}))
-      config.systems);
+    outputs = foldAttrs mergeAttrs { } (
+      map (
+        system: mapAttrs (_: v: { ${system} = v; }) (config.perSystem pkgsFor.${system})
+      ) config.systems
+    );
   };
 }
