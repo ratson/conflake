@@ -1,16 +1,29 @@
-{ config, lib, inputs, ... }@args:
+{
+  config,
+  lib,
+  inputs,
+  ...
+}@args:
 
 let
-  inherit (lib) genAttrs mkEnableOption mkOption types;
+  inherit (lib)
+    genAttrs
+    mkEnableOption
+    mkOption
+    types
+    ;
 
   cfg = config.moduleArgs;
 
-  pkgsFor = genAttrs config.systems (system: import inputs.nixpkgs {
-    inherit system;
-    inherit (config.nixpkgs) config;
+  pkgsFor = genAttrs config.systems (
+    system:
+    import inputs.nixpkgs {
+      inherit system;
+      inherit (config.nixpkgs) config;
 
-    overlays = config.withOverlays ++ [ config.packageOverlay ];
-  });
+      overlays = config.withOverlays ++ [ config.packageOverlay ];
+    }
+  );
 
   genSystems = f: genAttrs config.systems (system: f pkgsFor.${system});
 in

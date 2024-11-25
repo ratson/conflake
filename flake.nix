@@ -1,7 +1,8 @@
 {
   description = "A batteries included, convention-based configuration framework for Nix Flakes.";
 
-  outputs = inputs:
+  outputs =
+    inputs:
     let
       lib = import ./. inputs;
     in
@@ -17,5 +18,5 @@
       };
     };
 
-  inputs.nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
+  inputs.nixpkgs.url = "github:NixOS/nixpkgs/nixpkgs-unstable";
 }

@@ -1,5 +1,10 @@
 # A Conflake module for Conflake module flakes
-{ conflake, outputs, src, ... }:
+{
+  conflake,
+  outputs,
+  src,
+  ...
+}:
 
 {
   functor = self: self.lib.mkOutputs;

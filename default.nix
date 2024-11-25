@@ -1,61 +1,114 @@
 inputs:
 
 let
-  inherit (builtins) all attrNames functionArgs head isAttrs isPath length mapAttrs;
+  inherit (builtins)
+    all
+    attrNames
+    functionArgs
+    head
+    isAttrs
+    isPath
+    length
+    mapAttrs
+    ;
   inherit (inputs) nixpkgs;
   inherit (nixpkgs) lib;
-  inherit (lib) composeManyExtensions evalModules filter fix
-    getFiles getValues hasSuffix isDerivation isFunction
-    isStringLike mapAttrs' mkDefault mkOptionType nameValuePair
-    pipe removeSuffix setDefaultModuleLocation setFunctionArgs
-    showFiles showOption singleton toFunction;
+  inherit (lib)
+    composeManyExtensions
+    evalModules
+    filter
+    fix
+    getFiles
+    getValues
+    hasSuffix
+    isDerivation
+    isFunction
+    isStringLike
+    mapAttrs'
+    mkDefault
+    mkOptionType
+    nameValuePair
+    pipe
+    removeSuffix
+    setDefaultModuleLocation
+    setFunctionArgs
+    showFiles
+    showOption
+    singleton
+    toFunction
+    ;
   inherit (lib.modules) importApply;
-  inherit (lib.types) coercedTo defaultFunctor functionTo lazyAttrsOf listOf
-    optionDescriptionPhrase;
+  inherit (lib.types)
+    coercedTo
+    defaultFunctor
+    functionTo
+    lazyAttrsOf
+    listOf
+    optionDescriptionPhrase
+    ;
   inherit (lib.options) mergeEqualOption mergeOneOption;
 
   baseModules = import ./modules/module-list.nix;
 
   mkOutputs = {
-    __functor = self: src: module: (evalModules {
-      class = "conflake";
-      modules = baseModules ++ self.extraModules ++ [
-        {
-          inputs.nixpkgs = mkDefault nixpkgs;
-          inputs.conflake = mkDefault inputs.self;
-        }
-        module
-      ];
-      specialArgs = {
-        inherit conflake src;
+    __functor =
+      self: src: module:
+      (evalModules {
+        class = "conflake";
+        modules =
+          baseModules
+          ++ self.extraModules
+          ++ [
+            {
+              inputs.nixpkgs = mkDefault nixpkgs;
+              inputs.conflake = mkDefault inputs.self;
+            }
+            module
+          ];
+        specialArgs = {
+          inherit conflake src;
 
-        modulesPath = ./modules;
-      };
-    }).config.outputs;
+          modulesPath = ./modules;
+        };
+      }).config.outputs;
 
     # Attributes to allow module flakes to extend mkOutputs
     extraModules = [ ];
-    extend = (fix (extend': mkOutputs': modules: fix (self: mkOutputs' // {
-      extraModules = mkOutputs'.extraModules ++ modules;
-      extend = extend' self;
-    }))) mkOutputs;
+    extend =
+      (fix (
+        extend': mkOutputs': modules:
+        fix (
+          self:
+          mkOutputs'
+          // {
+            extraModules = mkOutputs'.extraModules ++ modules;
+            extend = extend' self;
+          }
+        )
+      ))
+        mkOutputs;
   };
 
   conflake = {
-    inherit loadModules mkOutputs selectAttr types;
+    inherit
+      loadModules
+      mkOutputs
+      selectAttr
+      types
+      ;
   };
 
   types = rec {
-    coercedTo' = coercedType: coerceFunc: finalType:
-      (coercedTo coercedType coerceFunc finalType) // {
-        merge = loc: defs:
+    coercedTo' =
+      coercedType: coerceFunc: finalType:
+      (coercedTo coercedType coerceFunc finalType)
+      // {
+        merge =
+          loc: defs:
           let
-            coerceVal = val:
-              if finalType.check val then val
-              else coerceFunc val;
+            coerceVal = val: if finalType.check val then val else coerceFunc val;
           in
-          finalType.merge loc
-            (map (def: def // { value = coerceVal def.value; }) defs);
+          finalType.merge loc (map (def: def // { value = coerceVal def.value; }) defs);
       };
 
     drv = mkOptionType {
@@ -97,24 +150,32 @@ let
     # if all definitions are null and ignore nulls otherwise.
     #
     # This adds a type with that merge semantics.
-    nullable = elemType: mkOptionType {
-      name = "nullable";
-      description = "nullable ${optionDescriptionPhrase
-        (class: class == "noun" || class == "composite") elemType}";
-      descriptionClass = "noun";
-      check = x: x == null || elemType.check x;
-      merge = loc: defs:
-        if all (def: def.value == null) defs then null
-        else elemType.merge loc (filter (def: def.value != null) defs);
-      emptyValue.value = null;
-      inherit (elemType) getSubOptions getSubModules;
-      substSubModules = m: nullable (elemType.substSubModules m);
-      functor = (defaultFunctor "nullable") // {
-        type = nullable;
-        wrapped = elemType;
+    nullable =
+      elemType:
+      mkOptionType {
+        name = "nullable";
+        description = "nullable ${
+          optionDescriptionPhrase (class: class == "noun" || class == "composite") elemType
+        }";
+        descriptionClass = "noun";
+        check = x: x == null || elemType.check x;
+        merge =
+          loc: defs:
+          if all (def: def.value == null) defs then
+            null
+          else
+            elemType.merge loc (filter (def: def.value != null) defs);
+        emptyValue.value = null;
+        inherit (elemType) getSubOptions getSubModules;
+        substSubModules = m: nullable (elemType.substSubModules m);
+        functor = (defaultFunctor "nullable") // {
+          type = nullable;
+          wrapped = elemType;
+        };
+        nestedTypes = {
+          inherit elemType;
+        };
       };
-      nestedTypes = { inherit elemType; };
-    };
 
     packageDef = mkOptionType {
       name = "packageDef";
@@ -136,12 +197,11 @@ let
           name = "nonFunction";
           description = "non-function";
           descriptionClass = "noun";
-          check = x: ! isFunction x;
+          check = x: !isFunction x;
           merge = mergeOneOption;
         };
       in
-      elemType: coercedTo nonFunction (x: _: x)
-        (functionTo elemType);
+      elemType: coercedTo nonFunction (x: _: x) (functionTo elemType);
     optListOf = elemType: coercedTo elemType singleton (listOf elemType);
 
     outputs = lazyAttrsOf outputsValue;
@@ -150,7 +210,8 @@ let
       name = "outputs";
       description = "outputs value";
       descriptionClass = "noun";
-      merge = loc: defs:
+      merge =
+        loc: defs:
         if (length defs) == 1 then
           (head defs).value
         else if all isAttrs (getValues defs) then
@@ -176,11 +237,19 @@ let
     };
   };
 
-  mkModule = path: { config, inputs, outputs, ... }@flakeArgs:
+  mkModule =
+    path:
+    {
+      config,
+      inputs,
+      outputs,
+      ...
+    }@flakeArgs:
     let
       inherit (config) moduleArgs;
       f = toFunction (import path);
-      g = { pkgs, ... }@args:
+      g =
+        { pkgs, ... }@args:
         let
           inherit (pkgs.stdenv.hostPlatform) system;
           inputs' = mapAttrs (_: selectAttr system) inputs;
@@ -190,25 +259,34 @@ let
     if moduleArgs.enable then
       pipe f [
         functionArgs
-        (x: removeAttrs x ([
-          "conflake"
-          "inputs"
-          "inputs'"
-          "moduleArgs"
-        ] ++ (attrNames moduleArgs.extra)))
+        (
+          x:
+          removeAttrs x (
+            [
+              "conflake"
+              "inputs"
+              "inputs'"
+              "moduleArgs"
+            ]
+            ++ (attrNames moduleArgs.extra)
+          )
+        )
         (x: x // { pkgs = true; })
         (setFunctionArgs g)
         (setDefaultModuleLocation path)
       ]
-    else path;
+    else
+      path;
 
-  loadModules = entries: args: mapAttrs'
-    (k: v:
+  loadModules =
+    entries: args:
+    mapAttrs' (
+      k: v:
       if hasSuffix ".fn.nix" k then
         nameValuePair (removeSuffix ".fn.nix" k) (importApply v args)
       else
-        nameValuePair (removeSuffix ".nix" k) (mkModule v args))
-    entries;
+        nameValuePair (removeSuffix ".nix" k) (mkModule v args)
+    ) entries;
 
   selectAttr = attr: mapAttrs (_: v: v.${attr} or { });
 in

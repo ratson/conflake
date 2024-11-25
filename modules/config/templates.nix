@@ -1,25 +1,40 @@
-{ config, lib, conflake, moduleArgs, ... }:
+{
+  config,
+  lib,
+  conflake,
+  moduleArgs,
+  ...
+}:
 
 let
   inherit (builtins) mapAttrs;
-  inherit (lib) filterAttrs mkOption mkIf mkMerge types;
+  inherit (lib)
+    filterAttrs
+    mkOption
+    mkIf
+    mkMerge
+    types
+    ;
   inherit (conflake.types) nullable optCallWith path;
 
-  template = types.submodule ({ name, ... }: {
-    options = {
-      path = mkOption {
-        type = path;
+  template = types.submodule (
+    { name, ... }:
+    {
+      options = {
+        path = mkOption {
+          type = path;
+        };
+        description = mkOption {
+          type = types.str;
+          default = name;
+        };
+        welcomeText = mkOption {
+          type = types.nullOr types.lines;
+          default = null;
+        };
       };
-      description = mkOption {
-        type = types.str;
-        default = name;
-      };
-      welcomeText = mkOption {
-        type = types.nullOr types.lines;
-        default = null;
-      };
-    };
-  });
+    }
+  );
 in
 {
   options = {
@@ -29,8 +44,7 @@ in
     };
 
     templates = mkOption {
-      type = optCallWith moduleArgs
-        (types.lazyAttrsOf (optCallWith moduleArgs template));
+      type = optCallWith moduleArgs (types.lazyAttrsOf (optCallWith moduleArgs template));
       default = { };
       apply = mapAttrs (_: filterAttrs (_: v: v != null));
     };
@@ -42,7 +56,9 @@ in
     })
 
     (mkIf (config.templates != { }) {
-      outputs = { inherit (config) templates; };
+      outputs = {
+        inherit (config) templates;
+      };
     })
   ];
 }

@@ -1,4 +1,10 @@
-{ config, lib, conflake, moduleArgs, ... }:
+{
+  config,
+  lib,
+  conflake,
+  moduleArgs,
+  ...
+}:
 
 let
   inherit (lib) mkOption mkIf mkMerge;
@@ -20,9 +26,7 @@ in
 
   config = mkMerge [
     (mkIf (config.nixDir.entries ? homeModules) {
-      homeModules = conflake.loadModules
-        config.nixDir.entries.homeModules
-        moduleArgs;
+      homeModules = conflake.loadModules config.nixDir.entries.homeModules moduleArgs;
     })
 
     (mkIf (config.homeModule != null) {
@@ -30,7 +34,9 @@ in
     })
 
     (mkIf (config.homeModules != { }) {
-      outputs = { inherit (config) homeModules; };
+      outputs = {
+        inherit (config) homeModules;
+      };
     })
   ];
 }
