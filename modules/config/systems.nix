@@ -1,14 +1,20 @@
-{ lib, ... }:
+{ lib, inputs, ... }:
 
 let
   inherit (lib) mkOption systems;
-  inherit (lib.types) listOf nonEmptyStr uniq;
+  inherit (lib.types)
+    coercedTo
+    listOf
+    nonEmptyStr
+    package
+    uniq
+    ;
 in
 {
   options = {
     systems = mkOption {
-      type = uniq (listOf nonEmptyStr);
-      default = systems.flakeExposed;
+      type = coercedTo package import (uniq (listOf nonEmptyStr));
+      default = inputs.systems or systems.flakeExposed;
     };
   };
 }
