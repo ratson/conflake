@@ -1,10 +1,4 @@
 {
-  inputs.conflake = {
-    url = "../..";
-    inputs.nixpkgs.follows = "nixpkgs";
-  };
-  inputs.nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
-
   outputs =
     { conflake, ... }@inputs:
     conflake ./. {
@@ -18,4 +12,12 @@
           packages.haloha = pkgs.hello;
         };
     };
+
+  inputs = {
+    conflake = {
+      url = "../..";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
+    nixpkgs.url = "github:NixOS/nixpkgs/nixpkgs-unstable";
+  };
 }
