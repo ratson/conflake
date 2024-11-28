@@ -24,7 +24,7 @@ Otherwise, edit `flake.nix` to the following,
 }
 ```
 
-Then migrate your `outputs` to conflake [`options`](../options).
+Then migrate your `outputs` to conflake [`options`](../options/).
 
 ## Shell
 
