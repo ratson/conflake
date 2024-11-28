@@ -4,17 +4,18 @@
   inputs,
   conflake,
   moduleArgs,
+  genSystems,
   ...
 }:
 
 let
   inherit (builtins) mapAttrs;
   inherit (lib)
-    foldl
-    mapAttrsToList
+    filterAttrs
+    mkDefault
     mkIf
     mkOption
-    recursiveUpdate
+    pipe
     ;
   inherit (lib.types) attrs lazyAttrsOf;
   inherit (conflake) selectAttr;
@@ -29,6 +30,11 @@ let
     inputs.nixpkgs.lib.nixosSystem (
       cfg
       // {
+        modules = [
+          {
+            config.nixpkgs.hostPlatform = mkDefault "x86_64-linux";
+          }
+        ] ++ cfg.modules or [ ];
         specialArgs = {
           inherit inputs hostname;
           inputs' = mapAttrs (_: selectAttr cfg.system) inputs;
@@ -49,14 +55,17 @@ in
   config = {
     outputs = mkIf (config.nixosConfigurations != { }) {
       nixosConfigurations = configs;
-      checks = foldl recursiveUpdate { } (
-        mapAttrsToList (n: v: {
-          # Wrapping the drv is needed as computing its name is expensive
-          # If not wrapped, it slows down `nix flake show` significantly
-          ${v.config.nixpkgs.system}."nixos-${n}" =
-            v.pkgs.runCommand "check-nixos-${n}" { }
-              "echo ${v.config.system.build.toplevel} > $out";
-        }) configs
+      checks = genSystems (
+        { system, ... }:
+        pipe configs [
+          (filterAttrs (_: v: v.pkgs.system == system))
+          (conflake.withPrefix "nixos-")
+          (mapAttrs (
+            # Wrapping the drv is needed as computing its name is expensive
+            # If not wrapped, it slows down `nix flake show` significantly
+            k: v: v.pkgs.runCommand "check-nixos-${k}" { } "echo ${v.config.system.build.toplevel} > $out"
+          ))
+        ]
       );
     };
     nixDir.aliases.nixosConfigurations = [ "nixos" ];

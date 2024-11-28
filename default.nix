@@ -95,6 +95,7 @@ let
       mkOutputs
       selectAttr
       types
+      withPrefix
       ;
   };
 
@@ -289,5 +290,8 @@ let
     ) entries;
 
   selectAttr = attr: mapAttrs (_: v: v.${attr} or { });
+
+  # Add `prefix` to keys of an attrset
+  withPrefix = prefix: mapAttrs' (k: v: nameValuePair "${prefix}${k}" v);
 in
 conflake

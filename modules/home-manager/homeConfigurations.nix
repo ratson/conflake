@@ -4,44 +4,61 @@
   inputs,
   conflake,
   moduleArgs,
+  genSystems,
   ...
 }:
 
 let
-  inherit (builtins) head mapAttrs match;
+  inherit (builtins)
+    hasAttr
+    head
+    mapAttrs
+    match
+    ;
   inherit (lib)
-    foldl
-    mapAttrsToList
-    mkOption
+    filterAttrs
+    mkDefault
     mkIf
-    recursiveUpdate
+    mkOption
+    pipe
     ;
   inherit (lib.types) attrs lazyAttrsOf;
-  inherit (conflake) selectAttr;
+  inherit (conflake) selectAttr withPrefix;
   inherit (conflake.types) optCallWith;
 
   isHome = x: x ? activationPackage;
 
   mkHome =
     name: cfg:
-    inputs.home-manager.lib.homeManagerConfiguration (
-      (removeAttrs cfg [ "system" ])
-      // {
-        extraSpecialArgs = {
-          inherit inputs;
-          inputs' = mapAttrs (_: selectAttr cfg.system) inputs;
-        } // cfg.extraSpecialArgs or { };
-        modules = [
-          (
-            { lib, ... }:
+    pipe cfg [
+      (
+        x:
+        if (!hasAttr "pkgs" x && hasAttr "system" x) then
+          x
+          // {
+            pkgs = inputs.nixpkgs.legacyPackages.${x.system};
+          }
+        else
+          x
+      )
+      (
+        x:
+        x
+        // {
+          extraSpecialArgs = {
+            inherit inputs;
+            inputs' = mapAttrs (_: selectAttr x.pkgs.system) inputs;
+          } // x.extraSpecialArgs or { };
+          modules = [
             {
-              home.username = lib.mkDefault (head (match "([^@]*)(@.*)?" name));
+              home.username = mkDefault (head (match "([^@]*)(@.*)?" name));
             }
-          )
-        ] ++ cfg.modules or [ ];
-        pkgs = inputs.nixpkgs.legacyPackages.${cfg.system};
-      }
-    );
+          ] ++ x.modules or [ ];
+        }
+      )
+      (x: removeAttrs x [ "system" ])
+      inputs.home-manager.lib.homeManagerConfiguration
+    ];
 
   configs = mapAttrs (
     name: cfg: if isHome cfg then cfg else mkHome name cfg
@@ -56,10 +73,13 @@ in
   config = {
     outputs = mkIf (config.homeConfigurations != { }) {
       homeConfigurations = configs;
-      checks = foldl recursiveUpdate { } (
-        mapAttrsToList (n: v: {
-          ${v.config.nixpkgs.system}."home-${n}" = v.activationPackage;
-        }) configs
+      checks = genSystems (
+        { system, ... }:
+        pipe configs [
+          (filterAttrs (_: v: v.pkgs.system == system))
+          (withPrefix "home-")
+          (mapAttrs (_: v: v.activationPackage))
+        ]
       );
     };
     nixDir.aliases.homeConfigurations = [ "home" ];
