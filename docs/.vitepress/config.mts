@@ -1,38 +1,106 @@
+import fs from "node:fs/promises";
 import { defineConfig } from "vitepress";
+import templates from "../templates/[name].paths.ts";
 
-export default defineConfig({
-  base: "/conflake/",
-  cleanUrls: true,
-  lastUpdated: true,
+async function collectNames(dir: string) {
+  const files = await fs.readdir(dir);
+  return files.filter((x) => x.endsWith(".md") && x !== "index.md")
+    .map((x) => x.replace(/\.md$/, ""));
+}
 
-  title: "Conflake",
-  description: "Config Flakes",
+export default async () => {
+  const [options, templateNames] = await Promise.all([
+    collectNames("options"),
+    templates.paths().then((paths) =>
+      paths.map(
+        (x) => x.params.name,
+      )
+    ),
+  ]);
 
-  themeConfig: {
-    nav: [
-      { text: "Home", link: "/" },
-      { text: "Guides", link: "/guide/getting-started" },
-    ],
+  return defineConfig({
+    base: "/conflake/",
+    cleanUrls: true,
+    lastUpdated: true,
 
-    sidebar: [
-      {
-        text: "Guides",
-        base: "/guide/",
-        items: [
-          { text: "Getting Started", link: "getting-started" },
-        ],
+    title: "Conflake",
+    description: "Config Flakes",
+
+    markdown: {
+      image: {
+        lazyLoading: true,
       },
-      {
-        text: "References",
-        base: "/reference/",
-        items: [
-          { text: "API", link: "api" },
-        ],
-      },
-    ],
+    },
 
-    socialLinks: [
-      { icon: "github", link: "https://github.com/ratson/conflake" },
-    ],
-  },
-});
+    themeConfig: {
+      editLink: {
+        pattern: "https://github.com/ratson/conflake/edit/main/docs/:path",
+        text: "Edit this page on GitHub",
+      },
+
+      nav: [
+        { text: "Home", link: "/" },
+        { text: "Guides", link: "/guide/getting-started" },
+      ],
+
+      search: {
+        provider: "local",
+      },
+
+      sidebar: [
+        {
+          text: "Introduction",
+          base: "/guide/",
+          collapsed: false,
+          items: [
+            { text: "What is Conflake?", link: "introduction" },
+            { text: "Getting Started", link: "getting-started" },
+            { text: "Project Layout", link: "project-layout" },
+          ],
+        },
+        {
+          text: "Options",
+          base: "/options/",
+          collapsed: false,
+          items: options.map((x) => ({
+            text: x,
+            link: x,
+          })),
+          link: "index",
+        },
+        {
+          text: "Templates",
+          base: "/templates/",
+          collapsed: false,
+          items: templateNames.map((x) => ({
+            text: x,
+            link: x,
+          })),
+        },
+        {
+          text: "Comparision",
+          base: "/compare-to/",
+          collapsed: true,
+          items: [
+            { text: "Flakelight", link: "flakelight" },
+            { text: "Flake Parts", link: "flake-parts" },
+          ],
+        },
+      ],
+
+      socialLinks: [
+        {
+          icon: "github",
+          link: "https://github.com/ratson/conflake/tree/main",
+        },
+      ],
+    },
+
+    transformPageData(pageData) {
+      switch (pageData.filePath) {
+        case "templates/[name].md":
+          pageData.title = `Templates - ${pageData.params?.name}`;
+      }
+    },
+  });
+};

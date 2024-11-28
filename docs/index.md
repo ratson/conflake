@@ -7,6 +7,9 @@ hero:
   tagline: A batteries included, convention-based configuration framework for Nix Flakes.
   actions:
     - theme: brand
+      text: What is Conflake?
+      link: /guide/introduction
+    - theme: alt
       text: Quickstart
       link: /guide/getting-started
     - theme: alt

@@ -1,6 +1,10 @@
 {
   "private": true,
+  "type": "module",
   "devDependencies": {
+    "@types/node": "^22.10.1",
+    "execa": "^9.5.1",
+    "strip-ansi": "^7.1.0",
     "vitepress": "^1.5.0"
   },
   "scripts": {
