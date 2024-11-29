@@ -13,8 +13,8 @@ export default defineLoader({
       ),
       ($({ cwd })`nix flake show --all-systems`).then((x) =>
         stripAnsi(x.stdout).replace(
-          /^(.*:\/\/\/).+(\?[^\n]+)/,
-          "$1tmp/conflake$2",
+          /^(.*:\/\/\/).+(\?[^&]+)[^\n]*\n/,
+          "$1tmp/conflake$2\n",
         )
       ),
       ($({ cwd })`nix flake show --all-systems --json`).then((x) =>
