@@ -96,7 +96,6 @@ let
 
   matchers = {
     dir = { type, ... }: type == "directory";
-
     file = { type, ... }: type == "regular";
   };
 
@@ -329,6 +328,7 @@ let
       loadModules
       matchers
       mkCheck
+      mkModule
       mkOutputs
       selectAttr
       types

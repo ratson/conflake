@@ -60,16 +60,20 @@ let
     src: loaders:
     pipe src [
       readDir
-      (filterAttrs (k: _: hasAttr k loaders))
       (
         entries:
-        mapAttrs (name: type: {
-          loader = loaders.${name};
-          args = {
-            inherit entries name type;
-            src = src + /${name};
-          };
-        }) entries
+        pipe entries [
+          (filterAttrs (k: _: hasAttr k loaders))
+          (mapAttrs (
+            name: type: {
+              loader = loaders.${name};
+              args = {
+                inherit entries name type;
+                src = src + /${name};
+              };
+            }
+          ))
+        ]
       )
       attrValues
       (filter (x: x.loader.enable && x.loader.match x.args))

@@ -3,11 +3,27 @@
   lib,
   conflake,
   moduleArgs,
+  src,
   ...
 }:
 
 let
-  inherit (lib) mkOption mkIf mkMerge;
+  inherit (builtins) readDir;
+  inherit (lib)
+    concatMap
+    filterAttrs
+    hasSuffix
+    mapAttrs'
+    mkIf
+    mkMerge
+    mkOption
+    nameValuePair
+    path
+    pipe
+    removeSuffix
+    setAttrByPath
+    tail
+    ;
   inherit (lib.types) lazyAttrsOf deferredModule;
   inherit (conflake.types) nullable optCallWith;
 in
@@ -25,18 +41,38 @@ in
   };
 
   config = mkMerge [
-    (mkIf (config.nixDir.entries ? nixosModules) {
-      nixosModules = conflake.loadModules config.nixDir.entries.nixosModules moduleArgs;
-    })
-
     (mkIf (config.nixosModule != null) {
       nixosModules.default = config.nixosModule;
     })
-
     (mkIf (config.nixosModules != { }) {
       outputs = {
         inherit (config) nixosModules;
       };
     })
+    {
+      loaders = pipe config.nixDir.src [
+        (path.removePrefix src)
+        path.subpath.components
+        (x: x ++ [ "nixosModules" ])
+        (concatMap (x: [ "loaders" ] ++ [ x ]))
+        tail
+        (
+          x:
+          setAttrByPath x {
+            load =
+              { src, ... }:
+              {
+                nixosModules = pipe src [
+                  readDir
+                  (filterAttrs (name: type: type == "regular" && hasSuffix ".nix" name))
+                  (mapAttrs' (
+                    k: _: nameValuePair (removeSuffix ".nix" k) (conflake.mkModule (src + /${k}) moduleArgs)
+                  ))
+                ];
+              };
+          }
+        )
+      ];
+    }
   ];
 }
