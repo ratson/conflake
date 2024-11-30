@@ -4,6 +4,7 @@
   src,
   lib,
   conflake,
+  moduleArgs,
   ...
 }:
 
@@ -16,8 +17,11 @@ let
     isPath
     mapAttrs
     readDir
+    tail
     ;
   inherit (lib)
+    concatMap
+    filterAttrs
     findFirst
     flip
     genAttrs
@@ -25,15 +29,18 @@ let
     hasAttrByPath
     hasPrefix
     hasSuffix
+    mapAttrs'
     mkEnableOption
     mkIf
     mkOption
     nameValuePair
+    optionalAttrs
+    path
+    pathIsDirectory
     pipe
     remove
     removeSuffix
-    optionalAttrs
-    pathIsDirectory
+    setAttrByPath
     subtractLists
     ;
   inherit (lib.types)
@@ -43,8 +50,8 @@ let
     raw
     str
     submodule
+    functionTo
     ;
-  inherit (conflake.types) path;
 
   cfg = config.nixDir;
 
@@ -99,6 +106,31 @@ let
       { success = false; };
 
   importNames = names: findFirst (x: x.success) { success = false; } (map importName names);
+
+  mkModuleLoader =
+    attr:
+    pipe config.nixDir.src [
+      (path.removePrefix src)
+      path.subpath.components
+      (x: x ++ [ attr ])
+      (concatMap (x: [ "loaders" ] ++ [ x ]))
+      tail
+      (
+        x:
+        setAttrByPath (x ++ [ "load" ]) (
+          { src, ... }:
+          {
+            ${attr} = pipe src [
+              readDir
+              (filterAttrs (name: type: type == "regular" && hasSuffix ".nix" name))
+              (mapAttrs' (
+                k: _: nameValuePair (removeSuffix ".nix" k) (conflake.mkModule (src + /${k}) moduleArgs)
+              ))
+            ];
+          }
+        )
+      )
+    ];
 in
 {
   options = {
@@ -109,7 +141,7 @@ in
             default = true;
           };
           src = mkOption {
-            type = path;
+            type = conflake.types.path;
             default = src + /nix;
           };
           aliases = mkOption {
@@ -117,10 +149,16 @@ in
             default = { };
           };
           entries = mkOption {
-            type = lazyAttrsOf raw;
             internal = true;
             readOnly = true;
+            type = lazyAttrsOf raw;
             default = optionalAttrs (cfg.enable && pathIsDirectory cfg.src) (loadDir cfg.src);
+          };
+          mkModuleLoader = mkOption {
+            internal = true;
+            readOnly = true;
+            type = functionTo raw;
+            default = mkModuleLoader;
           };
         };
       };
