@@ -12,6 +12,7 @@
   ./config/inputs.nix
   ./config/legacyPackages.nix
   ./config/lib.nix
+  ./config/loaders.nix
   ./config/moduleArgs.nix
   ./config/nixDir.nix
   ./config/nixosConfigurations.nix
@@ -23,7 +24,6 @@
   ./config/perSystem.nix
   ./config/systems.nix
   ./config/templates.nix
-  ./config/templatesDir.nix
   ./config/withOverlays.nix
   ./editorconfig.nix
   ./darwin/darwinConfigurations.nix

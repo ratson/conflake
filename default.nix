@@ -26,6 +26,7 @@ let
     isStringLike
     mapAttrs'
     mkDefault
+    mkOption
     mkOptionType
     nameValuePair
     pipe
@@ -43,8 +44,12 @@ let
     defaultFunctor
     functionTo
     lazyAttrsOf
+    lines
     listOf
+    nullOr
     optionDescriptionPhrase
+    str
+    submodule
     ;
   inherit (lib.options) mergeEqualOption mergeOneOption;
 
@@ -70,7 +75,7 @@ let
 
           modulesPath = ./modules;
         };
-      }).config.outputs;
+      }).config.finalOutputs;
 
     # Attributes to allow module flakes to extend mkOutputs
     extraModules = [ ];
@@ -87,16 +92,6 @@ let
         )
       ))
         mkOutputs;
-  };
-
-  conflake = {
-    inherit
-      loadModules
-      mkOutputs
-      selectAttr
-      types
-      withPrefix
-      ;
   };
 
   types = rec {
@@ -236,6 +231,26 @@ let
       check = isStringLike;
       merge = mergeEqualOption;
     };
+
+    template = submodule (
+      { name, ... }:
+      {
+        options = {
+          path = mkOption {
+            type = nullOr path;
+            default = null;
+          };
+          description = mkOption {
+            type = str;
+            default = name;
+          };
+          welcomeText = mkOption {
+            type = nullOr lines;
+            default = null;
+          };
+        };
+      }
+    );
   };
 
   mkModule =
@@ -293,5 +308,15 @@ let
 
   # Add `prefix` to keys of an attrset
   withPrefix = prefix: mapAttrs' (k: v: nameValuePair "${prefix}${k}" v);
+
+  conflake = {
+    inherit
+      loadModules
+      mkOutputs
+      selectAttr
+      types
+      withPrefix
+      ;
+  };
 in
 conflake
