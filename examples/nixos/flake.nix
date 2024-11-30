@@ -10,6 +10,10 @@
     conflake ./. {
       inherit inputs;
 
+      nixosModules.hi = {
+        imports = [ self.nixosModules.greet ];
+      };
+
       outputs = {
         nixosConfigurations.vm2 = nixpkgs.lib.nixosSystem {
           system = "x86_64-linux";

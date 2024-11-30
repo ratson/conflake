@@ -26,7 +26,12 @@ in
       type = submodule {
         freeformType = lazyAttrsOf raw;
         options = {
-          inherit (options) templates;
+          inherit (options)
+            darwinModules
+            homeModules
+            nixosModules
+            templates
+            ;
 
           checks = mkOption {
             type = lazyAttrsOf (lazyAttrsOf lib.types.package);
@@ -39,6 +44,9 @@ in
         !(
           elem k [
             "checks"
+            "darwinModules"
+            "homeModules"
+            "nixosModules"
             "templates"
           ]
           && v == { }

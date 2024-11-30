@@ -308,16 +308,6 @@ let
     else
       path;
 
-  loadModules =
-    entries: args:
-    mapAttrs' (
-      k: v:
-      if hasSuffix ".fn.nix" k then
-        nameValuePair (removeSuffix ".fn.nix" k) (importApply v args)
-      else
-        nameValuePair (removeSuffix ".nix" k) (mkModule v args)
-    ) entries;
-
   selectAttr = attr: mapAttrs (_: v: v.${attr} or { });
 
   # Add `prefix` to keys of an attrset
@@ -325,7 +315,6 @@ let
 
   conflake = {
     inherit
-      loadModules
       matchers
       mkCheck
       mkModule
