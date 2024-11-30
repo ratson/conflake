@@ -42,7 +42,7 @@ let
         };
         match = mkOption {
           type = functionTo bool;
-          default = { type, ... }: type == "directory";
+          default = conflake.matchers.dir;
         };
         load = mkOption {
           type = functionTo conflake.types.outputs;
@@ -61,15 +61,16 @@ let
     pipe src [
       readDir
       (filterAttrs (k: _: hasAttr k loaders))
-      (mapAttrs (
-        name: type: {
+      (
+        entries:
+        mapAttrs (name: type: {
           loader = loaders.${name};
           args = {
-            inherit name type;
+            inherit entries name type;
             src = src + /${name};
           };
-        }
-      ))
+        }) entries
+      )
       attrValues
       (filter (x: x.loader.enable && x.loader.match x.args))
       (map (

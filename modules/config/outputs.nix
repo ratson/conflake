@@ -8,6 +8,7 @@
 }:
 
 let
+  inherit (builtins) elem;
   inherit (lib) filterAttrs mkMerge mkOption;
   inherit (lib.types) lazyAttrsOf raw submodule;
   inherit (conflake.types) optCallWith outputs;
@@ -26,9 +27,23 @@ in
         freeformType = lazyAttrsOf raw;
         options = {
           inherit (options) templates;
+
+          checks = mkOption {
+            type = lazyAttrsOf (lazyAttrsOf lib.types.package);
+            default = { };
+          };
         };
       };
-      apply = filterAttrs (k: v: !(k == "templates" && v == { }));
+      apply = filterAttrs (
+        k: v:
+        !(
+          elem k [
+            "checks"
+            "templates"
+          ]
+          && v == { }
+        )
+      );
     };
   };
 

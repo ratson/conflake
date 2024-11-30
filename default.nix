@@ -94,6 +94,12 @@ let
         mkOutputs;
   };
 
+  matchers = {
+    dir = { type, ... }: type == "directory";
+
+    file = { type, ... }: type == "regular";
+  };
+
   types = rec {
     coercedTo' =
       coercedType: coerceFunc: finalType:
@@ -253,6 +259,15 @@ let
     );
   };
 
+  mkCheck =
+    name: pkgs: src: cmd:
+    pkgs.runCommand "check-${name}" { } ''
+      cp --no-preserve=mode -r ${src} src
+      cd src
+      ${cmd}
+      touch $out
+    '';
+
   mkModule =
     path:
     {
@@ -312,6 +327,8 @@ let
   conflake = {
     inherit
       loadModules
+      matchers
+      mkCheck
       mkOutputs
       selectAttr
       types
