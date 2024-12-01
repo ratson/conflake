@@ -20,16 +20,13 @@ let
     attrsToList
     concatMap
     filterAttrs
-    hasSuffix
     last
     mkEnableOption
     mkIf
     mkMerge
     mkOption
-    partition
     path
     pathIsDirectory
-    pathIsRegularFile
     pipe
     setAttrByPath
     ;
@@ -113,21 +110,7 @@ let
       load =
         { src, ... }:
         {
-          ${loadName src} = pipe src [
-            readDir
-            attrsToList
-            (partition ({ name, value }: value == "regular" && hasSuffix ".nix" name))
-            (
-              x:
-              loadValue {
-                inherit src;
-                filePairs = x.right;
-                dirPairs = filter (
-                  { name, value }: value == "directory" && pathIsRegularFile (src + /${name}/default.nix)
-                ) x.wrong;
-              }
-            )
-          ];
+          ${loadName src} = loadValue (conflake.readNixDir src);
         };
     };
 in

@@ -10,10 +10,12 @@ let
     isPath
     length
     mapAttrs
+    readDir
     ;
   inherit (inputs) nixpkgs;
   inherit (nixpkgs) lib;
   inherit (lib)
+    attrsToList
     composeManyExtensions
     evalModules
     filter
@@ -29,8 +31,9 @@ let
     mkOption
     mkOptionType
     nameValuePair
+    partition
+    pathIsRegularFile
     pipe
-    removeSuffix
     setDefaultModuleLocation
     setFunctionArgs
     showFiles
@@ -38,7 +41,6 @@ let
     singleton
     toFunction
     ;
-  inherit (lib.modules) importApply;
   inherit (lib.types)
     coercedTo
     defaultFunctor
@@ -308,6 +310,21 @@ let
     else
       path;
 
+  readNixDir =
+    src:
+    pipe src [
+      readDir
+      attrsToList
+      (partition ({ name, value }: value == "regular" && hasSuffix ".nix" name))
+      (x: {
+        inherit src;
+        filePairs = x.right;
+        dirPairs = filter (
+          { name, value }: value == "directory" && pathIsRegularFile (src + /${name}/default.nix)
+        ) x.wrong;
+      })
+    ];
+
   selectAttr = attr: mapAttrs (_: v: v.${attr} or { });
 
   # Add `prefix` to keys of an attrset
@@ -319,6 +336,7 @@ let
       mkCheck
       mkModule
       mkOutputs
+      readNixDir
       selectAttr
       types
       withPrefix
