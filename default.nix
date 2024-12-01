@@ -265,9 +265,9 @@ let
   mkCheck =
     name: pkgs: src: cmd:
     pkgs.runCommand "check-${name}" { } ''
-      cp --no-preserve=mode -r ${src} src
-      cd src
+      pushd "${src}"
       ${cmd}
+      popd
       touch $out
     '';
 
