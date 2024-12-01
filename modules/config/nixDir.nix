@@ -15,7 +15,6 @@ let
     filter
     foldl'
     isPath
-    listToAttrs
     mapAttrs
     readDir
     ;
@@ -104,21 +103,11 @@ let
   importNames = names: findFirst (x: x.success) { success = false; } (map importName names);
 
   mkModuleLoader = attr: {
-    ${config.nixDir.mkLoaderKey attr} = config.mkDirLoader {
-      loadValue =
-        {
-          filePairs,
-          dirPairs,
-          src,
-        }:
-        pipe filePairs [
-          (map (
-            x: nameValuePair (removeSuffix ".nix" x.name) (conflake.mkModule (src + /${x.name}) moduleArgs)
-          ))
-          (x: x ++ (map (x: x // { value = conflake.mkModule (src + /${x.name}) moduleArgs; }) dirPairs))
-          listToAttrs
-        ];
-    };
+    ${config.nixDir.mkLoaderKey attr}.load =
+      { src, ... }:
+      {
+        ${attr} = (conflake.readNixDir src).toAttrs (x: conflake.mkModule x moduleArgs);
+      };
   };
 in
 {
@@ -170,6 +159,7 @@ in
         "homeModules"
         "nixDir"
         "nixosModules"
+        "packages"
       ])
       (
         x:

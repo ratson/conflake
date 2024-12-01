@@ -20,12 +20,10 @@ let
     attrsToList
     concatMap
     filterAttrs
-    last
     mkEnableOption
     mkIf
     mkMerge
     mkOption
-    path
     pathIsDirectory
     pipe
     setAttrByPath
@@ -94,25 +92,6 @@ let
       ))
       mkMerge
     ];
-
-  mkDirLoader =
-    {
-      loadName ?
-        p:
-        pipe p [
-          (path.removePrefix src)
-          subpath.components
-          last
-        ],
-      loadValue,
-    }:
-    {
-      load =
-        { src, ... }:
-        {
-          ${loadName src} = loadValue (conflake.readNixDir src);
-        };
-    };
 in
 {
   options = {
@@ -131,13 +110,6 @@ in
       internal = true;
       type = lazyAttrsOf raw;
       default = { };
-    };
-
-    mkDirLoader = mkOption {
-      internal = true;
-      readOnly = true;
-      type = functionTo raw;
-      default = mkDirLoader;
     };
   };
 

@@ -131,5 +131,15 @@ in
 
       devShell.inputsFrom = pkgs: optionals ((getPkgDefs pkgs) ? default) [ pkgs.default ];
     })
+    {
+      loaders.${config.nixDir.mkLoaderKey "packages"}.load =
+        { src, ... }:
+        let
+          inherit (conflake.readNixDir src) toAttrs;
+        in
+        {
+          packages = genSystems (pkgs: toAttrs (src: pkgs.callPackage src moduleArgs));
+        };
+    }
   ];
 }

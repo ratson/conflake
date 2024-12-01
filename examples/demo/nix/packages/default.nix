@@ -1,4 +1,4 @@
-{ stdenv }:
+{ stdenv, ... }:
 
 stdenv.mkDerivation {
   pname = "dummy-package";

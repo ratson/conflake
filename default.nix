@@ -9,6 +9,7 @@ let
     isAttrs
     isPath
     length
+    listToAttrs
     mapAttrs
     readDir
     ;
@@ -34,6 +35,7 @@ let
     partition
     pathIsRegularFile
     pipe
+    removeSuffix
     setDefaultModuleLocation
     setFunctionArgs
     showFiles
@@ -317,11 +319,22 @@ let
       attrsToList
       (partition ({ name, value }: value == "regular" && hasSuffix ".nix" name))
       (x: {
-        inherit src;
         filePairs = x.right;
         dirPairs = filter (
           { name, value }: value == "directory" && pathIsRegularFile (src + /${name}/default.nix)
         ) x.wrong;
+      })
+      (args: {
+        inherit src;
+        inherit (args) dirPairs filePairs;
+
+        toAttrs =
+          f:
+          pipe args.filePairs [
+            (map (x: nameValuePair (removeSuffix ".nix" x.name) (f (src + /${x.name}))))
+            (x: x ++ (map (x: x // { value = f (src + /${x.name}); }) args.dirPairs))
+            listToAttrs
+          ];
       })
     ];
 
