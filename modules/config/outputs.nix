@@ -67,7 +67,7 @@ in
   };
 
   config.finalOutputs = mkMerge [
-    config.loadedOutputs
+    (filterAttrs (k: _: !(elem k [ "packages" ])) config.loadedOutputs)
     config.outputs
   ];
 }

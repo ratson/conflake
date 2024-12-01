@@ -1081,6 +1081,8 @@ runTests {
     in
     test (extended3 ./empty { }) (f: f.test && f.test2 && f.test3);
 
+  demo-example = test (conflake ../examples/demo { }) (f: f.overlays ? default);
+
   nixos-example = test (conflake ../examples/nixos { }) (
     f:
     f.nixosConfigurations ? vm.config.system.build.toplevel

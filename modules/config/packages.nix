@@ -134,12 +134,11 @@ in
     {
       loaders.${config.nixDir.mkLoaderKey "packages"}.load =
         { src, ... }:
-        let
-          inherit (conflake.readNixDir src) toAttrs;
-        in
         {
-          packages = genSystems (pkgs: toAttrs (src: pkgs.callPackage src moduleArgs));
+          packages = (conflake.readNixDir src).toAttrs import;
         };
+
+      packages = mkIf (config ? loadedOutputs.packages) config.loadedOutputs.packages;
     }
   ];
 }
