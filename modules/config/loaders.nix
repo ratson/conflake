@@ -11,18 +11,24 @@ let
     attrValues
     filter
     hasAttr
+    head
     mapAttrs
     readDir
+    tail
     ;
   inherit (lib)
+    attrsToList
+    concatMap
     filterAttrs
-    mkOption
-    mkIf
     mkEnableOption
+    mkIf
     mkMerge
+    mkOption
     pathIsDirectory
     pipe
+    setAttrByPath
     ;
+  inherit (lib.path) subpath;
   inherit (lib.types)
     bool
     functionTo
@@ -31,7 +37,7 @@ let
     submodule
     ;
 
-  cfg = config.loaders;
+  cfg = config.finalLoaders;
 
   loader = submodule (
     { name, ... }:
@@ -94,12 +100,37 @@ in
       default = { };
     };
 
+    finalLoaders = mkOption {
+      internal = true;
+      readOnly = true;
+      type = lazyAttrsOf loader;
+    };
+
     loadedOutputs = mkOption {
       internal = true;
       type = lazyAttrsOf raw;
       default = { };
     };
   };
+
+  config.finalLoaders = pipe config.loaders [
+    attrsToList
+    (map (
+      { name, value }:
+      let
+        parts = subpath.components name;
+        loader = pipe parts [
+          tail
+          (concatMap (x: [ "loaders" ] ++ [ x ]))
+          (x: setAttrByPath x value)
+        ];
+      in
+      {
+        "${head parts}" = loader;
+      }
+    ))
+    mkMerge
+  ];
 
   config.loadedOutputs = mkIf (cfg != { } && pathIsDirectory src) (resolve src cfg);
 }

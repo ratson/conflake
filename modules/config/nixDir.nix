@@ -17,10 +17,8 @@ let
     isPath
     mapAttrs
     readDir
-    tail
     ;
   inherit (lib)
-    concatMap
     filterAttrs
     findFirst
     flip
@@ -40,7 +38,6 @@ let
     pipe
     remove
     removeSuffix
-    setAttrByPath
     subtractLists
     ;
   inherit (lib.types)
@@ -109,28 +106,22 @@ let
 
   mkModuleLoader =
     attr:
-    pipe config.nixDir.src [
-      (path.removePrefix src)
-      path.subpath.components
-      (x: x ++ [ attr ])
-      (concatMap (x: [ "loaders" ] ++ [ x ]))
-      tail
-      (
-        x:
-        setAttrByPath (x ++ [ "load" ]) (
-          { src, ... }:
-          {
-            ${attr} = pipe src [
-              readDir
-              (filterAttrs (name: type: type == "regular" && hasSuffix ".nix" name))
-              (mapAttrs' (
-                k: _: nameValuePair (removeSuffix ".nix" k) (conflake.mkModule (src + /${k}) moduleArgs)
-              ))
-            ];
-          }
-        )
-      )
-    ];
+    let
+      dir = config.nixDir.src + /${attr};
+    in
+    {
+      "${path.removePrefix src dir}".load =
+        { src, ... }:
+        {
+          ${attr} = pipe src [
+            readDir
+            (filterAttrs (name: type: type == "regular" && hasSuffix ".nix" name))
+            (mapAttrs' (
+              k: _: nameValuePair (removeSuffix ".nix" k) (conflake.mkModule (src + /${k}) moduleArgs)
+            ))
+          ];
+        };
+    };
 in
 {
   options = {
