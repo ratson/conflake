@@ -20,11 +20,16 @@ let
     attrsToList
     concatMap
     filterAttrs
+    hasSuffix
+    last
     mkEnableOption
     mkIf
     mkMerge
     mkOption
+    partition
+    path
     pathIsDirectory
+    pathIsRegularFile
     pipe
     setAttrByPath
     ;
@@ -92,6 +97,39 @@ let
       ))
       mkMerge
     ];
+
+  mkDirLoader =
+    {
+      loadName ?
+        p:
+        pipe p [
+          (path.removePrefix src)
+          subpath.components
+          last
+        ],
+      loadValue,
+    }:
+    {
+      load =
+        { src, ... }:
+        {
+          ${loadName src} = pipe src [
+            readDir
+            attrsToList
+            (partition ({ name, value }: value == "regular" && hasSuffix ".nix" name))
+            (
+              x:
+              loadValue {
+                inherit src;
+                filePairs = x.right;
+                dirPairs = filter (
+                  { name, value }: value == "directory" && pathIsRegularFile (src + /${name}/default.nix)
+                ) x.wrong;
+              }
+            )
+          ];
+        };
+    };
 in
 {
   options = {
@@ -110,6 +148,13 @@ in
       internal = true;
       type = lazyAttrsOf raw;
       default = { };
+    };
+
+    mkDirLoader = mkOption {
+      internal = true;
+      readOnly = true;
+      type = functionTo raw;
+      default = mkDirLoader;
     };
   };
 

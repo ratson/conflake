@@ -1085,6 +1085,7 @@ runTests {
     f:
     f.nixosConfigurations ? vm.config.system.build.toplevel
     && f.nixosModules ? default
+    && f.nixosModules ? hallo
     && f.homeModules ? default
   );
 

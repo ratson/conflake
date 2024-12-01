@@ -15,11 +15,11 @@ let
     filter
     foldl'
     isPath
+    listToAttrs
     mapAttrs
     readDir
     ;
   inherit (lib)
-    filterAttrs
     findFirst
     flip
     genAttrs
@@ -27,7 +27,6 @@ let
     hasAttrByPath
     hasPrefix
     hasSuffix
-    mapAttrs'
     mkEnableOption
     mkIf
     mkOption
@@ -104,24 +103,23 @@ let
 
   importNames = names: findFirst (x: x.success) { success = false; } (map importName names);
 
-  mkModuleLoader =
-    attr:
-    let
-      dir = config.nixDir.src + /${attr};
-    in
-    {
-      "${path.removePrefix src dir}".load =
-        { src, ... }:
+  mkModuleLoader = attr: {
+    "${path.removePrefix src (config.nixDir.src + /${attr})}" = config.mkDirLoader {
+      loadValue =
         {
-          ${attr} = pipe src [
-            readDir
-            (filterAttrs (name: type: type == "regular" && hasSuffix ".nix" name))
-            (mapAttrs' (
-              k: _: nameValuePair (removeSuffix ".nix" k) (conflake.mkModule (src + /${k}) moduleArgs)
-            ))
-          ];
-        };
+          filePairs,
+          dirPairs,
+          src,
+        }:
+        pipe filePairs [
+          (map (
+            x: nameValuePair (removeSuffix ".nix" x.name) (conflake.mkModule (src + /${x.name}) moduleArgs)
+          ))
+          (x: x ++ (map (x: x // { value = conflake.mkModule (src + /${x.name}) moduleArgs; }) dirPairs))
+          listToAttrs
+        ];
     };
+  };
 in
 {
   options = {
