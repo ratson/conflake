@@ -10,6 +10,7 @@
 
 let
   inherit (builtins)
+    functionArgs
     hasAttr
     mapAttrs
     parseDrvName
@@ -17,7 +18,6 @@ let
     ;
   inherit (lib)
     findFirst
-    functionArgs
     mapAttrs'
     mkIf
     mkMerge
@@ -84,7 +84,6 @@ in
     (mkIf (config.package != null) {
       packages.default = config.package;
     })
-
     (mkIf (config.packages != null) {
       packageOverlay =
         final: prev:

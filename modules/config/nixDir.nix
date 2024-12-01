@@ -104,7 +104,7 @@ let
   importNames = names: findFirst (x: x.success) { success = false; } (map importName names);
 
   mkModuleLoader = attr: {
-    "${path.removePrefix src (config.nixDir.src + /${attr})}" = config.mkDirLoader {
+    ${config.nixDir.mkLoaderKey attr} = config.mkDirLoader {
       loadValue =
         {
           filePairs,
@@ -142,6 +142,12 @@ in
             readOnly = true;
             type = lazyAttrsOf raw;
             default = optionalAttrs (cfg.enable && pathIsDirectory cfg.src) (loadDir cfg.src);
+          };
+          mkLoaderKey = mkOption {
+            internal = true;
+            readOnly = true;
+            type = functionTo raw;
+            default = s: path.removePrefix src (config.nixDir.src + /${s});
           };
           mkModuleLoader = mkOption {
             internal = true;

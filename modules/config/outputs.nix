@@ -10,7 +10,12 @@
 let
   inherit (builtins) elem;
   inherit (lib) filterAttrs mkMerge mkOption;
-  inherit (lib.types) lazyAttrsOf raw submodule;
+  inherit (lib.types)
+    lazyAttrsOf
+    package
+    raw
+    submodule
+    ;
   inherit (conflake.types) optCallWith outputs;
 in
 {
@@ -34,7 +39,12 @@ in
             ;
 
           checks = mkOption {
-            type = lazyAttrsOf (lazyAttrsOf lib.types.package);
+            type = lazyAttrsOf (lazyAttrsOf package);
+            default = { };
+          };
+
+          packages = mkOption {
+            type = lazyAttrsOf (lazyAttrsOf package);
             default = { };
           };
         };
@@ -47,6 +57,7 @@ in
             "darwinModules"
             "homeModules"
             "nixosModules"
+            "packages"
             "templates"
           ]
           && v == { }
