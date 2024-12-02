@@ -1092,7 +1092,10 @@ runTests {
   );
 
   packages-example = test (conflake ../examples/packages { }) (
-    f: f.packages.x86_64-linux ? greet && f.devShells.x86_64-linux ? default
+    f:
+    f.legacyPackages.x86_64-linux ? emacsPackages.greet
+    && f.packages.x86_64-linux ? greet
+    && f.devShells.x86_64-linux ? default
   );
 
   self-outputs = test self (

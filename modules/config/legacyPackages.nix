@@ -3,21 +3,74 @@
   lib,
   conflake,
   genSystems,
+  moduleArgs,
   ...
 }:
 
 let
-  inherit (lib) mkIf mkOption;
-  inherit (lib.types) functionTo pkgs;
+  inherit (builtins)
+    isAttrs
+    isPath
+    mapAttrs
+    ;
+  inherit (lib)
+    mkIf
+    mkMerge
+    mkOption
+    removeSuffix
+    types
+    ;
+  inherit (lib.types) functionTo;
   inherit (conflake.types) nullable;
 in
 {
   options.legacyPackages = mkOption {
-    type = nullable (functionTo pkgs);
+    type = nullable (functionTo types.pkgs);
     default = null;
   };
 
-  config.outputs = mkIf (config.legacyPackages != null) {
-    legacyPackages = genSystems config.legacyPackages;
-  };
+  config = mkMerge [
+    (mkIf (config.legacyPackages != null) {
+      outputs.legacyPackages = genSystems config.legacyPackages;
+    })
+    {
+      loaders.${config.nixDir.mkLoaderKey "legacyPackages"}.load =
+        { src, ... }:
+        let
+          entries = config.loadDir' (x: x // { name = removeSuffix ".nix" x.name; }) src;
+          transform =
+            pkgs:
+            mapAttrs (
+              _: v:
+              if isAttrs v then
+                if v ? default && isPath v.default then pkgs.callPackage v.default moduleArgs else transform pkgs v
+              else
+                pkgs.callPackage v moduleArgs
+            );
+          overlay = _: prev: {
+            emacsPackagesFor =
+              emacs:
+              (prev.emacsPackagesFor emacs).overrideScope (
+                final: _:
+                mapAttrs (
+                  _: v: final.callPackage v { }
+                ) config.loadedOutputs.legacyPackages.${prev.system}.emacsPackages
+              );
+
+            emacsPackages =
+              prev.emacsPackages // config.loadedOutputs.legacyPackages.${prev.system}.emacsPackages;
+          };
+        in
+        {
+          inherit overlay;
+
+          withOverlays = overlay;
+
+          legacyPackages = genSystems (pkgs: transform pkgs entries);
+        };
+    }
+    (mkIf (config.loadedOutputs ? legacyPackages) {
+      outputs.legacyPackages = config.loadedOutputs.legacyPackages;
+    })
+  ];
 }

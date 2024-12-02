@@ -28,11 +28,13 @@ in
     (mkIf (config.overlay != null) {
       overlays.default = config.overlay;
     })
-
     (mkIf (config.overlays != { }) {
       outputs = {
         inherit (config) overlays;
       };
+    })
+    (mkIf (config.loadedOutputs.overlay != null) {
+      inherit (config.loadedOutputs) overlay;
     })
   ];
 }

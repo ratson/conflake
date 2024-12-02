@@ -11,6 +11,7 @@ let
   inherit (builtins)
     attrValues
     filter
+    foldl'
     hasAttr
     head
     mapAttrs
@@ -20,17 +21,23 @@ let
   inherit (lib)
     attrsToList
     concatMap
+    flip
     filterAttrs
+    hasPrefix
+    hasSuffix
     mkEnableOption
     mkIf
     mkMerge
     mkOption
+    nameValuePair
     pathIsDirectory
     pipe
+    remove
     setAttrByPath
     ;
   inherit (lib.path) subpath;
   inherit (lib.types)
+    attrs
     bool
     functionTo
     lazyAttrsOf
@@ -62,6 +69,33 @@ let
       };
     }
   );
+
+  loadDir' =
+    f: dir:
+    let
+      toEntry =
+        name: type:
+        let
+          path = dir + /${name};
+        in
+        if hasPrefix "." name then
+          null
+        else if type == "directory" then
+          nameValuePair name (loadDir' f path)
+        else if type == "regular" && hasSuffix ".nix" name then
+          f (nameValuePair name path)
+        else
+          null;
+    in
+    pipe dir [
+      readDir
+      (mapAttrs toEntry)
+      attrValues
+      (remove null)
+      (flip foldl' { } (acc: { name, value }: acc // { ${name} = value; }))
+    ];
+
+  loadDir = loadDir' lib.id;
 
   resolve =
     src: loaders:
@@ -107,12 +141,25 @@ in
       type = lazyAttrsOf loader;
     };
 
+    loadDir = mkOption {
+      internal = true;
+      readOnly = true;
+      type = functionTo attrs;
+      default = loadDir;
+    };
+    loadDir' = mkOption {
+      internal = true;
+      readOnly = true;
+      type = functionTo (functionTo attrs);
+      default = loadDir';
+    };
+
     loadedOutputs = mkOption {
       internal = true;
       type = submodule {
         freeformType = lazyAttrsOf raw;
         options = {
-          inherit (options) outputs;
+          inherit (options) overlay outputs withOverlays;
         };
       };
       default = { };

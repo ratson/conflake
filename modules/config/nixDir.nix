@@ -11,30 +11,22 @@
 let
   inherit (builtins)
     attrNames
-    attrValues
     filter
-    foldl'
     isPath
-    mapAttrs
-    readDir
     ;
   inherit (lib)
     findFirst
-    flip
     genAttrs
     getAttrFromPath
     hasAttrByPath
-    hasPrefix
     hasSuffix
     mkEnableOption
     mkIf
     mkOption
-    nameValuePair
     optionalAttrs
     path
     pathIsDirectory
     pipe
-    remove
     removeSuffix
     subtractLists
     ;
@@ -49,31 +41,6 @@ let
     ;
 
   cfg = config.nixDir;
-
-  loadDir =
-    dir:
-    let
-      toEntry =
-        name: type:
-        let
-          path = dir + /${name};
-        in
-        if hasPrefix "." name then
-          null
-        else if type == "directory" then
-          nameValuePair name (loadDir path)
-        else if type == "regular" && hasSuffix ".nix" name then
-          nameValuePair name path
-        else
-          null;
-    in
-    pipe dir [
-      readDir
-      (mapAttrs toEntry)
-      attrValues
-      (remove null)
-      (flip foldl' { } (acc: { name, value }: acc // { ${name} = value; }))
-    ];
 
   isFileEntry = attrPath: set: hasAttrByPath attrPath set && isPath (getAttrFromPath attrPath set);
 
@@ -130,7 +97,7 @@ in
             internal = true;
             readOnly = true;
             type = lazyAttrsOf raw;
-            default = optionalAttrs (cfg.enable && pathIsDirectory cfg.src) (loadDir cfg.src);
+            default = optionalAttrs (cfg.enable && pathIsDirectory cfg.src) (config.loadDir cfg.src);
           };
           mkLoaderKey = mkOption {
             internal = true;
@@ -157,6 +124,7 @@ in
         "_module"
         "darwinModules"
         "homeModules"
+        "legacyPackages"
         "nixDir"
         "nixosModules"
         "packages"
