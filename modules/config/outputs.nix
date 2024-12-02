@@ -8,7 +8,7 @@
 }:
 
 let
-  inherit (builtins) elem;
+  inherit (builtins) attrNames elem;
   inherit (lib) filterAttrs mkMerge mkOption;
   inherit (lib.types)
     lazyAttrsOf
@@ -17,6 +17,30 @@ let
     submodule
     ;
   inherit (conflake.types) optCallWith outputs;
+
+  outputsOptions = {
+    inherit (options)
+      darwinModules
+      homeModules
+      nixosModules
+      templates
+      ;
+
+    checks = mkOption {
+      type = lazyAttrsOf (lazyAttrsOf package);
+      default = { };
+    };
+
+    outputs = mkOption {
+      type = lazyAttrsOf raw;
+      default = { };
+    };
+
+    packages = mkOption {
+      type = lazyAttrsOf (lazyAttrsOf package);
+      default = { };
+    };
+  };
 in
 {
   options = {
@@ -30,44 +54,14 @@ in
       readOnly = true;
       type = submodule {
         freeformType = lazyAttrsOf raw;
-        options = {
-          inherit (options)
-            darwinModules
-            homeModules
-            nixosModules
-            templates
-            ;
-
-          checks = mkOption {
-            type = lazyAttrsOf (lazyAttrsOf package);
-            default = { };
-          };
-
-          packages = mkOption {
-            type = lazyAttrsOf (lazyAttrsOf package);
-            default = { };
-          };
-        };
+        options = outputsOptions;
       };
-      apply = filterAttrs (
-        k: v:
-        !(
-          elem k [
-            "checks"
-            "darwinModules"
-            "homeModules"
-            "nixosModules"
-            "packages"
-            "templates"
-          ]
-          && v == { }
-        )
-      );
+      apply = filterAttrs (k: v: !(elem k (attrNames outputsOptions) && v == { }));
     };
   };
 
   config.finalOutputs = mkMerge [
-    (filterAttrs (k: _: !(elem k [ "packages" ])) config.loadedOutputs)
+    config.loadedOutputs.outputs
     config.outputs
   ];
 }

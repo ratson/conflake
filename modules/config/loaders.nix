@@ -1,5 +1,6 @@
 {
   config,
+  options,
   lib,
   conflake,
   src,
@@ -108,29 +109,36 @@ in
 
     loadedOutputs = mkOption {
       internal = true;
-      type = lazyAttrsOf raw;
+      type = submodule {
+        freeformType = lazyAttrsOf raw;
+        options = {
+          inherit (options) outputs;
+        };
+      };
       default = { };
     };
   };
 
-  config.finalLoaders = pipe config.loaders [
-    attrsToList
-    (map (
-      { name, value }:
-      let
-        parts = subpath.components name;
-        loader = pipe parts [
-          tail
-          (concatMap (x: [ "loaders" ] ++ [ x ]))
-          (x: setAttrByPath x value)
-        ];
-      in
-      {
-        "${head parts}" = loader;
-      }
-    ))
-    mkMerge
-  ];
+  config = {
+    finalLoaders = pipe config.loaders [
+      attrsToList
+      (map (
+        { name, value }:
+        let
+          parts = subpath.components name;
+          loader = pipe parts [
+            tail
+            (concatMap (x: [ "loaders" ] ++ [ x ]))
+            (x: setAttrByPath x value)
+          ];
+        in
+        {
+          "${head parts}" = loader;
+        }
+      ))
+      mkMerge
+    ];
 
-  config.loadedOutputs = mkIf (cfg != { } && pathIsDirectory src) (resolve src cfg);
+    loadedOutputs = mkIf (cfg != { } && pathIsDirectory src) (resolve src cfg);
+  };
 }

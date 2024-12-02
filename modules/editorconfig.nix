@@ -31,7 +31,7 @@ in
       load =
         { entries, ... }:
         {
-          checks = genSystems (
+          outputs.checks = genSystems (
             pkgs:
             mkIf (elem pkgs.stdenv.hostPlatform.system platforms) {
               editorconfig = mkCheck "editorconfig" pkgs src (

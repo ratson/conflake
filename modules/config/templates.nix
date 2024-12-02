@@ -58,6 +58,8 @@ in
             ))
           ];
         };
+
+      templates = mkIf (config ? loadedOutputs.templates) config.loadedOutputs.templates;
     }
   ];
 }

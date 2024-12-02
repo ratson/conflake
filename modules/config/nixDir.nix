@@ -106,7 +106,7 @@ let
     ${config.nixDir.mkLoaderKey attr}.load =
       { src, ... }:
       {
-        ${attr} = (conflake.readNixDir src).toAttrs (x: conflake.mkModule x moduleArgs);
+        outputs.${attr} = (conflake.readNixDir src).toAttrs (x: conflake.mkModule x moduleArgs);
       };
   };
 in
