@@ -10,6 +10,7 @@
 
 let
   inherit (builtins)
+    functionArgs
     hasAttr
     mapAttrs
     parseDrvName
@@ -17,7 +18,6 @@ let
     ;
   inherit (lib)
     findFirst
-    functionArgs
     mapAttrs'
     mkIf
     mkMerge
@@ -84,7 +84,6 @@ in
     (mkIf (config.package != null) {
       packages.default = config.package;
     })
-
     (mkIf (config.packages != null) {
       packageOverlay =
         final: prev:
@@ -132,5 +131,14 @@ in
 
       devShell.inputsFrom = pkgs: optionals ((getPkgDefs pkgs) ? default) [ pkgs.default ];
     })
+    {
+      loaders.${config.nixDir.mkLoaderKey "packages"}.load =
+        { src, ... }:
+        {
+          packages = (conflake.readNixDir src).toAttrs import;
+        };
+
+      packages = mkIf (config ? loadedOutputs.packages) config.loadedOutputs.packages;
+    }
   ];
 }

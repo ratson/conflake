@@ -25,18 +25,16 @@ in
   };
 
   config = mkMerge [
-    (mkIf (config.nixDir.entries ? darwinModules) {
-      darwinModules = conflake.loadModules config.nixDir.entries.darwinModules moduleArgs;
-    })
-
     (mkIf (config.darwinModule != null) {
       darwinModules.default = config.darwinModule;
     })
-
     (mkIf (config.darwinModules != { }) {
       outputs = {
         inherit (config) darwinModules;
       };
     })
+    {
+      loaders = config.nixDir.mkModuleLoader "darwinModules";
+    }
   ];
 }

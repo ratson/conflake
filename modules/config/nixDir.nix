@@ -4,6 +4,7 @@
   src,
   lib,
   conflake,
+  moduleArgs,
   ...
 }:
 
@@ -29,11 +30,12 @@ let
     mkIf
     mkOption
     nameValuePair
+    optionalAttrs
+    path
+    pathIsDirectory
     pipe
     remove
     removeSuffix
-    optionalAttrs
-    pathIsDirectory
     subtractLists
     ;
   inherit (lib.types)
@@ -43,8 +45,8 @@ let
     raw
     str
     submodule
+    functionTo
     ;
-  inherit (conflake.types) path;
 
   cfg = config.nixDir;
 
@@ -99,6 +101,14 @@ let
       { success = false; };
 
   importNames = names: findFirst (x: x.success) { success = false; } (map importName names);
+
+  mkModuleLoader = attr: {
+    ${config.nixDir.mkLoaderKey attr}.load =
+      { src, ... }:
+      {
+        outputs.${attr} = (conflake.readNixDir src).toAttrs (x: conflake.mkModule x moduleArgs);
+      };
+  };
 in
 {
   options = {
@@ -109,7 +119,7 @@ in
             default = true;
           };
           src = mkOption {
-            type = path;
+            type = conflake.types.path;
             default = src + /nix;
           };
           aliases = mkOption {
@@ -117,10 +127,22 @@ in
             default = { };
           };
           entries = mkOption {
-            type = lazyAttrsOf raw;
             internal = true;
             readOnly = true;
+            type = lazyAttrsOf raw;
             default = optionalAttrs (cfg.enable && pathIsDirectory cfg.src) (loadDir cfg.src);
+          };
+          mkLoaderKey = mkOption {
+            internal = true;
+            readOnly = true;
+            type = functionTo raw;
+            default = s: path.removePrefix src (config.nixDir.src + /${s});
+          };
+          mkModuleLoader = mkOption {
+            internal = true;
+            readOnly = true;
+            type = functionTo raw;
+            default = mkModuleLoader;
           };
         };
       };
@@ -137,6 +159,7 @@ in
         "homeModules"
         "nixDir"
         "nixosModules"
+        "packages"
       ])
       (
         x:

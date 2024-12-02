@@ -17,6 +17,7 @@ let
     mkOptionType
     ;
   inherit (lib.types) lazyAttrsOf optionDescriptionPhrase;
+  inherit (conflake) mkCheck;
   inherit (conflake.types)
     coercedTo'
     drv
@@ -24,15 +25,6 @@ let
     optFunctionTo
     stringLike
     ;
-
-  mkCheck =
-    name: pkgs: cmd:
-    pkgs.runCommand "check-${name}" { } ''
-      cp --no-preserve=mode -r ${src} src
-      cd src
-      ${cmd}
-      touch $out
-    '';
 
   checkType = mkOptionType {
     name = "checkType";
@@ -48,7 +40,7 @@ let
     merge =
       loc: defs: pkgs:
       let
-        targetType = coercedTo' stringLike (mkCheck (last loc) pkgs) drv;
+        targetType = coercedTo' stringLike (mkCheck (last loc) pkgs src) drv;
       in
       (mergeDefinitions loc targetType (
         map (fn: {

@@ -9,11 +9,14 @@ let
     isAttrs
     isPath
     length
+    listToAttrs
     mapAttrs
+    readDir
     ;
   inherit (inputs) nixpkgs;
   inherit (nixpkgs) lib;
   inherit (lib)
+    attrsToList
     composeManyExtensions
     evalModules
     filter
@@ -26,8 +29,11 @@ let
     isStringLike
     mapAttrs'
     mkDefault
+    mkOption
     mkOptionType
     nameValuePair
+    partition
+    pathIsRegularFile
     pipe
     removeSuffix
     setDefaultModuleLocation
@@ -37,14 +43,17 @@ let
     singleton
     toFunction
     ;
-  inherit (lib.modules) importApply;
   inherit (lib.types)
     coercedTo
     defaultFunctor
     functionTo
     lazyAttrsOf
+    lines
     listOf
+    nullOr
     optionDescriptionPhrase
+    str
+    submodule
     ;
   inherit (lib.options) mergeEqualOption mergeOneOption;
 
@@ -70,7 +79,7 @@ let
 
           modulesPath = ./modules;
         };
-      }).config.outputs;
+      }).config.finalOutputs;
 
     # Attributes to allow module flakes to extend mkOutputs
     extraModules = [ ];
@@ -89,14 +98,9 @@ let
         mkOutputs;
   };
 
-  conflake = {
-    inherit
-      loadModules
-      mkOutputs
-      selectAttr
-      types
-      withPrefix
-      ;
+  matchers = {
+    dir = { type, ... }: type == "directory";
+    file = { type, ... }: type == "regular";
   };
 
   types = rec {
@@ -236,7 +240,36 @@ let
       check = isStringLike;
       merge = mergeEqualOption;
     };
+
+    template = submodule (
+      { name, ... }:
+      {
+        options = {
+          path = mkOption {
+            type = nullOr path;
+            default = null;
+          };
+          description = mkOption {
+            type = str;
+            default = name;
+          };
+          welcomeText = mkOption {
+            type = nullOr lines;
+            default = null;
+          };
+        };
+      }
+    );
   };
+
+  mkCheck =
+    name: pkgs: src: cmd:
+    pkgs.runCommand "check-${name}" { } ''
+      pushd "${src}"
+      ${cmd}
+      popd
+      touch $out
+    '';
 
   mkModule =
     path:
@@ -279,19 +312,48 @@ let
     else
       path;
 
-  loadModules =
-    entries: args:
-    mapAttrs' (
-      k: v:
-      if hasSuffix ".fn.nix" k then
-        nameValuePair (removeSuffix ".fn.nix" k) (importApply v args)
-      else
-        nameValuePair (removeSuffix ".nix" k) (mkModule v args)
-    ) entries;
+  readNixDir =
+    src:
+    pipe src [
+      readDir
+      attrsToList
+      (partition ({ name, value }: value == "regular" && hasSuffix ".nix" name))
+      (x: {
+        filePairs = x.right;
+        dirPairs = filter (
+          { name, value }: value == "directory" && pathIsRegularFile (src + /${name}/default.nix)
+        ) x.wrong;
+      })
+      (args: {
+        inherit src;
+        inherit (args) dirPairs filePairs;
+
+        toAttrs =
+          f:
+          pipe args.filePairs [
+            (map (x: nameValuePair (removeSuffix ".nix" x.name) (f (src + /${x.name}))))
+            (x: x ++ (map (x: x // { value = f (src + /${x.name}); }) args.dirPairs))
+            listToAttrs
+          ];
+      })
+    ];
 
   selectAttr = attr: mapAttrs (_: v: v.${attr} or { });
 
   # Add `prefix` to keys of an attrset
   withPrefix = prefix: mapAttrs' (k: v: nameValuePair "${prefix}${k}" v);
+
+  conflake = {
+    inherit
+      matchers
+      mkCheck
+      mkModule
+      mkOutputs
+      readNixDir
+      selectAttr
+      types
+      withPrefix
+      ;
+  };
 in
 conflake

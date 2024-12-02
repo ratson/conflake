@@ -25,18 +25,16 @@ in
   };
 
   config = mkMerge [
-    (mkIf (config.nixDir.entries ? homeModules) {
-      homeModules = conflake.loadModules config.nixDir.entries.homeModules moduleArgs;
-    })
-
     (mkIf (config.homeModule != null) {
       homeModules.default = config.homeModule;
     })
-
     (mkIf (config.homeModules != { }) {
       outputs = {
         inherit (config) homeModules;
       };
     })
+    {
+      loaders = config.nixDir.mkModuleLoader "homeModules";
+    }
   ];
 }

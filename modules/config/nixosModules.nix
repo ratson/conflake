@@ -7,7 +7,11 @@
 }:
 
 let
-  inherit (lib) mkOption mkIf mkMerge;
+  inherit (lib)
+    mkIf
+    mkMerge
+    mkOption
+    ;
   inherit (lib.types) lazyAttrsOf deferredModule;
   inherit (conflake.types) nullable optCallWith;
 in
@@ -25,18 +29,16 @@ in
   };
 
   config = mkMerge [
-    (mkIf (config.nixDir.entries ? nixosModules) {
-      nixosModules = conflake.loadModules config.nixDir.entries.nixosModules moduleArgs;
-    })
-
     (mkIf (config.nixosModule != null) {
       nixosModules.default = config.nixosModule;
     })
-
     (mkIf (config.nixosModules != { }) {
       outputs = {
         inherit (config) nixosModules;
       };
     })
+    {
+      loaders = config.nixDir.mkModuleLoader "nixosModules";
+    }
   ];
 }

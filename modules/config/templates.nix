@@ -1,40 +1,24 @@
 {
   config,
   lib,
+  options,
   conflake,
   moduleArgs,
   ...
 }:
 
 let
-  inherit (builtins) mapAttrs;
+  inherit (builtins) mapAttrs readDir;
   inherit (lib)
     filterAttrs
-    mkOption
+    mkDefault
     mkIf
     mkMerge
-    types
+    mkOption
+    pipe
     ;
-  inherit (conflake.types) nullable optCallWith path;
-
-  template = types.submodule (
-    { name, ... }:
-    {
-      options = {
-        path = mkOption {
-          type = path;
-        };
-        description = mkOption {
-          type = types.str;
-          default = name;
-        };
-        welcomeText = mkOption {
-          type = types.nullOr types.lines;
-          default = null;
-        };
-      };
-    }
-  );
+  inherit (lib.types) lazyAttrsOf;
+  inherit (conflake.types) nullable optCallWith template;
 in
 {
   options = {
@@ -44,7 +28,7 @@ in
     };
 
     templates = mkOption {
-      type = optCallWith moduleArgs (types.lazyAttrsOf (optCallWith moduleArgs template));
+      type = optCallWith moduleArgs (lazyAttrsOf (optCallWith moduleArgs template));
       default = { };
       apply = mapAttrs (_: filterAttrs (_: v: v != null));
     };
@@ -54,11 +38,28 @@ in
     (mkIf (config.template != null) {
       templates.default = config.template;
     })
-
     (mkIf (config.templates != { }) {
       outputs = {
         inherit (config) templates;
       };
     })
+    {
+      loaders.templates.load =
+        { src, ... }:
+        {
+          templates = pipe src [
+            readDir
+            (filterAttrs (_: type: type == "directory"))
+            (mapAttrs (
+              name: _: {
+                description = mkDefault name;
+                path = mkDefault (src + /${name});
+              }
+            ))
+          ];
+        };
+
+      templates = mkIf (config ? loadedOutputs.templates) config.loadedOutputs.templates;
+    }
   ];
 }
