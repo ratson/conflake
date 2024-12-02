@@ -55,6 +55,8 @@ let
     mapAttrs (name: genPkg final prev name) pkgs;
 
   getPkgDefs = pkgs: config.packages (moduleArgs // { inherit (pkgs) system; });
+
+  packages = genSystems (pkgs: mapAttrs (k: _: pkgs.${k}) (getPkgDefs pkgs));
 in
 {
   options = {
@@ -112,9 +114,10 @@ in
                   }).default
                 )
               ];
-        in
-        (optionalAttrs (pkgDefs ? default) rec {
           default = genPkg final prev defaultPkgName pkgDefs.default;
+        in
+        (optionalAttrs (pkgDefs ? default) {
+          inherit default;
           ${defaultPkgName} = default;
         })
         // genPkgs final prev (removeAttrs pkgDefs [ "default" ]);
@@ -123,9 +126,8 @@ in
         final: prev:
         removeAttrs (config.packageOverlay (final.appendOverlays config.withOverlays) prev) [ "default" ];
 
-      outputs = rec {
-        packages = genSystems (pkgs: mapAttrs (k: _: pkgs.${k}) (getPkgDefs pkgs));
-
+      outputs = {
+        inherit packages;
         checks = mapAttrs (_: mapAttrs' (n: nameValuePair ("packages-" + n))) packages;
       };
 
