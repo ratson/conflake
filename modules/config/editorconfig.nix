@@ -13,19 +13,39 @@ let
     getExe
     mkEnableOption
     mkIf
+    mkOption
     optionalString
+    types
     ;
   inherit (conflake) mkCheck;
 
+  cfg = config.editorconfig;
+
   platforms = lib.platforms.darwin ++ lib.platforms.linux;
+
+  mkArgs =
+    entries:
+    if (cfg.checkArgs != null) then
+      cfg.checkArgs
+    else
+      # By default, high false-positive flags are disabled.
+      optionalString (
+        (entries.".ecrc" or "") != "regular"
+      ) " -disable-indent-size -disable-max-line-length";
 in
 {
-  options.conflake.editorconfig = mkEnableOption "editorconfig check" // {
-    default = true;
+  options.editorconfig = {
+    check = mkEnableOption "editorconfig check" // {
+      default = true;
+    };
+
+    checkArgs = mkOption {
+      type = types.nullOr types.str;
+      default = null;
+    };
   };
 
-  # By default, high false-positive flags are disabled.
-  config = mkIf config.conflake.editorconfig {
+  config = mkIf cfg.check {
     loaders.".editorconfig" = {
       match = conflake.matchers.file;
       load =
@@ -35,10 +55,7 @@ in
             pkgs:
             mkIf (elem pkgs.stdenv.hostPlatform.system platforms) {
               editorconfig = mkCheck "editorconfig" pkgs src (
-                "${getExe pkgs.editorconfig-checker}"
-                + optionalString (
-                  (entries.".ecrc" or "") != "regular"
-                ) " -disable-indent-size -disable-max-line-length"
+                "${getExe pkgs.editorconfig-checker}" + (mkArgs entries)
               );
             }
           );

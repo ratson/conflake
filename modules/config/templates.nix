@@ -58,8 +58,9 @@ in
             ))
           ];
         };
-
-      templates = mkIf (config ? loadedOutputs.templates) config.loadedOutputs.templates;
     }
+    (mkIf (config.loadedOutputs ? templates) {
+      inherit (config.loadedOutputs) templates;
+    })
   ];
 }
