@@ -1,5 +1,4 @@
 [
-  ./autoInputs.nix
   ./builtinFormatters.nix
   ./builtinOverlay.nix
   ./config/apps.nix
