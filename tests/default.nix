@@ -1040,7 +1040,7 @@ runTests {
   editorconfig = test (conflake ./editorconfig { }) (f: f ? checks.x86_64-linux.editorconfig);
 
   editorconfig-disabled = test (conflake ./editorconfig {
-    conflake.editorconfig = false;
+    editorconfig.check = false;
   }) (f: !f ? checks.x86_64-linux.editorconfig);
 
   modulesPath = test (conflake' {
