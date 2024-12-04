@@ -136,11 +136,12 @@ in
     })
 
     {
-      loaders.${config.nixDir.mkLoaderKey "packages"}.load =
+      loaders = config.nixDir.mkLoader "packages" (
         { src, ... }:
         {
           packages = (conflake.readNixDir src).toAttrs import;
-        };
+        }
+      );
     }
   ];
 }

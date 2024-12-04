@@ -22,6 +22,7 @@ let
     getAttrFromPath
     hasAttrByPath
     hasSuffix
+    mkDefault
     mkEnableOption
     mkOption
     nameValuePair
@@ -44,7 +45,9 @@ let
 
   isFileEntry = attrPath: set: hasAttrByPath attrPath set && isPath (getAttrFromPath attrPath set);
 
-  hasLoader = name: hasAttr (cfg.mkLoaderKey name) config.loaders;
+  mkLoaderKey = s: path.removePrefix src (cfg.src + /${s});
+
+  hasLoader = name: hasAttr (mkLoaderKey name) config.loaders;
 
   importDir =
     entries:
@@ -54,13 +57,22 @@ let
       (map (removeSuffix ".nix"))
     ]) (p: import (if isFileEntry [ "${p}.nix" ] entries then entries."${p}.nix" else entries."${p}"));
 
-  mkModuleLoader = attr: {
-    ${config.nixDir.mkLoaderKey attr}.load =
+  mkLoader = k: load: {
+    ${mkLoaderKey k} = {
+      inherit load;
+
+      enable = mkDefault cfg.enable;
+    };
+  };
+
+  mkModuleLoader =
+    attr:
+    mkLoader attr (
       { src, ... }:
       {
         outputs.${attr} = (conflake.readNixDir src).toAttrs (x: conflake.mkModule x moduleArgs);
-      };
-  };
+      }
+    );
 in
 {
   options = {
@@ -78,11 +90,11 @@ in
             type = lazyAttrsOf (listOf str);
             default = { };
           };
-          mkLoaderKey = mkOption {
+          mkLoader = mkOption {
             internal = true;
             readOnly = true;
-            type = functionTo raw;
-            default = s: path.removePrefix src (config.nixDir.src + /${s});
+            type = functionTo (functionTo (lazyAttrsOf raw));
+            default = mkLoader;
           };
           mkModuleLoader = mkOption {
             internal = true;
@@ -96,7 +108,7 @@ in
   };
 
   config = {
-    loaders."${cfg.mkLoaderKey "."}".load =
+    loaders = mkLoader "." (
       { src, ... }:
       let
         entries = config.loadDir src;
@@ -137,6 +149,7 @@ in
         (map mkPair)
         (remove null)
         listToAttrs
-      ];
+      ]
+    );
   };
 }

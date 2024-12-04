@@ -31,7 +31,7 @@ in
     })
 
     {
-      loaders.${config.nixDir.mkLoaderKey "legacyPackages"}.load =
+      loaders = config.nixDir.mkLoader "legacyPackages" (
         { src, ... }:
         let
           entries = config.loadDir' (x: x // { name = removeSuffix ".nix" x.name; }) src;
@@ -64,7 +64,8 @@ in
           withOverlays = overlay;
 
           outputs.legacyPackages = genSystems (pkgs: transform pkgs entries);
-        };
+        }
+      );
     }
   ];
 }
