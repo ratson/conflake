@@ -12,7 +12,9 @@ let
   inherit (builtins)
     attrNames
     filter
+    hasAttr
     isPath
+    listToAttrs
     ;
   inherit (lib)
     findFirst
@@ -21,17 +23,15 @@ let
     hasAttrByPath
     hasSuffix
     mkEnableOption
-    mkIf
     mkOption
-    optionalAttrs
+    nameValuePair
     path
-    pathIsDirectory
     pipe
+    remove
     removeSuffix
     subtractLists
     ;
   inherit (lib.types)
-    attrsOf
     lazyAttrsOf
     listOf
     raw
@@ -44,6 +44,8 @@ let
 
   isFileEntry = attrPath: set: hasAttrByPath attrPath set && isPath (getAttrFromPath attrPath set);
 
+  hasLoader = name: hasAttr (cfg.mkLoaderKey name) config.loaders;
+
   importDir =
     entries:
     genAttrs (pipe entries [
@@ -51,23 +53,6 @@ let
       (filter (hasSuffix ".nix"))
       (map (removeSuffix ".nix"))
     ]) (p: import (if isFileEntry [ "${p}.nix" ] entries then entries."${p}.nix" else entries."${p}"));
-
-  importName =
-    name:
-    if isFileEntry [ "${name}.nix" ] cfg.entries then
-      {
-        success = true;
-        value = import cfg.entries."${name}.nix";
-      }
-    else if cfg.entries ? ${name} then
-      {
-        success = true;
-        value = importDir cfg.entries.${name};
-      }
-    else
-      { success = false; };
-
-  importNames = names: findFirst (x: x.success) { success = false; } (map importName names);
 
   mkModuleLoader = attr: {
     ${config.nixDir.mkLoaderKey attr}.load =
@@ -90,14 +75,8 @@ in
             default = src + /nix;
           };
           aliases = mkOption {
-            type = attrsOf (listOf str);
+            type = lazyAttrsOf (listOf str);
             default = { };
-          };
-          entries = mkOption {
-            internal = true;
-            readOnly = true;
-            type = lazyAttrsOf raw;
-            default = optionalAttrs (cfg.enable && pathIsDirectory cfg.src) (config.loadDir cfg.src);
           };
           mkLoaderKey = mkOption {
             internal = true;
@@ -116,29 +95,48 @@ in
     };
   };
 
-  config = mkIf (cfg.entries != { }) (
-    pipe options [
-      attrNames
-      (filter (name: !(options.${name}.internal or false)))
-      (subtractLists [
-        "_module"
-        "darwinModules"
-        "homeModules"
-        "legacyPackages"
-        "nixDir"
-        "nixosModules"
-        "packages"
-      ])
-      (
-        x:
-        genAttrs x (
+  config = {
+    loaders."${cfg.mkLoaderKey "."}".load =
+      { src, ... }:
+      let
+        entries = config.loadDir src;
+
+        importName =
+          name:
+          if isFileEntry [ "${name}.nix" ] entries then
+            {
+              success = true;
+              value = import entries."${name}.nix";
+            }
+          else if entries ? ${name} then
+            {
+              success = true;
+              value = importDir entries.${name};
+            }
+          else
+            { success = false; };
+
+        importNames = names: findFirst (x: x.success) { success = false; } (map importName names);
+
+        mkPair =
           name:
           let
             val = importNames ([ name ] ++ cfg.aliases.${name} or [ ]);
           in
-          mkIf val.success (optionalAttrs val.success val.value)
-        )
-      )
-    ]
-  );
+          if val.success then nameValuePair name val.value else null;
+
+        invalid = name: !(options.${name}.internal or false) && !hasLoader name;
+      in
+      pipe options [
+        attrNames
+        (subtractLists [
+          "_module"
+          "nixDir"
+        ])
+        (filter invalid)
+        (map mkPair)
+        (remove null)
+        listToAttrs
+      ];
+  };
 }

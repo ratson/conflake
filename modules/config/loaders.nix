@@ -62,7 +62,7 @@ let
           default = conflake.matchers.dir;
         };
         load = mkOption {
-          type = functionTo conflake.types.outputs;
+          type = functionTo (lazyAttrsOf raw);
           default = _: { };
         };
         loaders = mkOption {
@@ -162,7 +162,7 @@ in
       type = submodule {
         freeformType = lazyAttrsOf raw;
         options = {
-          inherit (options) overlay outputs withOverlays;
+          inherit (options) outputs;
         };
       };
       default = { };
@@ -205,7 +205,7 @@ in
         "nixDir"
         "nixpkgs"
       ])
-      (x: genAttrs x (name: mkIf (config.loadedOutputs ? ${name}) config.loadedOutputs.${name}))
+      (x: genAttrs x (name: mkIf (config ? loadedOutputs.${name}) config.loadedOutputs.${name}))
     ])
   ];
 }
