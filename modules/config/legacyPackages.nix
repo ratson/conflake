@@ -8,11 +8,7 @@
 }:
 
 let
-  inherit (builtins)
-    isAttrs
-    isPath
-    mapAttrs
-    ;
+  inherit (builtins) isAttrs isPath mapAttrs;
   inherit (lib)
     mkIf
     mkMerge
@@ -33,6 +29,7 @@ in
     (mkIf (config.legacyPackages != null) {
       outputs.legacyPackages = genSystems config.legacyPackages;
     })
+
     {
       loaders.${config.nixDir.mkLoaderKey "legacyPackages"}.load =
         { src, ... }:
@@ -66,11 +63,8 @@ in
 
           withOverlays = overlay;
 
-          legacyPackages = genSystems (pkgs: transform pkgs entries);
+          outputs.legacyPackages = genSystems (pkgs: transform pkgs entries);
         };
     }
-    (mkIf (config.loadedOutputs ? legacyPackages) {
-      outputs.legacyPackages = config.loadedOutputs.legacyPackages;
-    })
   ];
 }

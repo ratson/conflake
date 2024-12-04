@@ -79,7 +79,7 @@ let
 
           modulesPath = ./modules;
         };
-      }).config.finalOutputs;
+      }).config.outputs;
 
     # Attributes to allow module flakes to extend mkOutputs
     extraModules = [ ];

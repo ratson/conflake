@@ -9,6 +9,7 @@
 
 let
   inherit (builtins)
+    attrNames
     attrValues
     filter
     foldl'
@@ -23,6 +24,7 @@ let
     concatMap
     flip
     filterAttrs
+    genAttrs
     hasPrefix
     hasSuffix
     mkEnableOption
@@ -34,6 +36,7 @@ let
     pipe
     remove
     setAttrByPath
+    subtractLists
     ;
   inherit (lib.path) subpath;
   inherit (lib.types)
@@ -166,26 +169,43 @@ in
     };
   };
 
-  config = {
-    finalLoaders = pipe config.loaders [
-      attrsToList
-      (map (
-        { name, value }:
-        let
-          parts = subpath.components name;
-          loader = pipe parts [
-            tail
-            (concatMap (x: [ "loaders" ] ++ [ x ]))
-            (x: setAttrByPath x value)
-          ];
-        in
-        {
-          "${head parts}" = loader;
-        }
-      ))
-      mkMerge
-    ];
+  config = mkMerge [
+    {
+      finalLoaders = pipe config.loaders [
+        attrsToList
+        (map (
+          { name, value }:
+          let
+            parts = subpath.components name;
+            loader = pipe parts [
+              tail
+              (concatMap (x: [ "loaders" ] ++ [ x ]))
+              (x: setAttrByPath x value)
+            ];
+          in
+          {
+            "${head parts}" = loader;
+          }
+        ))
+        mkMerge
+      ];
 
-    loadedOutputs = mkIf (cfg != { } && pathIsDirectory src) (resolve src cfg);
-  };
+      loadedOutputs = mkIf (cfg != { } && pathIsDirectory src) (resolve src cfg);
+    }
+
+    (pipe options [
+      attrNames
+      (filter (name: !(options.${name}.internal or false)))
+      (subtractLists [
+        "_module"
+        "conflake"
+        "editorconfig"
+        "loaders"
+        "moduleArgs"
+        "nixDir"
+        "nixpkgs"
+      ])
+      (x: genAttrs x (name: mkIf (config.loadedOutputs ? ${name}) config.loadedOutputs.${name}))
+    ])
+  ];
 }

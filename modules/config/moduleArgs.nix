@@ -50,9 +50,7 @@ in
   config = {
     _module.args = {
       inherit pkgsFor genSystems;
-      inherit (config) inputs;
-
-      outputs = config.finalOutputs;
+      inherit (config) inputs outputs;
 
       moduleArgs = args // config._module.args // cfg.extra;
     };
