@@ -1,7 +1,6 @@
 {
   config,
   lib,
-  options,
   conflake,
   moduleArgs,
   ...
@@ -38,11 +37,13 @@ in
     (mkIf (config.template != null) {
       templates.default = config.template;
     })
+
     (mkIf (config.templates != { }) {
       outputs = {
         inherit (config) templates;
       };
     })
+
     {
       loaders.templates.load =
         { src, ... }:
@@ -59,8 +60,5 @@ in
           ];
         };
     }
-    (mkIf (config.loadedOutputs ? templates) {
-      inherit (config.loadedOutputs) templates;
-    })
   ];
 }

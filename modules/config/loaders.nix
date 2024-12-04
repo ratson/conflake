@@ -9,6 +9,7 @@
 
 let
   inherit (builtins)
+    attrNames
     attrValues
     filter
     foldl'
@@ -23,9 +24,9 @@ let
     concatMap
     flip
     filterAttrs
+    genAttrs
     hasPrefix
     hasSuffix
-    mkEnableOption
     mkIf
     mkMerge
     mkOption
@@ -34,11 +35,11 @@ let
     pipe
     remove
     setAttrByPath
+    subtractLists
     ;
   inherit (lib.path) subpath;
   inherit (lib.types)
     attrs
-    bool
     functionTo
     lazyAttrsOf
     raw
@@ -46,29 +47,6 @@ let
     ;
 
   cfg = config.finalLoaders;
-
-  loader = submodule (
-    { name, ... }:
-    {
-      options = {
-        enable = mkEnableOption "${name} loader" // {
-          default = true;
-        };
-        match = mkOption {
-          type = functionTo bool;
-          default = conflake.matchers.dir;
-        };
-        load = mkOption {
-          type = functionTo conflake.types.outputs;
-          default = _: { };
-        };
-        loaders = mkOption {
-          type = lazyAttrsOf loader;
-          default = { };
-        };
-      };
-    }
-  );
 
   loadDir' =
     f: dir:
@@ -131,14 +109,14 @@ in
 {
   options = {
     loaders = mkOption {
-      type = lazyAttrsOf loader;
+      type = conflake.types.loaders;
       default = { };
     };
 
     finalLoaders = mkOption {
       internal = true;
       readOnly = true;
-      type = lazyAttrsOf loader;
+      type = conflake.types.loaders;
     };
 
     loadDir = mkOption {
@@ -159,33 +137,50 @@ in
       type = submodule {
         freeformType = lazyAttrsOf raw;
         options = {
-          inherit (options) overlay outputs withOverlays;
+          inherit (options) outputs;
         };
       };
       default = { };
     };
   };
 
-  config = {
-    finalLoaders = pipe config.loaders [
-      attrsToList
-      (map (
-        { name, value }:
-        let
-          parts = subpath.components name;
-          loader = pipe parts [
-            tail
-            (concatMap (x: [ "loaders" ] ++ [ x ]))
-            (x: setAttrByPath x value)
-          ];
-        in
-        {
-          "${head parts}" = loader;
-        }
-      ))
-      mkMerge
-    ];
+  config = mkMerge [
+    {
+      finalLoaders = pipe config.loaders [
+        attrsToList
+        (map (
+          { name, value }:
+          let
+            parts = subpath.components name;
+            loader = pipe parts [
+              tail
+              (concatMap (x: [ "loaders" ] ++ [ x ]))
+              (x: setAttrByPath x value)
+            ];
+          in
+          {
+            "${head parts}" = loader;
+          }
+        ))
+        mkMerge
+      ];
 
-    loadedOutputs = mkIf (cfg != { } && pathIsDirectory src) (resolve src cfg);
-  };
+      loadedOutputs = mkIf (cfg != { } && pathIsDirectory src) (resolve src cfg);
+    }
+
+    (pipe options [
+      attrNames
+      (filter (name: !(options.${name}.internal or false)))
+      (subtractLists [
+        "_module"
+        "editorconfig"
+        "loaders"
+        "moduleArgs"
+        "nixDir"
+        "nixpkgs"
+        "presets"
+      ])
+      (x: genAttrs x (name: mkIf (config ? loadedOutputs.${name}) config.loadedOutputs.${name}))
+    ])
+  ];
 }

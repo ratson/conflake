@@ -15,13 +15,14 @@ let
   inherit (lib.types) listOf oneOf str;
   inherit (conflake) selectAttr;
   inherit (conflake.types) nullable;
+
+  flakePath = src + /flake.nix;
 in
 {
   options = {
     description = mkOption {
       type = nullable str;
-      default =
-        if pathExists (src + /flake.nix) then (import (src + /flake.nix)).description or null else null;
+      default = if pathExists flakePath then (import flakePath).description or null else null;
     };
 
     license = mkOption {
@@ -37,6 +38,9 @@ in
     final: prev:
     let
       inherit (prev.stdenv.hostPlatform) system;
+
+      getLicense =
+        license: final.lib.licenses.${license} or (final.lib.meta.getLicenseFromSpdxId license);
     in
     {
       inherit
@@ -47,6 +51,7 @@ in
         outputs
         conflake
         ;
+
       inputs' = mapAttrs (_: selectAttr system) inputs;
       outputs' = selectAttr system outputs;
 
@@ -59,10 +64,6 @@ in
         }
         // optionalAttrs (config.license != null) {
           license =
-            let
-              getLicense =
-                license: final.lib.licenses.${license} or (final.lib.meta.getLicenseFromSpdxId license);
-            in
             if isList config.license then map getLicense config.license else getLicense config.license;
         };
     }

@@ -1,12 +1,7 @@
-{
-  config,
-  lib,
-  conflake,
-  ...
-}:
+{ lib, conflake, ... }:
 
 let
-  inherit (lib) mkIf mkOption;
+  inherit (lib) mkOption;
   inherit (conflake.types) optListOf overlay;
 in
 {
@@ -15,9 +10,5 @@ in
       type = optListOf overlay;
       default = [ ];
     };
-  };
-
-  config = mkIf (config.loadedOutputs.withOverlays != [ ]) {
-    inherit (config.loadedOutputs) withOverlays;
   };
 }

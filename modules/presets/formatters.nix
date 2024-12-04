@@ -10,10 +10,13 @@ let
   inherit (lib)
     getExe
     mkDefault
+    mkEnableOption
     mkIf
     optionals
     optionalString
     ;
+
+  cfg = config.presets.formatters;
 
   hasNixfmt =
     pkgs:
@@ -22,14 +25,15 @@ let
       "riscv64-linux"
       "x86_64-freebsd"
     ];
+
   hasNodejs = pkgs: elem pkgs.stdenv.hostPlatform.system pkgs.nodejs.meta.platforms;
 in
 {
-  options.conflake.builtinFormatters = lib.mkEnableOption "default formatters" // {
+  options.presets.formatters = mkEnableOption "default formatters" // {
     default = config.formatter == null;
   };
 
-  config = mkIf config.conflake.builtinFormatters {
+  config = mkIf cfg {
     devShell.packages =
       pkgs:
       optionals (hasNixfmt pkgs) [

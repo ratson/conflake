@@ -12,7 +12,9 @@ let
   inherit (builtins)
     attrNames
     filter
+    hasAttr
     isPath
+    listToAttrs
     ;
   inherit (lib)
     findFirst
@@ -20,21 +22,19 @@ let
     getAttrFromPath
     hasAttrByPath
     hasSuffix
+    mkDefault
     mkEnableOption
-    mkIf
     mkOption
-    optionalAttrs
+    nameValuePair
     path
-    pathIsDirectory
     pipe
+    remove
     removeSuffix
     subtractLists
     ;
   inherit (lib.types)
-    attrsOf
     lazyAttrsOf
     listOf
-    raw
     str
     submodule
     functionTo
@@ -44,6 +44,10 @@ let
 
   isFileEntry = attrPath: set: hasAttrByPath attrPath set && isPath (getAttrFromPath attrPath set);
 
+  mkLoaderKey = s: path.removePrefix src (cfg.src + /${s});
+
+  hasLoader = name: hasAttr (mkLoaderKey name) config.loaders;
+
   importDir =
     entries:
     genAttrs (pipe entries [
@@ -52,30 +56,22 @@ let
       (map (removeSuffix ".nix"))
     ]) (p: import (if isFileEntry [ "${p}.nix" ] entries then entries."${p}.nix" else entries."${p}"));
 
-  importName =
-    name:
-    if isFileEntry [ "${name}.nix" ] cfg.entries then
-      {
-        success = true;
-        value = import cfg.entries."${name}.nix";
-      }
-    else if cfg.entries ? ${name} then
-      {
-        success = true;
-        value = importDir cfg.entries.${name};
-      }
-    else
-      { success = false; };
+  mkLoader = k: load: {
+    ${mkLoaderKey k} = {
+      inherit load;
 
-  importNames = names: findFirst (x: x.success) { success = false; } (map importName names);
+      enable = mkDefault cfg.enable;
+    };
+  };
 
-  mkModuleLoader = attr: {
-    ${config.nixDir.mkLoaderKey attr}.load =
+  mkModuleLoader =
+    attr:
+    mkLoader attr (
       { src, ... }:
       {
         outputs.${attr} = (conflake.readNixDir src).toAttrs (x: conflake.mkModule x moduleArgs);
-      };
-  };
+      }
+    );
 in
 {
   options = {
@@ -90,25 +86,19 @@ in
             default = src + /nix;
           };
           aliases = mkOption {
-            type = attrsOf (listOf str);
+            type = lazyAttrsOf (listOf str);
             default = { };
           };
-          entries = mkOption {
+          mkLoader = mkOption {
             internal = true;
             readOnly = true;
-            type = lazyAttrsOf raw;
-            default = optionalAttrs (cfg.enable && pathIsDirectory cfg.src) (config.loadDir cfg.src);
-          };
-          mkLoaderKey = mkOption {
-            internal = true;
-            readOnly = true;
-            type = functionTo raw;
-            default = s: path.removePrefix src (config.nixDir.src + /${s});
+            type = functionTo (functionTo conflake.types.loaders);
+            default = mkLoader;
           };
           mkModuleLoader = mkOption {
             internal = true;
             readOnly = true;
-            type = functionTo raw;
+            type = functionTo conflake.types.loaders;
             default = mkModuleLoader;
           };
         };
@@ -116,29 +106,49 @@ in
     };
   };
 
-  config = mkIf (cfg.entries != { }) (
-    pipe options [
-      attrNames
-      (filter (name: !(options.${name}.internal or false)))
-      (subtractLists [
-        "_module"
-        "darwinModules"
-        "homeModules"
-        "legacyPackages"
-        "nixDir"
-        "nixosModules"
-        "packages"
-      ])
-      (
-        x:
-        genAttrs x (
+  config = {
+    loaders = mkLoader "." (
+      { src, ... }:
+      let
+        entries = config.loadDir src;
+
+        importName =
+          name:
+          if isFileEntry [ "${name}.nix" ] entries then
+            {
+              success = true;
+              value = import entries."${name}.nix";
+            }
+          else if entries ? ${name} then
+            {
+              success = true;
+              value = importDir entries.${name};
+            }
+          else
+            { success = false; };
+
+        importNames = names: findFirst (x: x.success) { success = false; } (map importName names);
+
+        mkPair =
           name:
           let
             val = importNames ([ name ] ++ cfg.aliases.${name} or [ ]);
           in
-          mkIf val.success (optionalAttrs val.success val.value)
-        )
-      )
-    ]
-  );
+          if val.success then nameValuePair name val.value else null;
+
+        invalid = name: !(options.${name}.internal or false) && !hasLoader name;
+      in
+      pipe options [
+        attrNames
+        (subtractLists [
+          "_module"
+          "nixDir"
+        ])
+        (filter invalid)
+        (map mkPair)
+        (remove null)
+        listToAttrs
+      ]
+    );
+  };
 }

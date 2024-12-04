@@ -86,6 +86,7 @@ in
     (mkIf (config.package != null) {
       packages.default = config.package;
     })
+
     (mkIf (config.packages != null) {
       packageOverlay =
         final: prev:
@@ -133,14 +134,14 @@ in
 
       devShell.inputsFrom = pkgs: optionals ((getPkgDefs pkgs) ? default) [ pkgs.default ];
     })
+
     {
-      loaders.${config.nixDir.mkLoaderKey "packages"}.load =
+      loaders = config.nixDir.mkLoader "packages" (
         { src, ... }:
         {
           packages = (conflake.readNixDir src).toAttrs import;
-        };
-
-      packages = mkIf (config ? loadedOutputs.packages) config.loadedOutputs.packages;
+        }
+      );
     }
   ];
 }

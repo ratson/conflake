@@ -45,8 +45,9 @@ in
     };
   };
 
-  config = mkIf cfg.check {
+  config = {
     loaders.".editorconfig" = {
+      enable = cfg.check;
       match = conflake.matchers.file;
       load =
         { entries, ... }:
