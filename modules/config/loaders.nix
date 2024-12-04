@@ -173,12 +173,12 @@ in
       (filter (name: !(options.${name}.internal or false)))
       (subtractLists [
         "_module"
-        "conflake"
         "editorconfig"
         "loaders"
         "moduleArgs"
         "nixDir"
         "nixpkgs"
+        "presets"
       ])
       (x: genAttrs x (name: mkIf (config ? loadedOutputs.${name}) config.loadedOutputs.${name}))
     ])

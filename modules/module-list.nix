@@ -1,6 +1,4 @@
 [
-  ./builtinFormatters.nix
-  ./builtinOverlay.nix
   ./config/apps.nix
   ./config/bundlers.nix
   ./config/checks.nix
@@ -29,4 +27,6 @@
   ./darwin/darwinModules.nix
   ./home-manager/homeConfigurations.nix
   ./home-manager/homeModules.nix
+  ./presets/formatters.nix
+  ./presets/overlay.nix
 ]

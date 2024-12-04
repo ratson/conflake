@@ -452,7 +452,7 @@ runTests {
   }) (f: lib.isDerivation f.devShells.x86_64-linux.default);
 
   devShell-empty = test (conflake' {
-    disabledModules = [ "builtinFormatters.nix" ];
+    disabledModules = [ "presets/formatters.nix" ];
     devShell = { };
   }) (f: lib.isDerivation f.devShells.x86_64-linux.default);
 
@@ -461,7 +461,7 @@ runTests {
   }) (f: lib.isDerivation f.devShells.x86_64-linux.default);
 
   devShell-pkgDef-empty = test (conflake' {
-    disabledModules = [ "builtinFormatters.nix" ];
+    disabledModules = [ "presets/formatters.nix" ];
     devShell = { mkShell }: mkShell { };
   }) (f: lib.isDerivation f.devShells.x86_64-linux.default);
 
@@ -847,11 +847,11 @@ runTests {
   }) (f: lib.isDerivation f.formatter.x86_64-linux);
 
   formatters-disable = test (conflake' {
-    conflake.builtinFormatters = false;
+    presets.formatters = false;
   }) (f: !f ? formatter.x86_64-linux);
 
   formatters-disable-only-builtin = test (conflake' {
-    conflake.builtinFormatters = false;
+    presets.formatters = false;
     formatters =
       { rustfmt, ... }:
       {
@@ -1053,7 +1053,7 @@ runTests {
 
   empty-flake = {
     expr = conflake' {
-      disabledModules = [ "builtinFormatters.nix" ];
+      disabledModules = [ "presets/formatters.nix" ];
     };
     expected = { };
   };
