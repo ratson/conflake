@@ -27,7 +27,6 @@ let
     genAttrs
     hasPrefix
     hasSuffix
-    mkEnableOption
     mkIf
     mkMerge
     mkOption
@@ -41,7 +40,6 @@ let
   inherit (lib.path) subpath;
   inherit (lib.types)
     attrs
-    bool
     functionTo
     lazyAttrsOf
     raw
@@ -49,29 +47,6 @@ let
     ;
 
   cfg = config.finalLoaders;
-
-  loader = submodule (
-    { name, ... }:
-    {
-      options = {
-        enable = mkEnableOption "${name} loader" // {
-          default = true;
-        };
-        match = mkOption {
-          type = functionTo bool;
-          default = conflake.matchers.dir;
-        };
-        load = mkOption {
-          type = functionTo (lazyAttrsOf raw);
-          default = _: { };
-        };
-        loaders = mkOption {
-          type = lazyAttrsOf loader;
-          default = { };
-        };
-      };
-    }
-  );
 
   loadDir' =
     f: dir:
@@ -134,14 +109,14 @@ in
 {
   options = {
     loaders = mkOption {
-      type = lazyAttrsOf loader;
+      type = conflake.types.loaders;
       default = { };
     };
 
     finalLoaders = mkOption {
       internal = true;
       readOnly = true;
-      type = lazyAttrsOf loader;
+      type = conflake.types.loaders;
     };
 
     loadDir = mkOption {

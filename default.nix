@@ -29,6 +29,7 @@ let
     isStringLike
     mapAttrs'
     mkDefault
+    mkEnableOption
     mkOption
     mkOptionType
     nameValuePair
@@ -44,6 +45,7 @@ let
     toFunction
     ;
   inherit (lib.types)
+    bool
     coercedTo
     defaultFunctor
     functionTo
@@ -52,6 +54,7 @@ let
     listOf
     nullOr
     optionDescriptionPhrase
+    raw
     str
     submodule
     ;
@@ -138,6 +141,31 @@ let
       check = isFunction;
       merge = mergeOneOption;
     };
+
+    loader = submodule (
+      { name, ... }:
+      {
+        options = {
+          enable = mkEnableOption "${name} loader" // {
+            default = true;
+          };
+          match = mkOption {
+            type = functionTo bool;
+            default = matchers.dir;
+          };
+          load = mkOption {
+            type = functionTo (lazyAttrsOf raw);
+            default = _: { };
+          };
+          loaders = mkOption {
+            type = lazyAttrsOf loader;
+            default = { };
+          };
+        };
+      }
+    );
+
+    loaders = lazyAttrsOf loader;
 
     module = mkOptionType {
       name = "module";

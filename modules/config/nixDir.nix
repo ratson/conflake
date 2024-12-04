@@ -35,7 +35,6 @@ let
   inherit (lib.types)
     lazyAttrsOf
     listOf
-    raw
     str
     submodule
     functionTo
@@ -93,13 +92,13 @@ in
           mkLoader = mkOption {
             internal = true;
             readOnly = true;
-            type = functionTo (functionTo (lazyAttrsOf raw));
+            type = functionTo (functionTo conflake.types.loaders);
             default = mkLoader;
           };
           mkModuleLoader = mkOption {
             internal = true;
             readOnly = true;
-            type = functionTo raw;
+            type = functionTo conflake.types.loaders;
             default = mkModuleLoader;
           };
         };
