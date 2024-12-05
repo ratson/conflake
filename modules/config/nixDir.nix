@@ -40,7 +40,6 @@ let
     lazyAttrsOf
     listOf
     str
-    submodule
     functionTo
     ;
 
@@ -100,35 +99,29 @@ let
     );
 in
 {
-  options = {
-    nixDir = mkOption {
-      type = submodule {
-        options = {
-          enable = mkEnableOption "nixDir" // {
-            default = true;
-          };
-          src = mkOption {
-            type = conflake.types.path;
-            default = src + /nix;
-          };
-          aliases = mkOption {
-            type = lazyAttrsOf (listOf str);
-            default = { };
-          };
-          mkLoader = mkOption {
-            internal = true;
-            readOnly = true;
-            type = functionTo (functionTo conflake.types.loaders);
-            default = mkLoader;
-          };
-          mkModuleLoader = mkOption {
-            internal = true;
-            readOnly = true;
-            type = functionTo conflake.types.loaders;
-            default = mkModuleLoader;
-          };
-        };
-      };
+  options.nixDir = {
+    enable = mkEnableOption "nixDir" // {
+      default = true;
+    };
+    src = mkOption {
+      type = conflake.types.path;
+      default = src + /nix;
+    };
+    aliases = mkOption {
+      type = lazyAttrsOf (listOf str);
+      default = { };
+    };
+    mkLoader = mkOption {
+      internal = true;
+      readOnly = true;
+      type = functionTo (functionTo conflake.types.loaders);
+      default = mkLoader;
+    };
+    mkModuleLoader = mkOption {
+      internal = true;
+      readOnly = true;
+      type = functionTo conflake.types.loaders;
+      default = mkModuleLoader;
     };
   };
 

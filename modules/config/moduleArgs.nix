@@ -37,19 +37,12 @@ let
   };
 in
 {
-  options = {
-    moduleArgs = mkOption {
-      type = types.submodule {
-        options = {
-          enable = mkEnableOption "moduleArgs" // {
-            default = true;
-          };
-          extra = mkOption {
-            type = types.lazyAttrsOf types.raw;
-            default = { };
-          };
-        };
-      };
+  options.moduleArgs = {
+    enable = mkEnableOption "moduleArgs" // {
+      default = true;
+    };
+    extra = mkOption {
+      type = types.lazyAttrsOf types.raw;
       default = { };
     };
   };
