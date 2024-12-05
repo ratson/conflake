@@ -8,8 +8,9 @@
 }:
 
 let
-  inherit (builtins) isFunction mapAttrs;
+  inherit (builtins) mapAttrs;
   inherit (lib)
+    isFunction
     last
     mergeDefinitions
     mkIf

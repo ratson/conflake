@@ -8,8 +8,13 @@
 }:
 
 let
-  inherit (builtins) functionArgs mapAttrs;
-  inherit (lib) mkIf mkMerge mkOption;
+  inherit (builtins) mapAttrs;
+  inherit (lib)
+    functionArgs
+    mkIf
+    mkMerge
+    mkOption
+    ;
   inherit (lib.types)
     coercedTo
     lazyAttrsOf

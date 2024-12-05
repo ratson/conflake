@@ -41,7 +41,6 @@ let
     showFiles
     showOption
     singleton
-    toFunction
     ;
   inherit (lib.types)
     bool

@@ -7,8 +7,13 @@
 }:
 
 let
-  inherit (builtins) isFunction mapAttrs;
-  inherit (lib) mkMerge mkOption mkIf;
+  inherit (builtins) mapAttrs;
+  inherit (lib)
+    isFunction
+    mkMerge
+    mkOption
+    mkIf
+    ;
   inherit (lib.types) lazyAttrsOf;
   inherit (conflake.types) function nullable optFunctionTo;
 

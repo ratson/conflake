@@ -10,7 +10,6 @@
 
 let
   inherit (builtins)
-    functionArgs
     hasAttr
     mapAttrs
     parseDrvName
@@ -18,6 +17,7 @@ let
     ;
   inherit (lib)
     findFirst
+    functionArgs
     mapAttrs'
     mkIf
     mkMerge

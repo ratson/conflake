@@ -12,7 +12,6 @@
 let
   inherit (builtins)
     attrNames
-    functionArgs
     filter
     hasAttr
     isPath
@@ -20,6 +19,7 @@ let
     ;
   inherit (lib)
     findFirst
+    functionArgs
     genAttrs
     getAttrFromPath
     hasAttrByPath
