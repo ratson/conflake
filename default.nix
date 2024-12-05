@@ -3,8 +3,6 @@ inputs:
 let
   inherit (builtins)
     all
-    attrNames
-    functionArgs
     head
     isAttrs
     isPath
@@ -38,7 +36,6 @@ let
     pipe
     removeSuffix
     setDefaultModuleLocation
-    setFunctionArgs
     showFiles
     showOption
     singleton
@@ -299,48 +296,6 @@ let
       touch $out
     '';
 
-  mkModule =
-    path:
-    {
-      config,
-      inputs,
-      outputs,
-      mkSpecialArgs,
-      ...
-    }@flakeArgs:
-    let
-      inherit (config) moduleArgs;
-      f = toFunction (import path);
-      g =
-        { pkgs, ... }@args:
-        let
-          inherit (pkgs.stdenv.hostPlatform) system;
-          specialArgs = mkSpecialArgs system;
-        in
-        f (flakeArgs // { inherit (specialArgs) inputs'; } // moduleArgs.extra // args);
-    in
-    if moduleArgs.enable then
-      pipe f [
-        functionArgs
-        (
-          x:
-          removeAttrs x (
-            [
-              "conflake"
-              "inputs"
-              "inputs'"
-              "moduleArgs"
-            ]
-            ++ (attrNames moduleArgs.extra)
-          )
-        )
-        (x: x // { pkgs = true; })
-        (setFunctionArgs g)
-        (setDefaultModuleLocation path)
-      ]
-    else
-      path;
-
   readNixDir =
     src:
     pipe src [
@@ -376,7 +331,6 @@ let
     inherit
       matchers
       mkCheck
-      mkModule
       mkOutputs
       readNixDir
       selectAttr

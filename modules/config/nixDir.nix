@@ -5,12 +5,14 @@
   lib,
   conflake,
   moduleArgs,
+  mkSpecialArgs,
   ...
 }:
 
 let
   inherit (builtins)
     attrNames
+    functionArgs
     filter
     hasAttr
     isPath
@@ -30,7 +32,10 @@ let
     pipe
     remove
     removeSuffix
+    setDefaultModuleLocation
+    setFunctionArgs
     subtractLists
+    toFunction
     ;
   inherit (lib.types)
     lazyAttrsOf
@@ -64,12 +69,46 @@ let
     };
   };
 
+  mkModule =
+    path:
+    let
+      f = toFunction (import path);
+      g =
+        { pkgs, ... }@args:
+        let
+          inherit (pkgs.stdenv.hostPlatform) system;
+          specialArgs = mkSpecialArgs system;
+        in
+        f (moduleArgs // { inherit (specialArgs) inputs'; } // config.moduleArgs.extra // args);
+    in
+    if config.moduleArgs.enable then
+      pipe f [
+        functionArgs
+        (
+          x:
+          removeAttrs x (
+            [
+              "conflake"
+              "inputs"
+              "inputs'"
+              "moduleArgs"
+            ]
+            ++ (attrNames config.moduleArgs.extra)
+          )
+        )
+        (x: x // { pkgs = true; })
+        (setFunctionArgs g)
+        (setDefaultModuleLocation path)
+      ]
+    else
+      path;
+
   mkModuleLoader =
     attr:
     mkLoader attr (
       { src, ... }:
       {
-        outputs.${attr} = (conflake.readNixDir src).toAttrs (x: conflake.mkModule x moduleArgs);
+        outputs.${attr} = (conflake.readNixDir src).toAttrs mkModule;
       }
     );
 in
