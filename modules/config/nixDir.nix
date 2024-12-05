@@ -35,7 +35,6 @@ let
     setDefaultModuleLocation
     setFunctionArgs
     subtractLists
-    toFunction
     ;
   inherit (lib.types)
     lazyAttrsOf
@@ -72,32 +71,20 @@ let
   mkModule =
     path:
     let
-      f = toFunction (import path);
-      g =
-        { pkgs, ... }@args:
+      f = conflake.callWith' (
+        { pkgs, ... }:
         let
           inherit (pkgs.stdenv.hostPlatform) system;
           specialArgs = mkSpecialArgs system;
         in
-        f (moduleArgs // { inherit (specialArgs) inputs'; } // config.moduleArgs.extra // args);
+        moduleArgs // { inherit (specialArgs) inputs'; } // config.moduleArgs.extra
+      ) path;
     in
     if config.moduleArgs.enable then
       pipe f [
         functionArgs
-        (
-          x:
-          removeAttrs x (
-            [
-              "conflake"
-              "inputs"
-              "inputs'"
-              "moduleArgs"
-            ]
-            ++ (attrNames config.moduleArgs.extra)
-          )
-        )
         (x: x // { pkgs = true; })
-        (setFunctionArgs g)
+        (setFunctionArgs f)
         (setDefaultModuleLocation path)
       ]
     else
