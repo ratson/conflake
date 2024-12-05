@@ -305,6 +305,7 @@ let
       config,
       inputs,
       outputs,
+      mkSpecialArgs,
       ...
     }@flakeArgs:
     let
@@ -314,9 +315,9 @@ let
         { pkgs, ... }@args:
         let
           inherit (pkgs.stdenv.hostPlatform) system;
-          inputs' = mapAttrs (_: selectAttr system) inputs;
+          specialArgs = mkSpecialArgs system;
         in
-        f (flakeArgs // moduleArgs.extra // { inherit inputs'; } // args);
+        f (flakeArgs // { inherit (specialArgs) inputs'; } // moduleArgs.extra // args);
     in
     if moduleArgs.enable then
       pipe f [

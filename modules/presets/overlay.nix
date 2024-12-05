@@ -2,15 +2,15 @@
   config,
   src,
   lib,
-  inputs,
   outputs,
   conflake,
+  mkSpecialArgs,
   moduleArgs,
   ...
 }:
 
 let
-  inherit (builtins) isList mapAttrs pathExists;
+  inherit (builtins) isList pathExists;
   inherit (lib) mkOption mkOrder optionalAttrs;
   inherit (lib.types) listOf oneOf str;
   inherit (conflake) selectAttr;
@@ -39,6 +39,8 @@ in
     let
       inherit (prev.stdenv.hostPlatform) system;
 
+      specialArgs = mkSpecialArgs system;
+
       getLicense =
         license: final.lib.licenses.${license} or (final.lib.meta.getLicenseFromSpdxId license);
     in
@@ -47,12 +49,11 @@ in
         system
         moduleArgs
         src
-        inputs
         outputs
         conflake
         ;
+      inherit (specialArgs) inputs inputs';
 
-      inputs' = mapAttrs (_: selectAttr system) inputs;
       outputs' = selectAttr system outputs;
 
       defaultMeta =

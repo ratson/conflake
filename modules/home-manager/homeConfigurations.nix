@@ -3,8 +3,9 @@
   lib,
   inputs,
   conflake,
-  moduleArgs,
   genSystems,
+  mkSpecialArgs,
+  moduleArgs,
   ...
 }:
 
@@ -23,7 +24,7 @@ let
     pipe
     ;
   inherit (lib.types) attrs lazyAttrsOf;
-  inherit (conflake) selectAttr withPrefix;
+  inherit (conflake) withPrefix;
   inherit (conflake.types) optCallWith;
 
   isHome = x: x ? activationPackage;
@@ -45,10 +46,7 @@ let
         x:
         x
         // {
-          extraSpecialArgs = {
-            inherit inputs;
-            inputs' = mapAttrs (_: selectAttr x.pkgs.system) inputs;
-          } // x.extraSpecialArgs or { };
+          extraSpecialArgs = (mkSpecialArgs x.pkgs.system) // x.extraSpecialArgs or { };
           modules = [
             {
               home.username = mkDefault (head (match "([^@]*)(@.*)?" name));

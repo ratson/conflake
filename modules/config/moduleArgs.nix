@@ -1,17 +1,20 @@
 {
   config,
   lib,
-  inputs,
+  conflake,
   ...
 }@args:
 
 let
+  inherit (builtins) mapAttrs;
   inherit (lib)
     genAttrs
     mkEnableOption
     mkOption
     types
     ;
+  inherit (config) inputs;
+  inherit (conflake) selectAttr;
 
   cfg = config.moduleArgs;
 
@@ -26,6 +29,12 @@ let
   );
 
   genSystems = f: genAttrs config.systems (system: f pkgsFor.${system});
+
+  mkSpecialArgs = system: {
+    inherit inputs;
+
+    inputs' = mapAttrs (_: selectAttr system) inputs;
+  };
 in
 {
   options = {
@@ -36,9 +45,7 @@ in
             default = true;
           };
           extra = mkOption {
-            type = types.submodule {
-              freeformType = types.raw;
-            };
+            type = types.lazyAttrsOf types.raw;
             default = { };
           };
         };
@@ -49,8 +56,13 @@ in
 
   config = {
     _module.args = {
-      inherit pkgsFor genSystems;
-      inherit (config) inputs outputs;
+      inherit
+        inputs
+        mkSpecialArgs
+        pkgsFor
+        genSystems
+        ;
+      inherit (config) outputs;
 
       moduleArgs = args // config._module.args // cfg.extra;
     };

@@ -3,8 +3,9 @@
   lib,
   inputs,
   conflake,
-  moduleArgs,
   genSystems,
+  mkSpecialArgs,
+  moduleArgs,
   ...
 }:
 
@@ -18,7 +19,6 @@ let
     pipe
     ;
   inherit (lib.types) attrs lazyAttrsOf;
-  inherit (conflake) selectAttr;
   inherit (conflake.types) optCallWith;
 
   # Avoid checking if toplevel is a derivation as it causes the nixos modules
@@ -36,9 +36,8 @@ let
           }
         ] ++ cfg.modules or [ ];
         specialArgs = {
-          inherit inputs hostname;
-          inputs' = mapAttrs (_: selectAttr cfg.system) inputs;
-        } // cfg.specialArgs or { };
+          inherit hostname;
+        } // (mkSpecialArgs cfg.system) // cfg.specialArgs or { };
       }
     );
 
