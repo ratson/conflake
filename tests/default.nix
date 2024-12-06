@@ -574,6 +574,20 @@ runTests {
         && ((lib.fix (self: f.overlays.cool self { })) == { testValue = "cool"; })
       );
 
+  overlay-empty = {
+    expr =
+      lib.pipe
+        (conflake' {
+          overlay = final: prev: { };
+        })
+        [
+          (x: x.overlays.default { } { })
+          builtins.attrNames
+        ];
+
+    expected = [ ];
+  };
+
   overlay-merge =
     test
       (conflake' {
