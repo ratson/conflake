@@ -69,11 +69,19 @@ let
           baseModules
           ++ self.extraModules
           ++ [
-            (setDefaultModuleLocation ./default.nix {
-              inputs.nixpkgs = mkDefault nixpkgs;
-              inputs.conflake = mkDefault inputs.self;
-            })
-            (setDefaultModuleLocation (src + /flake.nix) module)
+            (setDefaultModuleLocation ./default.nix (
+              { flakePath, ... }:
+              {
+                imports = [
+                  (setDefaultModuleLocation flakePath module)
+                ];
+
+                config = {
+                  inputs.nixpkgs = mkDefault nixpkgs;
+                  inputs.conflake = mkDefault inputs.self;
+                };
+              }
+            ))
           ];
         specialArgs = {
           inherit conflake src;

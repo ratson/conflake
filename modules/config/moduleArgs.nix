@@ -2,6 +2,7 @@
   config,
   lib,
   conflake,
+  src,
   ...
 }@args:
 
@@ -63,6 +64,8 @@ in
         outputs
         pkgsFor
         ;
+
+      flakePath = src + /flake.nix;
 
       moduleArgs = args // config._module.args // cfg.extra;
     };

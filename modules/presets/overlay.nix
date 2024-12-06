@@ -5,6 +5,7 @@
   inputs,
   outputs,
   conflake,
+  flakePath,
   mkSystemArgs',
   moduleArgs,
   ...
@@ -15,8 +16,6 @@ let
   inherit (lib) mkOption mkOrder optionalAttrs;
   inherit (lib.types) listOf oneOf str;
   inherit (conflake.types) nullable;
-
-  flakePath = src + /flake.nix;
 in
 {
   options = {
