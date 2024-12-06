@@ -183,28 +183,23 @@ let
     # This adds a type with that merge semantics.
     nullable =
       elemType:
-      mkOptionType {
+      (nullOr elemType)
+      // {
         name = "nullable";
         description = "nullable ${
           optionDescriptionPhrase (class: class == "noun" || class == "composite") elemType
         }";
         descriptionClass = "noun";
-        check = x: x == null || elemType.check x;
         merge =
           loc: defs:
           if all (def: def.value == null) defs then
             null
           else
             elemType.merge loc (filter (def: def.value != null) defs);
-        emptyValue.value = null;
-        inherit (elemType) getSubOptions getSubModules;
         substSubModules = m: nullable (elemType.substSubModules m);
         functor = (defaultFunctor "nullable") // {
           type = nullable;
           wrapped = elemType;
-        };
-        nestedTypes = {
-          inherit elemType;
         };
       };
 
