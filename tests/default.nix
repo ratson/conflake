@@ -242,8 +242,13 @@ runTests {
     expr =
       builtins.attrNames
         (conflake' {
-          perSystem = _: { test = true; };
+          perSystem =
+            { src, ... }:
+            {
+              test.a.b.c = true;
+            };
         }).test;
+
     expected = [
       "aarch64-darwin"
       "aarch64-linux"

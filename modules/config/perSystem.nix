@@ -8,23 +8,28 @@
 
 let
   inherit (builtins) mapAttrs;
-  inherit (lib) foldAttrs mergeAttrs mkOption;
-  inherit (lib.types) functionTo;
-  inherit (conflake.types) outputs;
+  inherit (lib)
+    foldAttrs
+    mergeAttrs
+    mkOption
+    pipe
+    types
+    ;
 in
 {
-  options = {
-    perSystem = mkOption {
-      type = functionTo outputs;
-      default = _: { };
-    };
+  options.perSystem = mkOption {
+    type = types.functionTo conflake.types.outputs;
+    default = _: { };
   };
 
-  config = {
-    outputs = foldAttrs mergeAttrs { } (
-      map (
-        system: mapAttrs (_: v: { ${system} = v; }) (config.perSystem pkgsFor.${system})
-      ) config.systems
-    );
-  };
+  config.outputs = pipe config.systems [
+    (map (
+      system:
+      pipe pkgsFor.${system} [
+        config.perSystem
+        (mapAttrs (_: v: { ${system} = v; }))
+      ]
+    ))
+    (foldAttrs mergeAttrs { })
+  ];
 }
