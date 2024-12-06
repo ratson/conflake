@@ -4,8 +4,8 @@
   src,
   lib,
   conflake,
+  mkSystemArgs',
   moduleArgs,
-  mkSpecialArgs,
   ...
 }:
 
@@ -71,12 +71,7 @@ let
     path:
     let
       f = conflake.callWith' (
-        { pkgs, ... }:
-        let
-          inherit (pkgs.stdenv.hostPlatform) system;
-          specialArgs = mkSpecialArgs system;
-        in
-        moduleArgs // { inherit (specialArgs) inputs'; } // config.moduleArgs.extra
+        { pkgs, ... }: moduleArgs // (mkSystemArgs' pkgs) // config.moduleArgs.extra
       ) path;
     in
     if config.moduleArgs.enable then

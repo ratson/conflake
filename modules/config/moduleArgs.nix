@@ -13,7 +13,7 @@ let
     mkOption
     types
     ;
-  inherit (config) inputs;
+  inherit (config) inputs outputs;
   inherit (conflake) selectAttr;
 
   cfg = config.moduleArgs;
@@ -30,11 +30,17 @@ let
 
   genSystems = f: genAttrs config.systems (system: f pkgsFor.${system});
 
-  mkSpecialArgs = system: {
-    inherit inputs;
+  mkSystemArgs' =
+    pkgs:
+    let
+      inherit (pkgs.stdenv.hostPlatform) system;
+    in
+    {
+      inputs' = mapAttrs (_: selectAttr system) inputs;
+      outputs' = selectAttr system outputs;
+    };
 
-    inputs' = mapAttrs (_: selectAttr system) inputs;
-  };
+  mkSystemArgs = system: mkSystemArgs' pkgsFor.${system};
 in
 {
   options.moduleArgs = {
@@ -50,12 +56,13 @@ in
   config = {
     _module.args = {
       inherit
-        inputs
-        mkSpecialArgs
-        pkgsFor
         genSystems
+        inputs
+        mkSystemArgs
+        mkSystemArgs'
+        outputs
+        pkgsFor
         ;
-      inherit (config) outputs;
 
       moduleArgs = args // config._module.args // cfg.extra;
     };

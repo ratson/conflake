@@ -4,7 +4,7 @@
   inputs,
   conflake,
   genSystems,
-  mkSpecialArgs,
+  mkSystemArgs,
   moduleArgs,
   ...
 }:
@@ -36,8 +36,8 @@ let
           }
         ] ++ cfg.modules or [ ];
         specialArgs = {
-          inherit hostname;
-        } // (mkSpecialArgs cfg.system) // cfg.specialArgs or { };
+          inherit hostname inputs;
+        } // (mkSystemArgs cfg.system) // cfg.specialArgs or { };
       }
     );
 

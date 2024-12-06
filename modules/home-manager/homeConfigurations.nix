@@ -4,7 +4,7 @@
   inputs,
   conflake,
   genSystems,
-  mkSpecialArgs,
+  mkSystemArgs',
   moduleArgs,
   ...
 }:
@@ -46,7 +46,7 @@ let
         x:
         x
         // {
-          extraSpecialArgs = (mkSpecialArgs x.pkgs.system) // x.extraSpecialArgs or { };
+          extraSpecialArgs = (mkSystemArgs' x.pkgs) // x.extraSpecialArgs or { };
           modules = [
             {
               home.username = mkDefault (head (match "([^@]*)(@.*)?" name));
