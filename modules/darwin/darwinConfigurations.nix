@@ -3,6 +3,7 @@
   lib,
   inputs,
   conflake,
+  mkSystemArgs,
   moduleArgs,
   ...
 }:
@@ -11,7 +12,6 @@ let
   inherit (builtins) mapAttrs;
   inherit (lib) mkIf mkOption;
   inherit (lib.types) attrs lazyAttrsOf;
-  inherit (conflake) selectAttr;
   inherit (conflake.types) optCallWith;
 
   isDarwin = x: x ? config.system.builder;
@@ -22,9 +22,8 @@ let
       cfg
       // {
         specialArgs = {
-          inherit inputs hostname;
-          inputs' = mapAttrs (_: selectAttr cfg.system) inputs;
-        } // cfg.specialArgs or { };
+          inherit hostname inputs;
+        } // (mkSystemArgs cfg.system) // cfg.specialArgs or { };
       }
     );
 

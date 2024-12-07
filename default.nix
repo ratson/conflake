@@ -3,9 +3,8 @@ inputs:
 let
   inherit (builtins)
     all
-    attrNames
-    functionArgs
     head
+    intersectAttrs
     isAttrs
     isPath
     length
@@ -21,6 +20,7 @@ let
     evalModules
     filter
     fix
+    functionArgs
     getFiles
     getValues
     hasSuffix
@@ -38,11 +38,9 @@ let
     pipe
     removeSuffix
     setDefaultModuleLocation
-    setFunctionArgs
     showFiles
     showOption
     singleton
-    toFunction
     ;
   inherit (lib.types)
     bool
@@ -71,11 +69,19 @@ let
           baseModules
           ++ self.extraModules
           ++ [
-            (setDefaultModuleLocation ./default.nix {
-              inputs.nixpkgs = mkDefault nixpkgs;
-              inputs.conflake = mkDefault inputs.self;
-            })
-            (setDefaultModuleLocation (src + /flake.nix) module)
+            (setDefaultModuleLocation ./default.nix (
+              { flakePath, ... }:
+              {
+                imports = [
+                  (setDefaultModuleLocation flakePath module)
+                ];
+
+                config = {
+                  inputs.nixpkgs = mkDefault nixpkgs;
+                  inputs.conflake = mkDefault inputs.self;
+                };
+              }
+            ))
           ];
         specialArgs = {
           inherit conflake src;
@@ -185,28 +191,23 @@ let
     # This adds a type with that merge semantics.
     nullable =
       elemType:
-      mkOptionType {
+      (nullOr elemType)
+      // {
         name = "nullable";
         description = "nullable ${
           optionDescriptionPhrase (class: class == "noun" || class == "composite") elemType
         }";
         descriptionClass = "noun";
-        check = x: x == null || elemType.check x;
         merge =
           loc: defs:
           if all (def: def.value == null) defs then
             null
           else
             elemType.merge loc (filter (def: def.value != null) defs);
-        emptyValue.value = null;
-        inherit (elemType) getSubOptions getSubModules;
         substSubModules = m: nullable (elemType.substSubModules m);
         functor = (defaultFunctor "nullable") // {
           type = nullable;
           wrapped = elemType;
-        };
-        nestedTypes = {
-          inherit elemType;
         };
       };
 
@@ -290,6 +291,19 @@ let
     );
   };
 
+  callWith =
+    autoArgs: fn: args:
+    let
+      f = if isFunction fn then fn else import fn;
+      fargs = functionArgs f;
+      allArgs = intersectAttrs fargs autoArgs // args;
+    in
+    f allArgs;
+
+  callWith' =
+    mkAutoArgs: fn: args:
+    callWith (mkAutoArgs args) fn args;
+
   mkCheck =
     name: pkgs: src: cmd:
     pkgs.runCommand "check-${name}" { } ''
@@ -298,47 +312,6 @@ let
       popd
       touch $out
     '';
-
-  mkModule =
-    path:
-    {
-      config,
-      inputs,
-      outputs,
-      ...
-    }@flakeArgs:
-    let
-      inherit (config) moduleArgs;
-      f = toFunction (import path);
-      g =
-        { pkgs, ... }@args:
-        let
-          inherit (pkgs.stdenv.hostPlatform) system;
-          inputs' = mapAttrs (_: selectAttr system) inputs;
-        in
-        f (flakeArgs // moduleArgs.extra // { inherit inputs'; } // args);
-    in
-    if moduleArgs.enable then
-      pipe f [
-        functionArgs
-        (
-          x:
-          removeAttrs x (
-            [
-              "conflake"
-              "inputs"
-              "inputs'"
-              "moduleArgs"
-            ]
-            ++ (attrNames moduleArgs.extra)
-          )
-        )
-        (x: x // { pkgs = true; })
-        (setFunctionArgs g)
-        (setDefaultModuleLocation path)
-      ]
-    else
-      path;
 
   readNixDir =
     src:
@@ -373,9 +346,10 @@ let
 
   conflake = {
     inherit
+      callWith
+      callWith'
       matchers
       mkCheck
-      mkModule
       mkOutputs
       readNixDir
       selectAttr

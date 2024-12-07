@@ -1,17 +1,21 @@
 {
   config,
   lib,
-  inputs,
+  conflake,
+  src,
   ...
 }@args:
 
 let
+  inherit (builtins) mapAttrs;
   inherit (lib)
     genAttrs
     mkEnableOption
     mkOption
     types
     ;
+  inherit (config) inputs outputs;
+  inherit (conflake) selectAttr;
 
   cfg = config.moduleArgs;
 
@@ -26,31 +30,42 @@ let
   );
 
   genSystems = f: genAttrs config.systems (system: f pkgsFor.${system});
+
+  mkSystemArgs' =
+    pkgs:
+    let
+      inherit (pkgs.stdenv.hostPlatform) system;
+    in
+    {
+      inputs' = mapAttrs (_: selectAttr system) inputs;
+      outputs' = selectAttr system outputs;
+    };
+
+  mkSystemArgs = system: mkSystemArgs' pkgsFor.${system};
 in
 {
-  options = {
-    moduleArgs = mkOption {
-      type = types.submodule {
-        options = {
-          enable = mkEnableOption "moduleArgs" // {
-            default = true;
-          };
-          extra = mkOption {
-            type = types.submodule {
-              freeformType = types.raw;
-            };
-            default = { };
-          };
-        };
-      };
+  options.moduleArgs = {
+    enable = mkEnableOption "moduleArgs" // {
+      default = true;
+    };
+    extra = mkOption {
+      type = types.lazyAttrsOf types.raw;
       default = { };
     };
   };
 
   config = {
     _module.args = {
-      inherit pkgsFor genSystems;
-      inherit (config) inputs outputs;
+      inherit
+        genSystems
+        inputs
+        mkSystemArgs
+        mkSystemArgs'
+        outputs
+        pkgsFor
+        ;
+
+      flakePath = src + /flake.nix;
 
       moduleArgs = args // config._module.args // cfg.extra;
     };

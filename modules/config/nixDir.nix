@@ -4,6 +4,7 @@
   src,
   lib,
   conflake,
+  mkSystemArgs',
   moduleArgs,
   ...
 }:
@@ -18,6 +19,7 @@ let
     ;
   inherit (lib)
     findFirst
+    functionArgs
     genAttrs
     getAttrFromPath
     hasAttrByPath
@@ -30,13 +32,14 @@ let
     pipe
     remove
     removeSuffix
+    setDefaultModuleLocation
+    setFunctionArgs
     subtractLists
     ;
   inherit (lib.types)
     lazyAttrsOf
     listOf
     str
-    submodule
     functionTo
     ;
 
@@ -64,45 +67,56 @@ let
     };
   };
 
+  mkModule =
+    path:
+    let
+      f = conflake.callWith' (
+        { pkgs, ... }: moduleArgs // (mkSystemArgs' pkgs) // config.moduleArgs.extra
+      ) path;
+    in
+    if config.moduleArgs.enable then
+      pipe f [
+        functionArgs
+        (x: x // { pkgs = true; })
+        (setFunctionArgs f)
+        (setDefaultModuleLocation path)
+      ]
+    else
+      path;
+
   mkModuleLoader =
     attr:
     mkLoader attr (
       { src, ... }:
       {
-        outputs.${attr} = (conflake.readNixDir src).toAttrs (x: conflake.mkModule x moduleArgs);
+        outputs.${attr} = (conflake.readNixDir src).toAttrs mkModule;
       }
     );
 in
 {
-  options = {
-    nixDir = mkOption {
-      type = submodule {
-        options = {
-          enable = mkEnableOption "nixDir" // {
-            default = true;
-          };
-          src = mkOption {
-            type = conflake.types.path;
-            default = src + /nix;
-          };
-          aliases = mkOption {
-            type = lazyAttrsOf (listOf str);
-            default = { };
-          };
-          mkLoader = mkOption {
-            internal = true;
-            readOnly = true;
-            type = functionTo (functionTo conflake.types.loaders);
-            default = mkLoader;
-          };
-          mkModuleLoader = mkOption {
-            internal = true;
-            readOnly = true;
-            type = functionTo conflake.types.loaders;
-            default = mkModuleLoader;
-          };
-        };
-      };
+  options.nixDir = {
+    enable = mkEnableOption "nixDir" // {
+      default = true;
+    };
+    src = mkOption {
+      type = conflake.types.path;
+      default = src + /nix;
+    };
+    aliases = mkOption {
+      type = lazyAttrsOf (listOf str);
+      default = { };
+    };
+    mkLoader = mkOption {
+      internal = true;
+      readOnly = true;
+      type = functionTo (functionTo conflake.types.loaders);
+      default = mkLoader;
+    };
+    mkModuleLoader = mkOption {
+      internal = true;
+      readOnly = true;
+      type = functionTo conflake.types.loaders;
+      default = mkModuleLoader;
     };
   };
 

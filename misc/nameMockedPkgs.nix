@@ -4,13 +4,16 @@ real:
 let
   inherit (builtins)
     baseNameOf
-    isFunction
-    functionArgs
     intersectAttrs
     mapAttrs
     ;
   inherit (real) lib;
-  inherit (lib) fix filterAttrs;
+  inherit (lib)
+    fix
+    filterAttrs
+    functionArgs
+    isFunction
+    ;
 
   callPackageWith =
     autoArgs: fn: args:
