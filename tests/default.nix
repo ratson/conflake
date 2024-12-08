@@ -513,6 +513,10 @@ runTests {
     devShell = pkgs: pkgs.hello;
   }) (f: lib.isDerivation f.devShells.x86_64-linux.default);
 
+  devShell-buildInputs = test (conflake' {
+    devShell.buildInputs = pkgs: [ pkgs.hello ];
+  }) (f: lib.isDerivation f.devShells.x86_64-linux.default);
+
   devShells =
     test
       (conflake' {
@@ -540,7 +544,7 @@ runTests {
       );
 
   devShells-override = test (conflake' {
-    devShells.default = { mkShell }: mkShell { };
+    devShells.default = { mkShellNoCC }: mkShellNoCC { };
   }) (f: f ? devShells.x86_64-linux.default);
 
   devShells-import =
