@@ -1104,6 +1104,19 @@ runTests {
     in
     test (extended3 ./empty { }) (f: f.test && f.test2 && f.test3);
 
+  mkVersion = {
+    expr = conflake.lib.mkVersion null;
+    expected = "0.0.0+date=19700101_dirty";
+  };
+
+  mkVersion-self = {
+    expr = conflake.lib.mkVersion self;
+    expected = conflake.lib.mkVersion {
+      inherit (self) lastModifiedDate;
+      shortRev = self.shortRev or "dirty";
+    };
+  };
+
   demo-example = test (conflake ../examples/demo { }) (f: f.overlays ? default);
 
   nixos-example = test (conflake ../examples/nixos { }) (
