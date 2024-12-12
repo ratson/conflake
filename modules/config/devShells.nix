@@ -30,7 +30,7 @@ let
     ;
 
   devShellModule = {
-    freeformType = lazyAttrsOf types.anything;
+    freeformType = lazyAttrsOf (optFunctionTo types.unspecified);
 
     options = {
       stdenv = mkOption {
