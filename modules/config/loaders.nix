@@ -9,7 +9,6 @@
 
 let
   inherit (builtins)
-    attrNames
     attrValues
     filter
     foldl'
@@ -24,29 +23,21 @@ let
     concatMap
     flip
     filterAttrs
-    genAttrs
     hasPrefix
     hasSuffix
     mkIf
     mkMerge
     mkOption
     nameValuePair
-    pathIsDirectory
     pipe
     remove
     setAttrByPath
-    subtractLists
+    types
     ;
   inherit (lib.path) subpath;
-  inherit (lib.types)
-    attrs
-    functionTo
-    lazyAttrsOf
-    raw
-    submodule
-    ;
+  inherit (lib.types) attrs functionTo lazyAttrsOf;
 
-  cfg = config.finalLoaders;
+  cfg = config.loaders;
 
   loadDir' =
     f: dir:
@@ -134,19 +125,26 @@ in
 
     loadedOutputs = mkOption {
       internal = true;
-      type = submodule {
-        freeformType = lazyAttrsOf raw;
+      type = types.submodule {
+        freeformType = lazyAttrsOf types.raw;
         options = {
           inherit (options) outputs;
         };
       };
       default = { };
     };
+
+    mkLoaderKey = mkOption {
+      internal = true;
+      readOnly = true;
+      type = functionTo types.str;
+      default = lib.path.removePrefix src;
+    };
   };
 
   config = mkMerge [
     {
-      finalLoaders = pipe config.loaders [
+      finalLoaders = pipe cfg [
         attrsToList
         (map (
           { name, value }:
@@ -155,7 +153,7 @@ in
             loader = pipe parts [
               tail
               (concatMap (x: [ "loaders" ] ++ [ x ]))
-              (x: setAttrByPath x value)
+              (flip setAttrByPath value)
             ];
           in
           {
@@ -164,14 +162,14 @@ in
         ))
         mkMerge
       ];
-
-      loadedOutputs = mkIf (cfg != { } && pathIsDirectory src) (resolve src cfg);
     }
 
+    (mkIf (config.finalLoaders != { } && lib.pathIsDirectory src) {
+      loadedOutputs = resolve src config.finalLoaders;
+    })
+
     (pipe options [
-      attrNames
-      (filter (name: !(options.${name}.internal or false)))
-      (subtractLists [
+      (flip removeAttrs [
         "_module"
         "editorconfig"
         "loaders"
@@ -179,8 +177,10 @@ in
         "nixDir"
         "nixpkgs"
         "presets"
+        "templatesDir"
       ])
-      (x: genAttrs x (name: mkIf (config ? loadedOutputs.${name}) config.loadedOutputs.${name}))
+      (filterAttrs (_: v: !(v.internal or false)))
+      (mapAttrs (name: _: mkIf (config ? loadedOutputs.${name}) config.loadedOutputs.${name}))
     ])
   ];
 }

@@ -11,18 +11,16 @@ let
   inherit (builtins) mapAttrs;
   inherit (lib)
     functionArgs
+    isFunction
     mkIf
     mkMerge
     mkOption
+    types
     ;
   inherit (lib.types)
     coercedTo
     lazyAttrsOf
-    lines
-    listOf
     package
-    str
-    submoduleWith
     ;
   inherit (conflake.types)
     function
@@ -31,41 +29,20 @@ let
     optFunctionTo
     ;
 
-  devShellModule.options = {
-    inputsFrom = mkOption {
-      type = optFunctionTo (listOf package);
-      default = [ ];
-    };
+  devShellModule = {
+    freeformType = lazyAttrsOf (optFunctionTo types.unspecified);
 
-    packages = mkOption {
-      type = optFunctionTo (listOf package);
-      default = [ ];
-    };
+    options = {
+      stdenv = mkOption {
+        type = optFunctionTo package;
+        default = pkgs: pkgs.stdenv;
+      };
 
-    shellHook = mkOption {
-      type = optFunctionTo lines;
-      default = "";
-    };
-
-    hardeningDisable = mkOption {
-      type = listOf str;
-      default = [ ];
-    };
-
-    env = mkOption {
-      type = optFunctionTo (lazyAttrsOf str);
-      default = { };
-    };
-
-    stdenv = mkOption {
-      type = optFunctionTo package;
-      default = pkgs: pkgs.stdenv;
-    };
-
-    overrideShell = mkOption {
-      type = nullable package;
-      internal = true;
-      default = null;
+      overrideShell = mkOption {
+        type = nullable package;
+        internal = true;
+        default = null;
+      };
     };
   };
 
@@ -79,11 +56,7 @@ let
   packageOverride = p: { overrideShell = p; };
 
   devShellType = coercedTo function wrapFn (
-    optFunctionTo (
-      coercedTo package packageOverride (submoduleWith {
-        modules = [ devShellModule ];
-      })
-    )
+    optFunctionTo (coercedTo package packageOverride (types.submodule devShellModule))
   );
 
   genDevShell =
@@ -92,21 +65,20 @@ let
       cfg.overrideShell
     else
       let
-        cfg' = mapAttrs (_: v: v pkgs) cfg;
+        cfg' = mapAttrs (_: v: if isFunction v then v pkgs else v) cfg;
       in
       pkgs.mkShell.override { inherit (cfg') stdenv; } (
-        cfg'.env
-        // {
-          inherit (cfg') inputsFrom packages shellHook;
-          inherit (cfg) hardeningDisable;
-        }
+        removeAttrs cfg' [
+          "overrideShell"
+          "stdenv"
+        ]
       );
 in
 {
   options = {
     devShell = mkOption {
-      default = null;
       type = nullable devShellType;
+      default = null;
     };
 
     devShells = mkOption {

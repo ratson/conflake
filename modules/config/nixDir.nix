@@ -18,7 +18,9 @@ let
     listToAttrs
     ;
   inherit (lib)
+    filterAttrs
     findFirst
+    flip
     functionArgs
     genAttrs
     getAttrFromPath
@@ -28,13 +30,11 @@ let
     mkEnableOption
     mkOption
     nameValuePair
-    path
     pipe
     remove
     removeSuffix
     setDefaultModuleLocation
     setFunctionArgs
-    subtractLists
     ;
   inherit (lib.types)
     lazyAttrsOf
@@ -47,7 +47,7 @@ let
 
   isFileEntry = attrPath: set: hasAttrByPath attrPath set && isPath (getAttrFromPath attrPath set);
 
-  mkLoaderKey = s: path.removePrefix src (cfg.src + /${s});
+  mkLoaderKey = s: config.mkLoaderKey (cfg.src + /${s});
 
   hasLoader = name: hasAttr (mkLoaderKey name) config.loaders;
 
@@ -149,16 +149,14 @@ in
             val = importNames ([ name ] ++ cfg.aliases.${name} or [ ]);
           in
           if val.success then nameValuePair name val.value else null;
-
-        invalid = name: !(options.${name}.internal or false) && !hasLoader name;
       in
       pipe options [
-        attrNames
-        (subtractLists [
+        (flip removeAttrs [
           "_module"
           "nixDir"
         ])
-        (filter invalid)
+        (filterAttrs (k: v: !(v.internal or false) && !hasLoader k))
+        attrNames
         (map mkPair)
         (remove null)
         listToAttrs
