@@ -443,6 +443,17 @@ runTests {
     legacyPackages = pkgs: nixpkgs.legacyPackages.${pkgs.system};
   }) (f: f.legacyPackages.x86_64-linux.hello == nixpkgs.legacyPackages.x86_64-linux.hello);
 
+  legacyPackages-set-attrs = {
+    expr =
+      (conflake' {
+        inputs = {
+          inherit nixpkgs;
+        };
+        legacyPackages = pkgs: { };
+      }).legacyPackages.x86_64-linux;
+    expected = { };
+  };
+
   devShell = test (conflake' {
     devShell = {
       inputsFrom = pkgs: [ pkgs.emacs ];

@@ -16,12 +16,12 @@ let
     removeSuffix
     types
     ;
-  inherit (lib.types) functionTo;
+  inherit (lib.types) functionTo lazyAttrsOf;
   inherit (conflake.types) nullable;
 in
 {
   options.legacyPackages = mkOption {
-    type = nullable (functionTo types.pkgs);
+    type = nullable (functionTo (lazyAttrsOf types.raw));
     default = null;
   };
 
@@ -63,7 +63,7 @@ in
 
           withOverlays = overlay;
 
-          outputs.legacyPackages = genSystems (pkgs: transform pkgs entries);
+          legacyPackages = pkgs: transform pkgs entries;
         }
       );
     }
