@@ -11,9 +11,9 @@ let
   inherit (builtins)
     attrValues
     filter
-    foldl'
     hasAttr
     head
+    listToAttrs
     mapAttrs
     readDir
     tail
@@ -35,7 +35,7 @@ let
     types
     ;
   inherit (lib.path) subpath;
-  inherit (lib.types) attrs functionTo lazyAttrsOf;
+  inherit (lib.types) functionTo lazyAttrsOf;
 
   cfg = config.loaders;
 
@@ -47,7 +47,7 @@ let
         let
           path = dir + /${name};
         in
-        if hasPrefix "." name then
+        if hasPrefix "." name || hasPrefix "_" name then
           null
         else if type == "directory" then
           nameValuePair name (loadDir' f path)
@@ -61,7 +61,7 @@ let
       (mapAttrs toEntry)
       attrValues
       (remove null)
-      (flip foldl' { } (acc: { name, value }: acc // { ${name} = value; }))
+      listToAttrs
     ];
 
   loadDir = loadDir' lib.id;
@@ -113,24 +113,19 @@ in
     loadDir = mkOption {
       internal = true;
       readOnly = true;
-      type = functionTo attrs;
+      type = functionTo (lazyAttrsOf types.unspecified);
       default = loadDir;
     };
     loadDir' = mkOption {
       internal = true;
       readOnly = true;
-      type = functionTo (functionTo attrs);
+      type = functionTo (functionTo (lazyAttrsOf types.unspecified));
       default = loadDir';
     };
 
     loadedOutputs = mkOption {
       internal = true;
-      type = types.submodule {
-        freeformType = lazyAttrsOf types.raw;
-        options = {
-          inherit (options) outputs;
-        };
-      };
+      type = lazyAttrsOf types.unspecified;
       default = { };
     };
 

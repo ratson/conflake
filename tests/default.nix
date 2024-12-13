@@ -1,7 +1,9 @@
 { self, nixpkgs, ... }:
 
 let
+  inherit (builtins) attrNames;
   inherit (nixpkgs) lib;
+  inherit (lib) const pipe;
 
   test = flake: test: {
     expr = test flake;
@@ -200,7 +202,7 @@ runTests {
       })
       (
         f:
-        (builtins.attrNames f.test) == [
+        (attrNames f.test) == [
           "armv7l-linux"
           "i686-linux"
         ]
@@ -239,16 +241,17 @@ runTests {
   }) (f: (nixpkgs.legacyPackages.x86_64-linux.extend f.overlays.test).testVal);
 
   perSystem = {
-    expr =
-      builtins.attrNames
-        (conflake' {
-          perSystem =
-            { src, ... }:
-            {
-              test.a.b.c = true;
-            };
-        }).test;
-
+    expr = pipe null [
+      (const (conflake' {
+        perSystem =
+          { src, ... }:
+          {
+            test.a.b.c = true;
+          };
+      }))
+      (x: x.test)
+      attrNames
+    ];
     expected = [
       "aarch64-darwin"
       "aarch64-linux"
@@ -590,16 +593,10 @@ runTests {
       );
 
   overlay-empty = {
-    expr =
-      lib.pipe
-        (conflake' {
-          overlay = final: prev: { };
-        })
-        [
-          (x: x.overlays.default { } { })
-          builtins.attrNames
-        ];
-
+    expr = pipe (conflake' { overlay = final: prev: { }; }) [
+      (x: x.overlays.default { } { })
+      attrNames
+    ];
     expected = [ ];
   };
 
@@ -1130,13 +1127,26 @@ runTests {
 
   demo-example = test (conflake ../examples/demo { }) (f: f.overlays ? default);
 
-  nixos-example = test (conflake ../examples/nixos { }) (
-    f:
-    f.nixosConfigurations ? vm.config.system.build.toplevel
-    && f.nixosModules ? default
-    && f.nixosModules ? hallo
-    && f.homeModules ? default
-  );
+  nixos-example = {
+    expr = pipe (conflake ../examples/nixos { }) [
+      (f: [
+        (f.nixosConfigurations ? vm.config.system.build.toplevel)
+        (f.nixosModules ? default)
+        (f.nixosModules ? hallo)
+        (f.homeModules ? default)
+        (f.lib ? greeting.hi)
+        f.lib.hello-world
+      ])
+    ];
+    expected = [
+      true
+      true
+      true
+      true
+      true
+      "Hello, World!"
+    ];
+  };
 
   packages-example = test (conflake ../examples/packages { }) (
     f:
