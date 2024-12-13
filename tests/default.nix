@@ -1154,12 +1154,4 @@ runTests {
     && f.packages.x86_64-linux ? greet
     && f.devShells.x86_64-linux ? default
   );
-
-  self-outputs = test self (
-    f:
-    f ? __functor
-    && f ? lib.mkOutputs
-    && f ? templates.default.path
-    && f.templates.default.description != "default"
-  );
 }

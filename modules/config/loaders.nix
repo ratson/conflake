@@ -179,6 +179,7 @@ in
         "nixpkgs"
         "presets"
         "templatesDir"
+        "tests"
       ])
       (filterAttrs (_: v: !(v.internal or false)))
       (mapAttrs (name: _: mkIf (config ? loadedOutputs.${name}) config.loadedOutputs.${name}))

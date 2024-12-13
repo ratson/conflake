@@ -7,7 +7,7 @@
       lib = import ./. inputs;
     in
     lib.mkOutputs ./. {
-      inherit lib;
+      inherit inputs lib;
 
       checks.deadnix = pkgs: "${pkgs.deadnix}/bin/deadnix --fail ./misc ./modules ./nix";
       checks.statix = pkgs: "${pkgs.statix}/bin/statix check";
