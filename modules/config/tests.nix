@@ -43,27 +43,27 @@ in
   config = mkIf cfg.enable {
     loaders.${config.mkLoaderKey cfg.src}.load =
       { src, ... }:
-      let
-        tests = (config.loadDir src) // {
-          "tests.cases" = null;
-        };
-        results = lib.mapAttrsRecursive (
-          path: value:
-          let
-            suite = if value == null then cfg.cases else import value (moduleArgs // cfg.args);
-            cases = lib.runTests suite;
-            result =
-              if cases == [ ] then
-                "Unit tests successful"
-              else
-                throw "Unit tests failed: ${lib.generators.toPretty { } cases}\nin ${toString path} ";
-          in
-          result
-        ) tests;
-      in
       {
         checks.${cfg.name} =
           pkgs:
+          let
+            tests = (config.loadDir src) // {
+              "tests.cases" = null;
+            };
+            results = lib.mapAttrsRecursive (
+              path: value:
+              let
+                suite = if value == null then cfg.cases else pkgs.callPackage value (moduleArgs // cfg.args);
+                cases = lib.runTests suite;
+                result =
+                  if cases == [ ] then
+                    "Unit tests successful"
+                  else
+                    throw "Unit tests failed: ${lib.generators.toPretty { } cases}\nin ${toString path} ";
+              in
+              result
+            ) tests;
+          in
           pkgs.runCommandLocal "nix-tests" { } ''
             mkdir $out
             cp ${toFile "test-results.json" (toJSON results)} $out
