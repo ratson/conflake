@@ -47,7 +47,7 @@ let
         let
           path = dir + /${name};
         in
-        if hasPrefix "." name || hasPrefix "_" name then
+        if config.loadIgnore { inherit name path type; } then
           null
         else if type == "directory" then
           nameValuePair name (loadDir' f path)
@@ -102,6 +102,11 @@ in
     loaders = mkOption {
       type = conflake.types.loaders;
       default = { };
+    };
+
+    loadIgnore = mkOption {
+      type = functionTo types.bool;
+      default = { name, ... }: hasPrefix "." name || hasPrefix "_" name;
     };
 
     finalLoaders = mkOption {
@@ -168,6 +173,7 @@ in
         "_module"
         "editorconfig"
         "loaders"
+        "loadIgnore"
         "moduleArgs"
         "nixDir"
         "nixpkgs"
