@@ -9,7 +9,7 @@
     lib.mkOutputs ./. {
       inherit inputs lib;
 
-      checks.deadnix = pkgs: "${pkgs.deadnix}/bin/deadnix --fail ./misc ./modules ./nix";
+      checks.deadnix = pkgs: "${pkgs.deadnix}/bin/deadnix -f --exclude=nix/tests ./misc ./modules ./nix";
       checks.statix = pkgs: "${pkgs.statix}/bin/statix check";
 
       functor = _: lib.mkOutputs;

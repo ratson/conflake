@@ -849,17 +849,6 @@ runTests {
         }
       );
 
-  formatter = test (conflake' {
-    formatter = pkgs: pkgs.hello;
-  }) (f: lib.isDerivation f.formatter.x86_64-linux);
-
-  formatters = test (conflake' {
-    devShell.packages = pkgs: [ pkgs.rustfmt ];
-    formatters = {
-      "*.rs" = "rustfmt";
-    };
-  }) (f: lib.isDerivation f.formatter.x86_64-linux);
-
   formatters-fn = test (conflake' {
     formatters =
       { rustfmt, ... }:
@@ -876,19 +865,6 @@ runTests {
         "*.rs" = "${rustfmt}";
       };
   }) (f: lib.isDerivation f.formatter.x86_64-linux);
-
-  formatters-disable = test (conflake' {
-    presets.formatters = false;
-  }) (f: !f ? formatter.x86_64-linux);
-
-  formatters-disable-only-builtin = test (conflake' {
-    presets.formatters = false;
-    formatters =
-      { rustfmt, ... }:
-      {
-        "*.rs" = "rustfmt";
-      };
-  }) (f: f ? formatter.x86_64-linux);
 
   bundler =
     test

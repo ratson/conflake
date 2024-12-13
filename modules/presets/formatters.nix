@@ -6,14 +6,18 @@
 }:
 
 let
-  inherit (builtins) elem;
+  inherit (builtins) elem isList listToAttrs;
   inherit (lib)
+    flip
     getExe
     mkDefault
     mkEnableOption
     mkIf
+    mkMerge
+    nameValuePair
+    optionalAttrs
     optionals
-    optionalString
+    pipe
     ;
 
   cfg = config.presets.formatters;
@@ -27,34 +31,65 @@ let
     ];
 
   hasNodejs = pkgs: elem pkgs.stdenv.hostPlatform.system pkgs.nodejs.meta.platforms;
+
+  mkPrettier =
+    enable: exts:
+    mkIf enable {
+      formatters =
+        pkgs:
+        optionalAttrs (hasNodejs pkgs) (
+          pipe exts [
+            (x: if isList x then x else [ x ])
+            (map (flip nameValuePair (mkDefault "cd ${src} && ${getExe pkgs.nodePackages.prettier} --write")))
+            listToAttrs
+          ]
+        );
+    };
 in
 {
-  options.presets.formatters = mkEnableOption "default formatters" // {
-    default = config.formatter == null;
+  options.presets.formatters = {
+    enable = mkEnableOption "default formatters" // {
+      default = config.formatter == null;
+    };
+    json = mkEnableOption "json formatter" // {
+      default = cfg.enable;
+    };
+    markdown = mkEnableOption "markdown formatter" // {
+      default = cfg.enable;
+    };
+    nix = mkEnableOption "nix formatter" // {
+      default = cfg.enable;
+    };
+    yaml = mkEnableOption "yaml formatter" // {
+      default = cfg.enable;
+    };
   };
 
-  config = mkIf cfg {
-    devShell.packages =
-      pkgs:
-      optionals (hasNixfmt pkgs) [
-        pkgs.nixfmt-rfc-style
-      ]
-      ++ optionals (hasNodejs pkgs) [
-        pkgs.nodePackages.prettier
-      ];
-
-    formatters =
-      pkgs:
-      let
-        nixfmt = optionalString (hasNixfmt pkgs) "${getExe pkgs.nixfmt-rfc-style}";
-        prettier = optionalString (hasNodejs pkgs) "cd ${src} && ${getExe pkgs.nodePackages.prettier} --write";
-      in
-      {
-        "*.nix" = mkDefault nixfmt;
-        "*.md" = mkDefault prettier;
-        "*.json" = mkDefault prettier;
-        "*.yaml" = mkDefault prettier;
-        "*.yml" = mkDefault prettier;
-      };
-  };
+  config = mkMerge [
+    (mkIf cfg.nix {
+      devShell.packages =
+        pkgs:
+        optionals (hasNixfmt pkgs) [
+          pkgs.nixfmt-rfc-style
+        ];
+      formatters =
+        pkgs:
+        optionalAttrs (hasNixfmt pkgs) {
+          "*.nix" = mkDefault (getExe pkgs.nixfmt-rfc-style);
+        };
+    })
+    (mkIf (cfg.json || cfg.markdown || cfg.yaml) {
+      devShell.packages =
+        pkgs:
+        optionals (hasNodejs pkgs) [
+          pkgs.nodePackages.prettier
+        ];
+    })
+    (mkPrettier cfg.json "*.json")
+    (mkPrettier cfg.markdown "*.md")
+    (mkPrettier cfg.yaml [
+      "*.yml"
+      "*.yaml"
+    ])
+  ];
 }
