@@ -5,7 +5,7 @@
 }:
 
 let
-  inherit (lib) const isDerivation pipe;
+  inherit (lib) isDerivation;
   inherit (inputs) self;
   inherit (self.lib) withPrefix;
 
@@ -13,94 +13,81 @@ let
   conflake' = conflake ../../tests/empty;
 in
 withPrefix "test-" {
-  formatter = {
-    expr = pipe null [
-      (const (conflake' {
-        formatter = pkgs: pkgs.hello;
-      }))
-      (x: isDerivation x.formatter.x86_64-linux)
-    ];
-    expected = true;
-  };
+  formatter = [
+    (conflake' {
+      formatter = pkgs: pkgs.hello;
+    })
+    (x: isDerivation x.formatter.x86_64-linux)
+    true
+  ];
 
-  formatters = {
-    expr = pipe null [
-      (const (conflake' {
-        devShell.packages = pkgs: [ pkgs.rustfmt ];
-        formatters = {
+  formatters = [
+    (conflake' {
+      devShell.packages = pkgs: [ pkgs.rustfmt ];
+      formatters = {
+        "*.rs" = "rustfmt";
+      };
+    })
+    (x: isDerivation x.formatter.x86_64-linux)
+    true
+  ];
+
+  formatters-disable = [
+    (conflake' {
+      presets.formatters.enable = false;
+    })
+    (x: x ? formatter.x86_64-linux)
+    false
+  ];
+
+  formatters-disable-except = [
+    (conflake' {
+      presets.formatters.enable = false;
+      presets.formatters.nix = true;
+    })
+    (x: x ? formatter.x86_64-linux)
+    true
+  ];
+
+  formatters-disable-all-builtin = [
+    (conflake' {
+      presets.formatters = {
+        json = false;
+        markdown = false;
+        nix = false;
+        yaml = false;
+      };
+    })
+    (x: x ? formatter.x86_64-linux)
+    false
+  ];
+
+  formatters-disable-only-builtin = [
+    (conflake' {
+      presets.formatters.enable = false;
+      formatters =
+        { rustfmt, ... }:
+        {
           "*.rs" = "rustfmt";
         };
-      }))
-      (x: isDerivation x.formatter.x86_64-linux)
-    ];
-    expected = true;
-  };
+    })
+    (x: x ? formatter.x86_64-linux)
+    true
+  ];
 
-  formatters-disable = {
-    expr = pipe null [
-      (const (conflake' {
-        presets.formatters.enable = false;
-      }))
-      (x: x ? formatter.x86_64-linux)
-    ];
-    expected = false;
-  };
-
-  formatters-disable-except = {
-    expr = pipe null [
-      (const (conflake' {
-        presets.formatters.enable = false;
-        presets.formatters.nix = true;
-      }))
-      (x: x ? formatter.x86_64-linux)
-    ];
-    expected = true;
-  };
-
-  formatters-disable-all-builtin = {
-    expr = pipe null [
-      (const (conflake' {
-        presets.formatters = {
-          json = false;
-          markdown = false;
-          nix = false;
-          yaml = false;
-        };
-      }))
-      (x: x ? formatter.x86_64-linux)
-    ];
-    expected = false;
-  };
-
-  formatters-disable-only-builtin = {
-    expr = pipe null [
-      (const (conflake' {
-        presets.formatters.enable = false;
-        formatters =
-          { rustfmt, ... }:
-          {
-            "*.rs" = "rustfmt";
-          };
-      }))
-      (x: x ? formatter.x86_64-linux)
-    ];
-    expected = true;
-  };
-
-  self-outputs = {
-    expr = pipe inputs.self [
-      (x: [
-        (x ? __functor)
-        (x ? lib.mkOutputs)
-        (x ? templates.default.path)
-        (x.templates.default.description != "default")
-      ])
-    ];
-    expected = [
+  self-outputs = [
+    inputs.self
+    (x: [
+      (x ? __functor)
+      (x ? lib.mkOutputs)
+      (x ? templates.default.path)
+      (x.templates.default.description != "default")
+    ])
+    [
       true
       true
       true
       true
-    ];
-  };
+    ]
+  ];
 }
