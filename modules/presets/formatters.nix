@@ -49,7 +49,7 @@ in
 {
   options.presets.formatters = {
     enable = mkEnableOption "default formatters" // {
-      default = config.formatter == null;
+      default = config.presets.enable && config.formatter == null;
     };
     json = mkEnableOption "json formatter" // {
       default = cfg.enable;

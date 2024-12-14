@@ -75,6 +75,14 @@ withPrefix "test-" {
     true
   ];
 
+  presets-disable = [
+    (conflake' {
+      presets.enable = false;
+    })
+    (x: x ? formatter.x86_64-linux)
+    false
+  ];
+
   self-outputs = [
     inputs.self
     (x: [
