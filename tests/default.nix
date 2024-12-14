@@ -1058,13 +1058,6 @@ runTests {
     functor = _: _: true;
   }) (f: !(builtins.tryEval f).success);
 
-  empty-flake = {
-    expr = conflake' {
-      disabledModules = [ "presets/formatters.nix" ];
-    };
-    expected = { };
-  };
-
   default-nixpkgs = test (conflake' (
     { inputs, ... }:
     {

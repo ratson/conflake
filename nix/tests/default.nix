@@ -13,6 +13,13 @@ let
   conflake' = conflake ../../tests/empty;
 in
 withPrefix "test-" {
+  empty-flake = [
+    (conflake' {
+      disabledModules = [ "presets" ];
+    })
+    { }
+  ];
+
   formatter = [
     (conflake' {
       formatter = pkgs: pkgs.hello;
@@ -79,8 +86,7 @@ withPrefix "test-" {
     (conflake' {
       presets.enable = false;
     })
-    (x: x ? formatter.x86_64-linux)
-    false
+    { }
   ];
 
   self-outputs = [

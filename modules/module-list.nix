@@ -28,7 +28,6 @@
   ./darwin/darwinModules.nix
   ./home-manager/homeConfigurations.nix
   ./home-manager/homeModules.nix
-  ./presets/enable.nix
-  ./presets/formatters.nix
-  ./presets/overlay.nix
+  ./overlay.nix
+  ./presets
 ]

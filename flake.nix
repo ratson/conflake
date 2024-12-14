@@ -9,17 +9,23 @@
     lib.mkOutputs ./. {
       inherit inputs lib;
 
-      checks.deadnix = pkgs: "${pkgs.deadnix}/bin/deadnix -f --exclude=nix/tests ./misc ./modules ./nix";
-      checks.statix = pkgs: "${pkgs.statix}/bin/statix check";
-
       functor = _: lib.mkOutputs;
-
-      outputs.tests = import ./tests/run.nix inputs;
 
       templates = {
         default = {
           description = "Minimal Conflake flake.";
         };
+      };
+
+      outputs.tests = import ./tests/run.nix inputs;
+      presets.checks.deadnix = {
+        enable = true;
+        exclude = "nix/tests";
+        files = [
+          "misc"
+          "modules"
+          "nix"
+        ];
       };
     };
 
