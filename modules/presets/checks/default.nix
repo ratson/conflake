@@ -7,6 +7,7 @@ in
   imports = [
     ./deadnix.nix
     ./editorconfig.nix
+    ./tests.nix
     ./statix.nix
   ];
 

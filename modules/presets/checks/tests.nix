@@ -27,7 +27,7 @@ let
   inherit (lib.generators) toPretty;
   inherit (lib.types) lazyAttrsOf;
 
-  cfg = config.tests;
+  cfg = config.presets.checks.tests;
 
   mkSuite = mapAttrs (
     k: v:
@@ -44,7 +44,7 @@ let
   );
 in
 {
-  options.tests = {
+  options.presets.checks.tests = {
     enable = mkEnableOption "tests" // {
       default = true;
     };
