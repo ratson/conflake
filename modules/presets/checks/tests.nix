@@ -18,6 +18,7 @@ let
     flip
     head
     last
+    mkDefault
     mkEnableOption
     mkIf
     mkOption
@@ -43,18 +44,47 @@ let
     else
       v
   );
+
+  testsPlaceholder = {
+    "flake.nix#tests" = null;
+  };
+
+  mkCheck =
+    tests: pkgs:
+    let
+      results = lib.mapAttrsRecursive (
+        path:
+        flip pipe [
+          (x: if x == null then config.tests else pkgs.callPackage x (moduleArgs // cfg.args))
+          mkSuite
+          lib.runTests
+          (
+            cases:
+            if cases == [ ] then
+              "Unit tests successful"
+            else
+              throw "Unit tests failed: ${toPretty { } cases}\nin ${toString path}"
+          )
+        ]
+      ) tests;
+    in
+    pkgs.runCommandLocal "check-tests" { } ''
+      mkdir $out
+      cp ${toFile "test-results.json" (toJSON results)} $out
+    '';
 in
 {
+  options.tests = mkOption {
+    type = lazyAttrsOf types.attrs;
+    default = { };
+  };
+
   options.presets.checks.tests = {
     enable = mkEnableOption "tests" // {
-      default = true;
+      default = config.presets.enable;
     };
     args = mkOption {
       type = lazyAttrsOf types.raw;
-      default = { };
-    };
-    cases = mkOption {
-      type = lazyAttrsOf types.attrs;
       default = { };
     };
     name = mkOption {
@@ -68,35 +98,12 @@ in
   };
 
   config = mkIf cfg.enable {
+    checks.${cfg.name} = mkDefault (mkCheck testsPlaceholder);
+
     loaders.${config.mkLoaderKey cfg.src}.load =
       { src, ... }:
       {
-        checks.${cfg.name} =
-          pkgs:
-          let
-            tests = (config.loadDir src) // {
-              "tests.cases" = null;
-            };
-            results = lib.mapAttrsRecursive (
-              path:
-              flip pipe [
-                (x: if x == null then cfg.cases else pkgs.callPackage x (moduleArgs // cfg.args))
-                mkSuite
-                lib.runTests
-                (
-                  cases:
-                  if cases == [ ] then
-                    "Unit tests successful"
-                  else
-                    throw "Unit tests failed: ${toPretty { } cases}\nin ${toString path}"
-                )
-              ]
-            ) tests;
-          in
-          pkgs.runCommandLocal "check-tests" { } ''
-            mkdir $out
-            cp ${toFile "test-results.json" (toJSON results)} $out
-          '';
+        checks.${cfg.name} = mkCheck ((config.loadDir src) // testsPlaceholder);
       };
   };
 }
