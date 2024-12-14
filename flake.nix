@@ -5,11 +5,12 @@
     inputs:
     let
       lib = import ./. inputs;
+      conflake = lib.mkOutputs;
     in
-    lib.mkOutputs ./. {
+    conflake ./. {
       inherit inputs lib;
 
-      functor = _: lib.mkOutputs;
+      functor = _: conflake;
 
       templates = {
         default = {
