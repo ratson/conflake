@@ -11,6 +11,8 @@ let
 
   conflake = self;
   conflake' = conflake ../../tests/empty;
+
+  editorconfigSrc = ../../tests/editorconfig;
 in
 withPrefix "test-" {
   empty-flake = [
@@ -87,6 +89,20 @@ withPrefix "test-" {
       presets.enable = false;
     })
     { }
+  ];
+
+  presets-checks-editorconfig = [
+    (conflake editorconfigSrc { })
+    (x: x ? checks.x86_64-linux.editorconfig)
+    true
+  ];
+
+  presets-checks-editorconfig-disabled = [
+    (conflake editorconfigSrc {
+      presets.checks.editorconfig.enable = false;
+    })
+    (x: x ? checks.x86_64-linux.editorconfig)
+    false
   ];
 
   self-outputs = [

@@ -8,7 +8,7 @@
 }:
 
 let
-  inherit (builtins) elem;
+  inherit (builtins) concatStringsSep elem;
   inherit (lib)
     getExe
     mkEnableOption
@@ -19,35 +19,33 @@ let
     ;
   inherit (conflake) mkCheck;
 
-  cfg = config.editorconfig;
+  cfg = config.presets.checks.editorconfig;
 
   platforms = lib.platforms.darwin ++ lib.platforms.linux;
 
   mkArgs =
     entries:
-    if (cfg.checkArgs != null) then
-      cfg.checkArgs
+    if (cfg.args != null) then
+      cfg.args
     else
       # By default, high false-positive flags are disabled.
       optionalString (
         (entries.".ecrc" or "") != "regular"
-      ) " -disable-indent-size -disable-max-line-length";
+      ) "-disable-indent-size -disable-max-line-length";
 in
 {
-  options.editorconfig = {
-    check = mkEnableOption "editorconfig check" // {
-      default = true;
+  options.presets.checks.editorconfig = {
+    enable = mkEnableOption "editorconfig check" // {
+      default = config.presets.checks.enable;
     };
-
-    checkArgs = mkOption {
+    args = mkOption {
       type = types.nullOr types.str;
       default = null;
     };
   };
 
-  config = {
+  config = mkIf cfg.enable {
     loaders.".editorconfig" = {
-      enable = cfg.check;
       match = conflake.matchers.file;
       load =
         { entries, ... }:
@@ -56,7 +54,10 @@ in
             pkgs:
             mkIf (elem pkgs.stdenv.hostPlatform.system platforms) {
               editorconfig = mkCheck "editorconfig" pkgs src (
-                "${getExe pkgs.editorconfig-checker}" + (mkArgs entries)
+                concatStringsSep " " [
+                  (getExe pkgs.editorconfig-checker)
+                  (mkArgs entries)
+                ]
               );
             }
           );

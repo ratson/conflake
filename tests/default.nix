@@ -1044,12 +1044,6 @@ runTests {
       };
   }) (f: builtins.isList f.packages.x86_64-linux.test.meta.license);
 
-  editorconfig = test (conflake ./editorconfig { }) (f: f ? checks.x86_64-linux.editorconfig);
-
-  editorconfig-disabled = test (conflake ./editorconfig {
-    editorconfig.check = false;
-  }) (f: !f ? checks.x86_64-linux.editorconfig);
-
   modulesPath = test (conflake' {
     disabledModules = [
       "config/functor.nix"
