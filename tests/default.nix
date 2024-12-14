@@ -5,8 +5,18 @@
 }:
 
 let
-  inherit (builtins) attrNames;
-  inherit (lib) const isDerivation pipe;
+  inherit (builtins)
+    attrNames
+    deepSeq
+    isList
+    tryEval
+    ;
+  inherit (lib)
+    const
+    fix
+    isDerivation
+    pipe
+    ;
   inherit (inputs) self nixpkgs;
   inherit (self.lib) withPrefix;
 
@@ -24,7 +34,11 @@ let
   conflake' = conflake fixtures.empty;
 in
 withPrefix "test-" {
-  call-conflake = test (conflake' { outputs.test = true; }) (f: f.test);
+  call-conflake = [
+    (conflake' { outputs.test = true; })
+    (x: x.test)
+    true
+  ];
 
   explicit-mkOutputs = [
     (conflake.lib.mkOutputs fixtures.empty { outputs.test = true; })
@@ -32,42 +46,58 @@ withPrefix "test-" {
     true
   ];
 
-  module-with-args = test (conflake' (
-    { lib, config, ... }:
-    {
-      outputs.test = true;
-    }
-  )) (f: f.test);
+  module-with-args = [
+    (conflake' (
+      { lib, config, ... }:
+      {
+        outputs.test = true;
+      }
+    ))
+    (x: x.test)
+    true
+  ];
 
-  src-arg = test (conflake ./test-path (
-    { src, ... }:
-    {
-      outputs = {
-        inherit src;
-      };
-    }
-  )) (f: f.src == ./test-path);
+  src-arg = [
+    (conflake ./test-path (
+      { src, ... }:
+      {
+        outputs = {
+          inherit src;
+        };
+      }
+    ))
+    (x: x.src)
+    ./test-path
+  ];
 
-  lib-arg = test (conflake' (
-    { lib, ... }:
-    {
-      outputs = {
-        inherit lib;
-      };
-    }
-  )) (f: f.lib ? fix);
+  lib-arg = [
+    (conflake' (
+      { lib, ... }:
+      {
+        outputs = {
+          inherit lib;
+        };
+      }
+    ))
+    (x: x.lib ? fix)
+    true
+  ];
 
-  config-arg = test (conflake' (
-    { config, ... }:
-    {
-      lib = {
-        a = true;
-      };
-      outputs = {
-        inherit config;
-      };
-    }
-  )) (f: f.config.lib.a);
+  config-arg = [
+    (conflake' (
+      { config, ... }:
+      {
+        lib = {
+          a = true;
+        };
+        outputs = {
+          inherit config;
+        };
+      }
+    ))
+    (x: x.config.lib.a)
+    true
+  ];
 
   options-arg = test (conflake' (
     { options, ... }:
@@ -97,23 +127,23 @@ withPrefix "test-" {
     }
   )) (f: f.inputs.test);
 
-  moduleArgs-arg = {
-    expr =
-      (conflake' (
-        { inputs, ... }:
-        {
-          moduleArgs.extra = {
-            username = "user";
+  moduleArgs-arg = [
+    (conflake' (
+      { inputs, ... }:
+      {
+        moduleArgs.extra = {
+          username = "user";
+        };
+        outputs =
+          { username, ... }:
+          {
+            test = username;
           };
-          outputs =
-            { username, ... }:
-            {
-              test = username;
-            };
-        }
-      )).test;
-    expected = "user";
-  };
+      }
+    ))
+    (x: x.test)
+    "user"
+  ];
 
   overridden-nixpkgs = test (conflake' (
     { inputs, ... }:
@@ -135,30 +165,36 @@ withPrefix "test-" {
     }
   )) (f: f.test);
 
-  moduleArgs =
-    test
-      (conflake' (
-        { moduleArgs, ... }:
-        {
-          outputs = {
-            inherit moduleArgs;
-          };
-        }
-      ))
-      (
-        f:
-        f.moduleArgs ? config
-        && f.moduleArgs ? options
-        && f.moduleArgs ? src
-        && f.moduleArgs ? lib
-        && f.moduleArgs ? conflake
-        && f.moduleArgs ? inputs
-        && f.moduleArgs ? outputs
-        && f.moduleArgs ? pkgsFor
-        && f.moduleArgs ? specialArgs
-        && f.moduleArgs ? modulesPath
-        && f.moduleArgs ? moduleArgs
-      );
+  moduleArgs = [
+    (conflake' (
+      { moduleArgs, ... }:
+      {
+        outputs = {
+          inherit moduleArgs;
+        };
+      }
+    ))
+    (x: attrNames x.moduleArgs)
+    [
+      "config"
+      "conflake"
+      "extendModules"
+      "flakePath"
+      "genSystems"
+      "inputs"
+      "lib"
+      "mkSystemArgs"
+      "mkSystemArgs'"
+      "moduleArgs"
+      "moduleType"
+      "modulesPath"
+      "options"
+      "outputs"
+      "pkgsFor"
+      "specialArgs"
+      "src"
+    ]
+  ];
 
   moduleArgs-add = test (conflake' {
     _module.args.test-val = true;
@@ -169,20 +205,24 @@ withPrefix "test-" {
       };
   }) (f: f.test);
 
-  extra-pkgs-vals = test (conflake' {
-    package =
-      {
-        src,
-        inputs,
-        outputs,
-        conflake,
-        inputs',
-        outputs',
-        defaultMeta,
-        writeText,
-      }:
-      writeText "test" "";
-  }) (f: f.packages.x86_64-linux.default.name == "test");
+  extra-pkgs-vals = [
+    (conflake' {
+      package =
+        {
+          src,
+          inputs,
+          outputs,
+          conflake,
+          inputs',
+          outputs',
+          defaultMeta,
+          writeText,
+        }:
+        writeText "test" "";
+    })
+    (x: x.packages.x86_64-linux.default.name)
+    "test"
+  ];
 
   inputs' = test (conflake' {
     systems = [ "x86_64-linux" ];
@@ -204,38 +244,45 @@ withPrefix "test-" {
       };
   }) (f: f.test.x86_64-linux);
 
-  systems =
-    test
-      (conflake' {
-        systems = [
-          "i686-linux"
-          "armv7l-linux"
-        ];
+  systems = [
+    (conflake' {
+      systems = [
+        "i686-linux"
+        "armv7l-linux"
+      ];
+      perSystem = _: { test = true; };
+    })
+    (x: x.test)
+    attrNames
+    [
+      "armv7l-linux"
+      "i686-linux"
+    ]
+  ];
+
+  all-flakes-systems = [
+    (conflake' (
+      { lib, ... }:
+      {
+        systems = lib.systems.flakeExposed;
         perSystem = _: { test = true; };
-      })
-      (
-        f:
-        (attrNames f.test) == [
-          "armv7l-linux"
-          "i686-linux"
-        ]
-      );
+      }
+    ))
+    (x: deepSeq x.test x.test.x86_64-linux)
+    true
+  ];
 
-  all-flakes-systems = test (conflake' (
-    { lib, ... }:
-    {
-      systems = lib.systems.flakeExposed;
-      perSystem = _: { test = true; };
-    }
-  )) (f: builtins.deepSeq f.test f.test.x86_64-linux);
-
-  all-linux-systems = test (conflake' (
-    { lib, ... }:
-    {
-      systems = lib.intersectLists lib.systems.doubles.linux lib.systems.flakeExposed;
-      perSystem = _: { test = true; };
-    }
-  )) (f: builtins.deepSeq f.test f.test.x86_64-linux);
+  all-linux-systems = [
+    (conflake' (
+      { lib, ... }:
+      {
+        systems = lib.intersectLists lib.systems.doubles.linux lib.systems.flakeExposed;
+        perSystem = _: { test = true; };
+      }
+    ))
+    (x: deepSeq x.test x.test.x86_64-linux)
+    true
+  ];
 
   outputs = test (conflake' {
     outputs.example.test = true;
@@ -402,7 +449,8 @@ withPrefix "test-" {
           installPhase = "echo true > $out";
         };
     })
-    (f: (nixpkgs.legacyPackages.x86_64-linux.extend f.overlays.default) ? default)
+    (x: nixpkgs.legacyPackages.x86_64-linux.extend x.overlays.default)
+    (x: x ? default)
     false
   ];
 
@@ -425,7 +473,7 @@ withPrefix "test-" {
           };
       };
     })
-    (f: (import f.packages.x86_64-linux.pkg2))
+    (x: import x.packages.x86_64-linux.pkg2)
     true
   ];
 
@@ -448,7 +496,7 @@ withPrefix "test-" {
           };
       };
     })
-    (f: (import f.packages.x86_64-linux.pkg2))
+    (x: import x.packages.x86_64-linux.pkg2)
     true
   ];
 
@@ -471,34 +519,48 @@ withPrefix "test-" {
             { }
         );
     })
-    (f: (import f.packages.x86_64-linux.default) && !(f.packages.aarch64-linux ? default))
-    true
+    (x: [
+      (import x.packages.x86_64-linux.default)
+      (x.packages.aarch64-linux ? default)
+    ])
+    [
+      true
+      false
+    ]
   ];
 
-  legacyPackages-set-pkgs = test (conflake' {
-    inputs = {
-      inherit nixpkgs;
-    };
-    legacyPackages = pkgs: pkgs;
-  }) (f: f.legacyPackages.x86_64-linux.hello == nixpkgs.legacyPackages.x86_64-linux.hello);
+  legacyPackages-set-pkgs = [
+    (conflake' {
+      inputs = {
+        inherit nixpkgs;
+      };
+      legacyPackages = pkgs: pkgs;
+    })
+    (x: x.legacyPackages.x86_64-linux.hello)
+    nixpkgs.legacyPackages.x86_64-linux.hello
+  ];
 
-  legacyPackages-set-nixpkgs = test (conflake' {
-    inputs = {
-      inherit nixpkgs;
-    };
-    legacyPackages = pkgs: nixpkgs.legacyPackages.${pkgs.system};
-  }) (f: f.legacyPackages.x86_64-linux.hello == nixpkgs.legacyPackages.x86_64-linux.hello);
+  legacyPackages-set-nixpkgs = [
+    (conflake' {
+      inputs = {
+        inherit nixpkgs;
+      };
+      legacyPackages = pkgs: nixpkgs.legacyPackages.${pkgs.system};
+    })
+    (x: x.legacyPackages.x86_64-linux.hello)
+    nixpkgs.legacyPackages.x86_64-linux.hello
+  ];
 
-  legacyPackages-set-attrs = {
-    expr =
-      (conflake' {
-        inputs = {
-          inherit nixpkgs;
-        };
-        legacyPackages = pkgs: { };
-      }).legacyPackages.x86_64-linux;
-    expected = { };
-  };
+  legacyPackages-set-attrs = [
+    (conflake' {
+      inputs = {
+        inherit nixpkgs;
+      };
+      legacyPackages = pkgs: { };
+    })
+    (x: x.legacyPackages.x86_64-linux)
+    { }
+  ];
 
   devShell = test (conflake' {
     devShell = {
@@ -511,21 +573,21 @@ withPrefix "test-" {
       stdenv = pkgs: pkgs.clangStdenv;
       hardeningDisable = [ "all" ];
     };
-  }) (f: lib.isDerivation f.devShells.x86_64-linux.default);
+  }) (f: isDerivation f.devShells.x86_64-linux.default);
 
   devShell-empty = test (conflake' {
     disabledModules = [ "presets/formatters.nix" ];
     devShell = { };
-  }) (f: lib.isDerivation f.devShells.x86_64-linux.default);
+  }) (f: isDerivation f.devShells.x86_64-linux.default);
 
   devShell-pkgDef = test (conflake' {
     devShell = { mkShell }: mkShell { };
-  }) (f: lib.isDerivation f.devShells.x86_64-linux.default);
+  }) (f: isDerivation f.devShells.x86_64-linux.default);
 
   devShell-pkgDef-empty = test (conflake' {
     disabledModules = [ "presets/formatters.nix" ];
     devShell = { mkShell }: mkShell { };
-  }) (f: lib.isDerivation f.devShells.x86_64-linux.default);
+  }) (f: isDerivation f.devShells.x86_64-linux.default);
 
   devShell-pkgs-arg = test (conflake' {
     devShell = pkgs: {
@@ -537,7 +599,7 @@ withPrefix "test-" {
       env.TEST_VAR = "test value";
       stdenv = pkgs.clangStdenv;
     };
-  }) (f: lib.isDerivation f.devShells.x86_64-linux.default);
+  }) (f: isDerivation f.devShells.x86_64-linux.default);
 
   devShell-pkgs-arg-set = test (conflake' {
     devShell =
@@ -556,7 +618,7 @@ withPrefix "test-" {
         env.TEST_VAR = "test value";
         stdenv = clangStdenv;
       };
-  }) (f: lib.isDerivation f.devShells.x86_64-linux.default);
+  }) (f: isDerivation f.devShells.x86_64-linux.default);
 
   devShell-pkg = test (conflake' (
     { inputs, ... }:
@@ -564,333 +626,314 @@ withPrefix "test-" {
       systems = [ "x86_64-linux" ];
       devShell = inputs.nixpkgs.legacyPackages.x86_64-linux.hello;
     }
-  )) (f: lib.isDerivation f.devShells.x86_64-linux.default);
+  )) (f: isDerivation f.devShells.x86_64-linux.default);
 
   devShell-pkg-fn = test (conflake' {
     devShell = pkgs: pkgs.hello;
-  }) (f: lib.isDerivation f.devShells.x86_64-linux.default);
+  }) (f: isDerivation f.devShells.x86_64-linux.default);
 
   devShell-buildInputs = test (conflake' {
     devShell.buildInputs = pkgs: [ pkgs.hello ];
-  }) (f: lib.isDerivation f.devShells.x86_64-linux.default);
+  }) (f: isDerivation f.devShells.x86_64-linux.default);
 
-  devShells =
-    test
-      (conflake' {
-        devShell.inputsFrom = pkgs: [ pkgs.emacs ];
-        devShells = {
-          shell1 = { mkShell }: mkShell { };
-          shell2 = {
-            packages = pkgs: [ pkgs.emacs ];
-          };
-          shell3 = pkgs: { packages = [ pkgs.emacs ]; };
-          shell4 =
-            { emacs, ... }:
-            {
-              packages = [ emacs ];
-            };
+  devShells = [
+    (conflake' {
+      devShell.inputsFrom = pkgs: [ pkgs.emacs ];
+      devShells = {
+        shell1 = { mkShell }: mkShell { };
+        shell2 = {
+          packages = pkgs: [ pkgs.emacs ];
         };
-      })
-      (
-        f:
-        (lib.isDerivation f.devShells.x86_64-linux.default)
-        && (lib.isDerivation f.devShells.x86_64-linux.shell1)
-        && (lib.isDerivation f.devShells.x86_64-linux.shell2)
-        && (lib.isDerivation f.devShells.x86_64-linux.shell3)
-        && (lib.isDerivation f.devShells.x86_64-linux.shell4)
-      );
+        shell3 = pkgs: { packages = [ pkgs.emacs ]; };
+        shell4 =
+          { emacs, ... }:
+          {
+            packages = [ emacs ];
+          };
+      };
+    })
+    (x: [
+      (isDerivation x.devShells.x86_64-linux.default)
+      (isDerivation x.devShells.x86_64-linux.shell1)
+      (isDerivation x.devShells.x86_64-linux.shell2)
+      (isDerivation x.devShells.x86_64-linux.shell3)
+      (isDerivation x.devShells.x86_64-linux.shell4)
+    ])
+    [
+      true
+      true
+      true
+      true
+      true
+    ]
+  ];
 
   devShells-override = test (conflake' {
     devShells.default = { mkShellNoCC }: mkShellNoCC { };
   }) (f: f ? devShells.x86_64-linux.default);
 
-  devShells-import =
-    test
-      (conflake' (
-        { config, ... }:
+  devShells-import = [
+    (conflake' (
+      { config, ... }:
+      {
+        devShell.inputsFrom = pkgs: [ pkgs.emacs ];
+        devShells.shell1 = pkgs: { imports = [ (config.devShell pkgs) ]; };
+      }
+    ))
+    (x: [
+      (isDerivation x.devShells.x86_64-linux.default)
+      (isDerivation x.devShells.x86_64-linux.shell1)
+    ])
+    [
+      true
+      true
+    ]
+  ];
+
+  overlay = [
+    (conflake' {
+      overlay = final: prev: { testValue = "hello"; };
+    })
+    (x: fix (self: x.overlays.default self { }))
+    { testValue = "hello"; }
+  ];
+
+  overlays = [
+    (conflake' {
+      overlay = final: prev: { testValue = "hello"; };
+      overlays.cool = final: prev: { testValue = "cool"; };
+    })
+    (x: [
+      (fix (self: x.overlays.default self { }))
+      (fix (self: x.overlays.cool self { }))
+    ])
+    [
+      { testValue = "hello"; }
+      { testValue = "cool"; }
+    ]
+  ];
+
+  overlay-empty = [
+    (conflake' { overlay = final: prev: { }; })
+    (x: x.overlays.default { } { })
+    attrNames
+    [ ]
+  ];
+
+  overlay-merge = [
+    (conflake' {
+      imports = [
+        { overlay = final: prev: { testValue = "hello"; }; }
+        { overlay = final: prev: { testValue2 = "hello2"; }; }
+      ];
+    })
+    (x: fix (self: x.overlays.default self { }))
+    {
+      testValue = "hello";
+      testValue2 = "hello2";
+    }
+  ];
+
+  overlays-merge = [
+    (conflake' {
+      imports = [
+        { overlays.test = final: prev: { testValue = "hello"; }; }
+        { overlays.test = final: prev: { testValue2 = "hello2"; }; }
+      ];
+    })
+    (x: fix (self: x.overlays.test self { }))
+    {
+      testValue = "hello";
+      testValue2 = "hello2";
+    }
+  ];
+
+  checks = [
+    (conflake' {
+      checks = {
+        test-fail = pkgs: "exit 1";
+        test-success = pkgs: pkgs.hello;
+      };
+    })
+    (x: [
+      ((x ? checks.x86_64-linux.test-fail) && (isDerivation x.checks.x86_64-linux.test-success))
+      ((x ? checks.x86_64-linux.test-success) && (isDerivation x.checks.x86_64-linux.test-success))
+    ])
+    [
+      true
+      true
+    ]
+  ];
+
+  app = [
+    (conflake' {
+      app = {
+        type = "app";
+        program = "${nixpkgs.legacyPackages.x86_64-linux.hello}/bin/hello";
+      };
+    })
+    (x: x.apps.x86_64-linux.default)
+    {
+      type = "app";
+      program = "${nixpkgs.legacyPackages.x86_64-linux.hello}/bin/hello";
+    }
+  ];
+
+  app-fn = [
+    (conflake' {
+      app = pkgs: {
+        type = "app";
+        program = "${pkgs.hello}/bin/hello";
+      };
+    })
+    (x: x.apps.x86_64-linux.default)
+    {
+      type = "app";
+      program = "${nixpkgs.legacyPackages.x86_64-linux.hello}/bin/hello";
+    }
+  ];
+
+  app-string = [
+    (conflake' {
+      inputs = {
+        inherit nixpkgs;
+      };
+      app = "${nixpkgs.legacyPackages.x86_64-linux.hello}/bin/hello";
+    })
+    (x: x.apps.x86_64-linux.default)
+    {
+      type = "app";
+      program = "${nixpkgs.legacyPackages.x86_64-linux.hello}/bin/hello";
+    }
+  ];
+
+  app-string-fn = [
+    (conflake' {
+      inputs = {
+        inherit nixpkgs;
+      };
+      app = pkgs: "${pkgs.hello}/bin/hello";
+    })
+    (x: x.apps.x86_64-linux.default)
+    {
+      type = "app";
+      program = "${nixpkgs.legacyPackages.x86_64-linux.hello}/bin/hello";
+    }
+  ];
+
+  apps = [
+    (conflake' {
+      inputs = {
+        inherit nixpkgs;
+      };
+      apps = {
+        emacs = pkgs: "${pkgs.emacs}/bin/emacs";
+        bash = pkgs: {
+          type = "app";
+          program = "${pkgs.bash}/bin/bash";
+        };
+      };
+    })
+    (x: x.apps.x86_64-linux)
+    {
+      emacs = {
+        type = "app";
+        program = "${nixpkgs.legacyPackages.x86_64-linux.emacs}/bin/emacs";
+      };
+      bash = {
+        type = "app";
+        program = "${nixpkgs.legacyPackages.x86_64-linux.bash}/bin/bash";
+      };
+    }
+  ];
+
+  apps-fn = [
+    (conflake' {
+      inputs = {
+        inherit nixpkgs;
+      };
+      apps =
+        { emacs, bash, ... }:
         {
-          devShell.inputsFrom = pkgs: [ pkgs.emacs ];
-          devShells.shell1 = pkgs: { imports = [ (config.devShell pkgs) ]; };
-        }
-      ))
-      (
-        f:
-        (lib.isDerivation f.devShells.x86_64-linux.default)
-        && (lib.isDerivation f.devShells.x86_64-linux.shell1)
-      );
-
-  overlay = test (conflake' {
-    overlay = final: prev: { testValue = "hello"; };
-  }) (f: (lib.fix (self: f.overlays.default self { })) == { testValue = "hello"; });
-
-  overlays =
-    test
-      (conflake' {
-        overlay = final: prev: { testValue = "hello"; };
-        overlays.cool = final: prev: { testValue = "cool"; };
-      })
-      (
-        f:
-        ((lib.fix (self: f.overlays.default self { })) == { testValue = "hello"; })
-        && ((lib.fix (self: f.overlays.cool self { })) == { testValue = "cool"; })
-      );
-
-  overlay-empty = {
-    expr = pipe (conflake' { overlay = final: prev: { }; }) [
-      (x: x.overlays.default { } { })
-      attrNames
-    ];
-    expected = [ ];
-  };
-
-  overlay-merge =
-    test
-      (conflake' {
-        imports = [
-          { overlay = final: prev: { testValue = "hello"; }; }
-          { overlay = final: prev: { testValue2 = "hello2"; }; }
-        ];
-      })
-      (
-        f:
-        (
-          (lib.fix (self: f.overlays.default self { })) == {
-            testValue = "hello";
-            testValue2 = "hello2";
-          }
-        )
-      );
-
-  overlays-merge =
-    test
-      (conflake' {
-        imports = [
-          { overlays.test = final: prev: { testValue = "hello"; }; }
-          { overlays.test = final: prev: { testValue2 = "hello2"; }; }
-        ];
-      })
-      (
-        f:
-        (
-          (lib.fix (self: f.overlays.test self { })) == {
-            testValue = "hello";
-            testValue2 = "hello2";
-          }
-        )
-      );
-
-  checks =
-    test
-      (conflake' {
-        checks = {
-          test-fail = pkgs: "exit 1";
-          test-success = pkgs: pkgs.hello;
-        };
-      })
-      (
-        f:
-        (f ? checks.x86_64-linux.test-fail)
-        && (lib.isDerivation f.checks.x86_64-linux.test-success)
-        && (f ? checks.x86_64-linux.test-success)
-        && (lib.isDerivation f.checks.x86_64-linux.test-success)
-      );
-
-  app =
-    test
-      (conflake' {
-        app = {
-          type = "app";
-          program = "${nixpkgs.legacyPackages.x86_64-linux.hello}/bin/hello";
-        };
-      })
-      (
-        f:
-        (
-          f.apps.x86_64-linux.default == {
-            type = "app";
-            program = "${nixpkgs.legacyPackages.x86_64-linux.hello}/bin/hello";
-          }
-        )
-      );
-
-  app-fn =
-    test
-      (conflake' {
-        app = pkgs: {
-          type = "app";
-          program = "${pkgs.hello}/bin/hello";
-        };
-      })
-      (
-        f:
-        (
-          f.apps.x86_64-linux.default == {
-            type = "app";
-            program = "${nixpkgs.legacyPackages.x86_64-linux.hello}/bin/hello";
-          }
-        )
-      );
-
-  app-string =
-    test
-      (conflake' {
-        inputs = {
-          inherit nixpkgs;
-        };
-        app = "${nixpkgs.legacyPackages.x86_64-linux.hello}/bin/hello";
-      })
-      (
-        f:
-        (
-          f.apps.x86_64-linux.default == {
-            type = "app";
-            program = "${nixpkgs.legacyPackages.x86_64-linux.hello}/bin/hello";
-          }
-        )
-      );
-
-  app-string-fn =
-    test
-      (conflake' {
-        inputs = {
-          inherit nixpkgs;
-        };
-        app = pkgs: "${pkgs.hello}/bin/hello";
-      })
-      (
-        f:
-        (
-          f.apps.x86_64-linux.default == {
-            type = "app";
-            program = "${nixpkgs.legacyPackages.x86_64-linux.hello}/bin/hello";
-          }
-        )
-      );
-
-  apps =
-    test
-      (conflake' {
-        inputs = {
-          inherit nixpkgs;
-        };
-        apps = {
-          emacs = pkgs: "${pkgs.emacs}/bin/emacs";
-          bash = pkgs: {
-            type = "app";
-            program = "${pkgs.bash}/bin/bash";
-          };
-        };
-      })
-      (
-        f:
-        f.apps.x86_64-linux == {
-          emacs = {
-            type = "app";
-            program = "${nixpkgs.legacyPackages.x86_64-linux.emacs}/bin/emacs";
-          };
+          emacs = "${emacs}/bin/emacs";
           bash = {
             type = "app";
-            program = "${nixpkgs.legacyPackages.x86_64-linux.bash}/bin/bash";
+            program = "${bash}/bin/bash";
           };
-        }
-      );
-
-  apps-fn =
-    test
-      (conflake' {
-        inputs = {
-          inherit nixpkgs;
         };
-        apps =
-          { emacs, bash, ... }:
-          {
-            emacs = "${emacs}/bin/emacs";
-            bash = {
-              type = "app";
-              program = "${bash}/bin/bash";
-            };
-          };
-      })
-      (
-        f:
-        f.apps.x86_64-linux == {
-          emacs = {
-            type = "app";
-            program = "${nixpkgs.legacyPackages.x86_64-linux.emacs}/bin/emacs";
-          };
-          bash = {
-            type = "app";
-            program = "${nixpkgs.legacyPackages.x86_64-linux.bash}/bin/bash";
-          };
-        }
-      );
+    })
+    (x: x.apps.x86_64-linux)
+    {
+      emacs = {
+        type = "app";
+        program = "${nixpkgs.legacyPackages.x86_64-linux.emacs}/bin/emacs";
+      };
+      bash = {
+        type = "app";
+        program = "${nixpkgs.legacyPackages.x86_64-linux.bash}/bin/bash";
+      };
+    }
+  ];
 
-  template = {
-    expr =
-      (conflake' {
-        template = {
-          path = ./test;
-          description = "test template";
-        };
-      }).templates.default;
-
-    expected = {
+  template = [
+    (conflake' {
+      template = {
+        path = ./test;
+        description = "test template";
+      };
+    })
+    (x: x.templates.default)
+    {
       path = ./test;
       description = "test template";
-    };
-  };
+    }
+  ];
 
-  template-fn =
-    test
-      (conflake' {
-        template =
-          { inputs, ... }:
-          {
-            path = ./test;
-            description = "test template";
-          };
-      })
-      (
-        f:
-        f.templates.default == {
-          path = ./test;
-          description = "test template";
-        }
-      );
-
-  templates =
-    test
-      (conflake' {
-        templates.test-template = {
+  template-fn = [
+    (conflake' {
+      template =
+        { inputs, ... }:
+        {
           path = ./test;
           description = "test template";
         };
-      })
-      (
-        f:
-        f.templates.test-template == {
-          path = ./test;
-          description = "test template";
-        }
-      );
+    })
+    (x: x.templates.default)
+    {
+      path = ./test;
+      description = "test template";
+    }
+  ];
 
-  templates-welcomeText =
-    test
-      (conflake' {
-        templates.test-template = {
-          path = ./test;
-          description = "test template";
-          welcomeText = "hi";
-        };
-      })
-      (
-        f:
-        f.templates.test-template == {
-          path = ./test;
-          description = "test template";
-          welcomeText = "hi";
-        }
-      );
+  templates = [
+    (conflake' {
+      templates.test-template = {
+        path = ./test;
+        description = "test template";
+      };
+    })
+    (x: x.templates.test-template)
+    {
+      path = ./test;
+      description = "test template";
+    }
+  ];
+
+  templates-welcomeText = [
+    (conflake' {
+      templates.test-template = {
+        path = ./test;
+        description = "test template";
+        welcomeText = "hi";
+      };
+    })
+    (x: x.templates.test-template)
+    {
+      path = ./test;
+      description = "test template";
+      welcomeText = "hi";
+    }
+  ];
 
   formatter = [
     (conflake' {
@@ -954,72 +997,70 @@ withPrefix "test-" {
     true
   ];
 
-  formatters-fn = test (conflake' {
-    formatters =
-      { rustfmt, ... }:
-      {
-        "*.rs" = "${rustfmt}";
-      };
-  }) (f: lib.isDerivation f.formatter.x86_64-linux);
-
-  formatters-no-devshell = test (conflake' {
-    devShell = lib.mkForce null;
-    formatters =
-      { rustfmt, ... }:
-      {
-        "*.rs" = "${rustfmt}";
-      };
-  }) (f: lib.isDerivation f.formatter.x86_64-linux);
-
-  bundler =
-    test
-      (conflake' {
-        bundler = x: x;
-      })
-      (
-        f:
-        (f.bundlers.x86_64-linux.default nixpkgs.legacyPackages.x86_64-linux.hello)
-        == nixpkgs.legacyPackages.x86_64-linux.hello
-      );
-
-  bundler-fn =
-    test
-      (conflake' {
-        bundler = pkgs: x: pkgs.hello;
-      })
-      (
-        f:
-        (f.bundlers.x86_64-linux.default nixpkgs.legacyPackages.x86_64-linux.emacs)
-        == nixpkgs.legacyPackages.x86_64-linux.hello
-      );
-
-  bundlers =
-    test
-      (conflake' {
-        bundlers = {
-          hello = x: x;
+  formatters-fn = [
+    (conflake' {
+      formatters =
+        { rustfmt, ... }:
+        {
+          "*.rs" = "${rustfmt}";
         };
-      })
-      (
-        f:
-        (f.bundlers.x86_64-linux.hello nixpkgs.legacyPackages.x86_64-linux.hello)
-        == nixpkgs.legacyPackages.x86_64-linux.hello
-      );
+    })
+    (x: x.formatter.x86_64-linux)
+    isDerivation
+    true
+  ];
 
-  bundlers-fn =
-    test
-      (conflake' {
-        bundlers =
-          { hello, ... }:
-          {
-            hello = x: hello;
-          };
-      })
-      (
-        f:
-        (f.bundlers.x86_64-linux.hello nixpkgs.legacyPackages.x86_64-linux.emacs)
-        == nixpkgs.legacyPackages.x86_64-linux.hello
-      );
+  formatters-no-devshell = [
+    (conflake' {
+      devShell = lib.mkForce null;
+      formatters =
+        { rustfmt, ... }:
+        {
+          "*.rs" = "${rustfmt}";
+        };
+    })
+    (x: x.formatter.x86_64-linux)
+    isDerivation
+    true
+  ];
+
+  bundler = [
+    (conflake' {
+      bundler = x: x;
+    })
+    (x: x.bundlers.x86_64-linux.default nixpkgs.legacyPackages.x86_64-linux.hello)
+    nixpkgs.legacyPackages.x86_64-linux.hello
+  ];
+
+  bundler-fn = [
+    (conflake' {
+      bundler = pkgs: x: pkgs.hello;
+    })
+    (x: x.bundlers.x86_64-linux.default nixpkgs.legacyPackages.x86_64-linux.emacs)
+    nixpkgs.legacyPackages.x86_64-linux.hello
+  ];
+
+  bundlers = [
+    (conflake' {
+      bundlers = {
+        hello = x: x;
+      };
+    })
+    (x: x.bundlers.x86_64-linux.hello nixpkgs.legacyPackages.x86_64-linux.hello)
+    nixpkgs.legacyPackages.x86_64-linux.hello
+  ];
+
+  bundlers-fn = [
+    (conflake' {
+      bundlers =
+        { hello, ... }:
+        {
+          hello = x: hello;
+        };
+    })
+    (x: x.bundlers.x86_64-linux.hello nixpkgs.legacyPackages.x86_64-linux.emacs)
+    nixpkgs.legacyPackages.x86_64-linux.hello
+  ];
 
   nixosConfigurations = test (conflake' (
     { lib, ... }:
@@ -1041,36 +1082,39 @@ withPrefix "test-" {
     }
   )) (f: f ? nixosConfigurations.test.config.system.build.toplevel);
 
-  nixosConfigurations-manualWithProp =
-    test
-      (conflake' (
-        { lib, config, ... }:
-        {
-          nixosConfigurations.test = nixpkgs.lib.nixosSystem {
-            system = "x86_64-linux";
-            modules = [
-              (
-                { pkgs, ... }:
-                {
-                  system.stateVersion = "24.05";
-                  environment.variables = {
-                    TEST1 = config.inputs.nixpkgs.legacyPackages.x86_64-linux.hello;
-                    TEST2 = config.inputs.nixpkgs.legacyPackages.${pkgs.system}.hello;
-                  };
-                }
-              )
-            ];
-          };
-        }
-      ))
+  nixosConfigurations-manualWithProp = [
+    (conflake' (
+      { lib, config, ... }:
+      {
+        nixosConfigurations.test = nixpkgs.lib.nixosSystem {
+          system = "x86_64-linux";
+          modules = [
+            (
+              { pkgs, ... }:
+              {
+                system.stateVersion = "24.05";
+                environment.variables = {
+                  TEST1 = config.inputs.nixpkgs.legacyPackages.x86_64-linux.hello;
+                  TEST2 = config.inputs.nixpkgs.legacyPackages.${pkgs.system}.hello;
+                };
+              }
+            )
+          ];
+        };
+      }
+    ))
+    (x: [
+      (x ? nixosConfigurations.test.config.system.build.toplevel)
       (
-        f:
-        (f ? nixosConfigurations.test.config.system.build.toplevel)
-        && (
-          f.nixosConfigurations.test.config.environment.variables.TEST1
-          == f.nixosConfigurations.test.config.environment.variables.TEST2
-        )
-      );
+        x.nixosConfigurations.test.config.environment.variables.TEST1
+        == x.nixosConfigurations.test.config.environment.variables.TEST2
+      )
+    ])
+    [
+      true
+      true
+    ]
+  ];
 
   nixosModule = test (conflake' {
     nixosModule = { inputs, inputs', ... }: { };
@@ -1096,66 +1140,91 @@ withPrefix "test-" {
     conflakeModules.test = _: { };
   }) (f: f ? conflakeModules.test);
 
-  lib = test (conflake' {
-    lib.addFive = x: x + 5;
-  }) (f: f.lib.addFive 4 == 9);
+  lib = [
+    (conflake' {
+      lib.addFive = x: x + 5;
+    })
+    (f: f.lib.addFive 4)
+    9
+  ];
 
-  functor = test (conflake' {
-    outputs.testvalue = 5;
-    functor = self: x: x + self.testvalue;
-  }) (f: f 4 == 9);
+  functor = [
+    (conflake' {
+      outputs.testvalue = 5;
+      functor = self: x: x + self.testvalue;
+    })
+    (f: f 4)
+    9
+  ];
 
-  meta =
-    test
-      (conflake' {
-        description = "aaa";
-        license = "AGPL-3.0-only";
-        packages.test =
-          { writeTextFile, defaultMeta }:
-          writeTextFile {
-            name = "test";
-            text = "";
-            meta = defaultMeta;
-          };
-      })
-      (
-        f:
-        (f.packages.x86_64-linux.test.meta.description == "aaa")
-        && (f.packages.x86_64-linux.test.meta.license.spdxId == "AGPL-3.0-only")
-      );
+  meta = [
+    (conflake' {
+      description = "aaa";
+      license = "AGPL-3.0-only";
+      packages.test =
+        { writeTextFile, defaultMeta }:
+        writeTextFile {
+          name = "test";
+          text = "";
+          meta = defaultMeta;
+        };
+    })
+    (f: [
+      f.packages.x86_64-linux.test.meta.description
+      f.packages.x86_64-linux.test.meta.license.spdxId
+    ])
+    [
+      "aaa"
+      "AGPL-3.0-only"
+    ]
+  ];
 
-  meta-license-attrname = test (conflake' {
-    license = "agpl3Only";
-    packages.test =
-      { writeTextFile, defaultMeta }:
-      writeTextFile {
-        name = "test";
-        text = "";
-        meta = defaultMeta;
-      };
-  }) (f: f.packages.x86_64-linux.test.meta.license.spdxId == "AGPL-3.0-only");
+  meta-license-attrname = [
+    (conflake' {
+      license = "agpl3Only";
+      packages.test =
+        { writeTextFile, defaultMeta }:
+        writeTextFile {
+          name = "test";
+          text = "";
+          meta = defaultMeta;
+        };
+    })
+    (f: f.packages.x86_64-linux.test.meta.license.spdxId)
+    "AGPL-3.0-only"
+  ];
 
-  meta-licenses = test (conflake' {
-    license = [
-      "agpl3Only"
-      "AGPL-3.0-or-later"
-    ];
-    packages.test =
-      { writeTextFile, defaultMeta }:
-      writeTextFile {
-        name = "test";
-        text = "";
-        meta = defaultMeta;
-      };
-  }) (f: builtins.isList f.packages.x86_64-linux.test.meta.license);
+  meta-licenses = [
+    (conflake' {
+      license = [
+        "agpl3Only"
+        "AGPL-3.0-or-later"
+      ];
+      packages.test =
+        { writeTextFile, defaultMeta }:
+        writeTextFile {
+          name = "test";
+          text = "";
+          meta = defaultMeta;
+        };
+    })
+    (f: f.packages.x86_64-linux.test.meta.license)
+    isList
+    true
+  ];
 
-  modulesPath = test (conflake' {
-    disabledModules = [
-      "config/functor.nix"
-      "config/nixDir.nix"
-    ];
-    functor = _: _: true;
-  }) (f: !(builtins.tryEval f).success);
+  modulesPath = [
+    (conflake' {
+      disabledModules = [
+        "config/functor.nix"
+        "config/nixDir.nix"
+      ];
+      functor = _: _: true;
+    })
+    tryEval
+    (x: x.success)
+    false
+  ];
 
   presets-disable = [
     (conflake' {
@@ -1253,25 +1322,30 @@ withPrefix "test-" {
 
   demo-example = [
     (conflake ../examples/demo { })
-    (f: f.overlays ? default)
-    true
+    (f: attrNames f.overlays)
+    [ "default" ]
   ];
 
   nixos-example = [
     (conflake ../examples/nixos { })
     (f: [
       (f.nixosConfigurations ? vm.config.system.build.toplevel)
-      (f.nixosModules ? default)
-      (f.nixosModules ? hallo)
-      (f.homeModules ? default)
+      (attrNames f.nixosModules)
+      (attrNames f.homeModules)
       (f.lib ? greeting.hi)
       f.lib.hello-world
     ])
     [
       true
-      true
-      true
-      true
+      [
+        "default"
+        "greet"
+        "hallo"
+      ]
+      [
+        "default"
+        "greet"
+      ]
       true
       "Hello, World!"
     ]
@@ -1279,15 +1353,21 @@ withPrefix "test-" {
 
   packages-example = [
     (conflake ../examples/packages { })
-    (f: [
-      (f.legacyPackages.x86_64-linux ? emacsPackages.greet)
-      (f.packages.x86_64-linux ? greet)
-      (f.devShells.x86_64-linux ? default)
+    (x: [
+      (x.legacyPackages.x86_64-linux ? emacsPackages.greet)
+      (attrNames x.packages.x86_64-linux)
+      (attrNames x.devShells.x86_64-linux)
     ])
     [
       true
-      true
-      true
+      [
+        "default"
+        "greet"
+        "hei"
+      ]
+      [
+        "default"
+      ]
     ]
   ];
 }
