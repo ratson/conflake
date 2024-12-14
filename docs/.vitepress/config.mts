@@ -56,6 +56,7 @@ export default async () => {
             { text: "What is Conflake?", link: "introduction" },
             { text: "Getting Started", link: "getting-started" },
             { text: "Project Layout", link: "project-layout" },
+            { text: "Writing Tests", link: "writing-tests" },
           ],
         },
         {
