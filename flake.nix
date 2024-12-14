@@ -17,10 +17,8 @@
         };
       };
 
-      outputs.tests = import ./tests/run.nix inputs;
       presets.checks.deadnix = {
         enable = true;
-        exclude = "nix/tests";
         files = [
           "misc"
           "modules"

@@ -2,6 +2,7 @@
   config,
   lib,
   moduleArgs,
+  src,
   ...
 }:
 
@@ -62,7 +63,7 @@ in
     };
     src = mkOption {
       type = types.path;
-      default = config.nixDir.src + /tests;
+      default = src + /tests;
     };
   };
 
@@ -92,7 +93,7 @@ in
               ]
             ) tests;
           in
-          pkgs.runCommandLocal "nix-tests" { } ''
+          pkgs.runCommandLocal "check-tests" { } ''
             mkdir $out
             cp ${toFile "test-results.json" (toJSON results)} $out
           '';

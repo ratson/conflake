@@ -1,23 +1,36 @@
-{ self, nixpkgs, ... }:
+{
+  lib,
+  inputs,
+  ...
+}:
 
 let
   inherit (builtins) attrNames;
-  inherit (nixpkgs) lib;
-  inherit (lib) const pipe;
+  inherit (lib) const isDerivation pipe;
+  inherit (inputs) self nixpkgs;
+  inherit (self.lib) withPrefix;
+
+  fixtures = {
+    empty = ./_fixtures/empty;
+    editorconfig = ./_fixtures/editorconfig;
+  };
 
   test = flake: test: {
     expr = test flake;
     expected = true;
   };
-  runTests = tests: lib.runTests (lib.mapAttrs' (k: v: lib.nameValuePair "test-${k}" v) tests);
 
   conflake = self;
-  conflake' = conflake ./empty;
+  conflake' = conflake fixtures.empty;
 in
-runTests {
+withPrefix "test-" {
   call-conflake = test (conflake' { outputs.test = true; }) (f: f.test);
 
-  explicit-mkOutputs = test (conflake.lib.mkOutputs ./empty { outputs.test = true; }) (f: f.test);
+  explicit-mkOutputs = [
+    (conflake.lib.mkOutputs fixtures.empty { outputs.test = true; })
+    (x: x.test)
+    true
+  ];
 
   module-with-args = test (conflake' (
     { lib, config, ... }:
@@ -293,144 +306,174 @@ runTests {
     package = { hello }: hello;
   }) (f: f.packages.aarch64-linux.default.pname == "hello");
 
-  package =
-    test
-      (conflake' {
-        package =
+  package = [
+    (conflake' {
+      package =
+        { stdenv }:
+        stdenv.mkDerivation {
+          pname = "pkg1";
+          version = "0.0.1";
+          src = fixtures.empty;
+          installPhase = "echo true > $out";
+        };
+    })
+    (f: [
+      (import f.packages.x86_64-linux.default)
+      (f ? packages.aarch64-linux.default)
+      ((nixpkgs.legacyPackages.x86_64-linux.extend f.overlays.default) ? pkg1)
+      (f ? checks.x86_64-linux.packages-default)
+      (f ? checks.aarch64-linux.packages-default)
+    ])
+    [
+      true
+      true
+      true
+      true
+      true
+    ]
+  ];
+
+  packages = [
+    (conflake' {
+      packages = {
+        default =
           { stdenv }:
           stdenv.mkDerivation {
-            pname = "pkg1";
-            version = "0.0.1";
-            src = ./empty;
+            name = "pkg1";
+            src = fixtures.empty;
             installPhase = "echo true > $out";
           };
-      })
-      (
-        f:
-        (import f.packages.x86_64-linux.default)
-        && (f ? packages.aarch64-linux.default)
-        && ((nixpkgs.legacyPackages.x86_64-linux.extend f.overlays.default) ? pkg1)
-        && (f ? checks.x86_64-linux.packages-default)
-        && (f ? checks.aarch64-linux.packages-default)
-      );
-
-  packages =
-    test
-      (conflake' {
-        packages = {
-          default =
-            { stdenv }:
-            stdenv.mkDerivation {
-              name = "pkg1";
-              src = ./empty;
-              installPhase = "echo true > $out";
-            };
-          pkg2 =
-            {
-              stdenv,
-              pkg1,
-              pkg3,
-            }:
-            stdenv.mkDerivation {
-              name = "hello-world";
-              src = ./empty;
-              nativeBuildInputs = [
-                pkg1
-                pkg3
-              ];
-              installPhase = "echo true > $out";
-            };
-          pkg3 =
-            { stdenv }:
-            stdenv.mkDerivation {
-              name = "hello-world";
-              src = ./empty;
-              installPhase = "echo true > $out";
-            };
-        };
-      })
-      (
-        f:
-        (import f.packages.x86_64-linux.default)
-        && (import f.packages.x86_64-linux.pkg2)
-        && (import f.packages.x86_64-linux.pkg3)
-        && (
-          let
-            pkgs' = nixpkgs.legacyPackages.x86_64-linux.extend f.overlays.default;
-          in
-          (pkgs' ? pkg1) && (pkgs' ? pkg2) && (pkgs' ? pkg3)
-        )
-        && (f ? checks.x86_64-linux.packages-default)
-        && (f ? checks.x86_64-linux.packages-pkg2)
-        && (f ? checks.x86_64-linux.packages-pkg3)
-      );
-
-  package-overlay-no-default = test (conflake' {
-    package =
-      { stdenv }:
-      stdenv.mkDerivation {
-        name = "pkg1";
-        src = ./empty;
-        installPhase = "echo true > $out";
-      };
-  }) (f: !((nixpkgs.legacyPackages.x86_64-linux.extend f.overlays.default) ? default));
-
-  packages-refer-default-as-default = test (conflake' {
-    packages = {
-      default =
-        { stdenv }:
-        stdenv.mkDerivation {
-          name = "pkg1";
-          src = ./empty;
-          installPhase = "echo true > $out";
-        };
-      pkg2 =
-        { stdenv, default }:
-        stdenv.mkDerivation {
-          name = "hello-world";
-          src = ./empty;
-          installPhase = "cat ${default} > $out";
-        };
-    };
-  }) (f: (import f.packages.x86_64-linux.pkg2));
-
-  packages-refer-default-as-name = test (conflake' {
-    packages = {
-      default =
-        { stdenv }:
-        stdenv.mkDerivation {
-          name = "pkg1";
-          src = ./empty;
-          installPhase = "echo true > $out";
-        };
-      pkg2 =
-        { stdenv, pkg1 }:
-        stdenv.mkDerivation {
-          name = "hello-world";
-          src = ./empty;
-          installPhase = "cat ${pkg1} > $out";
-        };
-    };
-  }) (f: (import f.packages.x86_64-linux.pkg2));
-
-  packages-fn-has-system = test (conflake' {
-    packages =
-      { system, ... }:
-      (
-        if system == "x86_64-linux" then
+        pkg2 =
           {
-            default =
-              { stdenv }:
-              stdenv.mkDerivation {
-                name = "pkg1";
-                src = ./empty;
-                installPhase = "echo true > $out";
-              };
-          }
-        else
-          { }
-      );
-  }) (f: (import f.packages.x86_64-linux.default) && !(f.packages.aarch64-linux ? default));
+            stdenv,
+            pkg1,
+            pkg3,
+          }:
+          stdenv.mkDerivation {
+            name = "hello-world";
+            src = fixtures.empty;
+            nativeBuildInputs = [
+              pkg1
+              pkg3
+            ];
+            installPhase = "echo true > $out";
+          };
+        pkg3 =
+          { stdenv }:
+          stdenv.mkDerivation {
+            name = "hello-world";
+            src = fixtures.empty;
+            installPhase = "echo true > $out";
+          };
+      };
+    })
+    (f: [
+      (import f.packages.x86_64-linux.default)
+      (import f.packages.x86_64-linux.pkg2)
+      (import f.packages.x86_64-linux.pkg3)
+      (
+        let
+          pkgs' = nixpkgs.legacyPackages.x86_64-linux.extend f.overlays.default;
+        in
+        (pkgs' ? pkg1) && (pkgs' ? pkg2) && (pkgs' ? pkg3)
+      )
+      (f ? checks.x86_64-linux.packages-default)
+      (f ? checks.x86_64-linux.packages-pkg2)
+      (f ? checks.x86_64-linux.packages-pkg3)
+    ])
+    [
+      true
+      true
+      true
+      true
+      true
+      true
+      true
+    ]
+  ];
+
+  package-overlay-no-default = [
+    (conflake' {
+      package =
+        { stdenv }:
+        stdenv.mkDerivation {
+          name = "pkg1";
+          src = fixtures.empty;
+          installPhase = "echo true > $out";
+        };
+    })
+    (f: (nixpkgs.legacyPackages.x86_64-linux.extend f.overlays.default) ? default)
+    false
+  ];
+
+  packages-refer-default-as-default = [
+    (conflake' {
+      packages = {
+        default =
+          { stdenv }:
+          stdenv.mkDerivation {
+            name = "pkg1";
+            src = fixtures.empty;
+            installPhase = "echo true > $out";
+          };
+        pkg2 =
+          { stdenv, default }:
+          stdenv.mkDerivation {
+            name = "hello-world";
+            src = fixtures.empty;
+            installPhase = "cat ${default} > $out";
+          };
+      };
+    })
+    (f: (import f.packages.x86_64-linux.pkg2))
+    true
+  ];
+
+  packages-refer-default-as-name = [
+    (conflake' {
+      packages = {
+        default =
+          { stdenv }:
+          stdenv.mkDerivation {
+            name = "pkg1";
+            src = fixtures.empty;
+            installPhase = "echo true > $out";
+          };
+        pkg2 =
+          { stdenv, pkg1 }:
+          stdenv.mkDerivation {
+            name = "hello-world";
+            src = fixtures.empty;
+            installPhase = "cat ${pkg1} > $out";
+          };
+      };
+    })
+    (f: (import f.packages.x86_64-linux.pkg2))
+    true
+  ];
+
+  packages-fn-has-system = [
+    (conflake' {
+      packages =
+        { system, ... }:
+        (
+          if system == "x86_64-linux" then
+            {
+              default =
+                { stdenv }:
+                stdenv.mkDerivation {
+                  name = "pkg1";
+                  src = fixtures.empty;
+                  installPhase = "echo true > $out";
+                };
+            }
+          else
+            { }
+        );
+    })
+    (f: (import f.packages.x86_64-linux.default) && !(f.packages.aarch64-linux ? default))
+    true
+  ];
 
   legacyPackages-set-pkgs = test (conflake' {
     inputs = {
@@ -849,6 +892,68 @@ runTests {
         }
       );
 
+  formatter = [
+    (conflake' {
+      formatter = pkgs: pkgs.hello;
+    })
+    (x: isDerivation x.formatter.x86_64-linux)
+    true
+  ];
+
+  formatters = [
+    (conflake' {
+      devShell.packages = pkgs: [ pkgs.rustfmt ];
+      formatters = {
+        "*.rs" = "rustfmt";
+      };
+    })
+    (x: isDerivation x.formatter.x86_64-linux)
+    true
+  ];
+
+  formatters-disable = [
+    (conflake' {
+      presets.formatters.enable = false;
+    })
+    (x: x ? formatter.x86_64-linux)
+    false
+  ];
+
+  formatters-disable-except = [
+    (conflake' {
+      presets.formatters.enable = false;
+      presets.formatters.nix = true;
+    })
+    (x: x ? formatter.x86_64-linux)
+    true
+  ];
+
+  formatters-disable-all-builtin = [
+    (conflake' {
+      presets.formatters = {
+        json = false;
+        markdown = false;
+        nix = false;
+        yaml = false;
+      };
+    })
+    (x: x ? formatter.x86_64-linux)
+    false
+  ];
+
+  formatters-disable-only-builtin = [
+    (conflake' {
+      presets.formatters.enable = false;
+      formatters =
+        { rustfmt, ... }:
+        {
+          "*.rs" = "rustfmt";
+        };
+    })
+    (x: x ? formatter.x86_64-linux)
+    true
+  ];
+
   formatters-fn = test (conflake' {
     formatters =
       { rustfmt, ... }:
@@ -1052,28 +1157,86 @@ runTests {
     functor = _: _: true;
   }) (f: !(builtins.tryEval f).success);
 
-  default-nixpkgs = test (conflake' (
-    { inputs, ... }:
-    {
-      outputs = {
-        inherit inputs;
-      };
-    }
-  )) (f: f.inputs ? nixpkgs.lib);
+  presets-disable = [
+    (conflake' {
+      presets.enable = false;
+    })
+    { }
+  ];
 
-  extend-mkOutputs =
-    let
-      extended = conflake.lib.mkOutputs.extend [ { outputs.test = true; } ];
-    in
-    test (extended ./empty { }) (f: f.test);
+  presets-checks-editorconfig = [
+    (conflake fixtures.editorconfig { })
+    (x: x ? checks.x86_64-linux.editorconfig)
+    true
+  ];
 
-  extend-mkOutputs-nested =
-    let
-      extended = conflake.lib.mkOutputs.extend [ { outputs.test = true; } ];
-      extended2 = extended.extend [ { outputs.test2 = true; } ];
-      extended3 = extended2.extend [ { outputs.test3 = true; } ];
-    in
-    test (extended3 ./empty { }) (f: f.test && f.test2 && f.test3);
+  presets-checks-editorconfig-disabled = [
+    (conflake fixtures.editorconfig {
+      presets.checks.editorconfig.enable = false;
+    })
+    (x: x ? checks.x86_64-linux.editorconfig)
+    false
+  ];
+
+  self-outputs = [
+    inputs.self
+    (x: [
+      (x ? __functor)
+      (x ? lib.mkOutputs)
+      (x ? templates.default.path)
+      (x.templates.default.description != "default")
+    ])
+    [
+      true
+      true
+      true
+      true
+    ]
+  ];
+
+  empty-flake = [
+    (conflake' {
+      disabledModules = [ "presets" ];
+    })
+    { }
+  ];
+
+  default-nixpkgs = [
+    (conflake' (
+      { inputs, ... }:
+      {
+        outputs = {
+          inherit inputs;
+        };
+      }
+    ))
+    (f: f.inputs ? nixpkgs.lib)
+    true
+  ];
+
+  extend-mkOutputs = [
+    (conflake.lib.mkOutputs.extend [ { outputs.test = true; } ])
+    (extended: extended fixtures.empty { })
+    (x: x.test)
+    true
+  ];
+
+  extend-mkOutputs-nested = [
+    (conflake.lib.mkOutputs.extend [ { outputs.test = true; } ])
+    (extended: extended.extend [ { outputs.test2 = true; } ])
+    (extended2: extended2.extend [ { outputs.test3 = true; } ])
+    (extended3: extended3 fixtures.empty { })
+    (x: [
+      x.test
+      x.test2
+      x.test3
+    ])
+    [
+      true
+      true
+      true
+    ]
+  ];
 
   mkVersion = {
     expr = conflake.lib.mkVersion null;
@@ -1088,33 +1251,43 @@ runTests {
     };
   };
 
-  demo-example = test (conflake ../examples/demo { }) (f: f.overlays ? default);
+  demo-example = [
+    (conflake ../examples/demo { })
+    (f: f.overlays ? default)
+    true
+  ];
 
-  nixos-example = {
-    expr = pipe (conflake ../examples/nixos { }) [
-      (f: [
-        (f.nixosConfigurations ? vm.config.system.build.toplevel)
-        (f.nixosModules ? default)
-        (f.nixosModules ? hallo)
-        (f.homeModules ? default)
-        (f.lib ? greeting.hi)
-        f.lib.hello-world
-      ])
-    ];
-    expected = [
+  nixos-example = [
+    (conflake ../examples/nixos { })
+    (f: [
+      (f.nixosConfigurations ? vm.config.system.build.toplevel)
+      (f.nixosModules ? default)
+      (f.nixosModules ? hallo)
+      (f.homeModules ? default)
+      (f.lib ? greeting.hi)
+      f.lib.hello-world
+    ])
+    [
       true
       true
       true
       true
       true
       "Hello, World!"
-    ];
-  };
+    ]
+  ];
 
-  packages-example = test (conflake ../examples/packages { }) (
-    f:
-    f.legacyPackages.x86_64-linux ? emacsPackages.greet
-    && f.packages.x86_64-linux ? greet
-    && f.devShells.x86_64-linux ? default
-  );
+  packages-example = [
+    (conflake ../examples/packages { })
+    (f: [
+      (f.legacyPackages.x86_64-linux ? emacsPackages.greet)
+      (f.packages.x86_64-linux ? greet)
+      (f.devShells.x86_64-linux ? default)
+    ])
+    [
+      true
+      true
+      true
+    ]
+  ];
 }
