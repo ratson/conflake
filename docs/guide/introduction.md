@@ -2,19 +2,34 @@
 
 A batteries included, convention-based configuration framework for Nix Flakes.
 
-## Goals
-
-- Minimize boilerplate needed for flakes
-- Support straightforward configuration of all vanilla flake attributes
-- Allow sharing common configuration using modules
-- What can be done automatically, should be
-- Provide good defaults, but let them be changed/disabled
-
 ## Features
 
-- Handles generating per-system attributes
-- Extensible using the module system
+- Load files to `outputs` attribute set according to [project layout](./project-layout.md)
+- Provide `outputs` and `perSystem` options for flexible configuration
+- Handle generating per-system attributes, with
+  [`nix-systems`](../options/systems.md#nix-systems) support
 - Given package definitions, generates package and overlay outputs
-- Automatically import attributes from nix files in a directory (default `./nix`)
-- Builds formatter outputs that can format multiple file types
-- Provides outputs/perSystem options for easy migration
+- Enable `nix fmt` for common file types
+- Easy to [write and run tests](./writing-tests.md)
+- Extensible using the module system
+
+## Why I Need This
+
+If you are using `builtins.readDir` to manage your Nix configuration,
+this project can help you minimize much of the boilerplate code.
+
+A shared framework like this makes it easier for readers
+to navigate the project's file structure.
+
+## Trade-offs
+
+This project introduces substantial amount of code to your project,
+and any bugs could prevent your configuration from building successfully.
+
+Running `nix flake update` without reviewing the changes
+and updating your code accordingly may disrupt your project.
+
+Adding an additional `inputs` entry may not be appropriate for flakes intended
+to be used by others.
+
+Misusing the module system can result in infinite recursion errors.

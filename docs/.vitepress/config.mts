@@ -87,6 +87,14 @@ export default async () => {
             { text: "Flake Parts", link: "flake-parts" },
           ],
         },
+        {
+          text: "Development",
+          base: "/development/",
+          collapsed: true,
+          items: [
+            { text: "Design Decisions", link: "design-decisions" },
+          ],
+        },
       ],
 
       socialLinks: [
