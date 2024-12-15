@@ -33,3 +33,5 @@ Adding an additional `inputs` entry may not be appropriate for flakes intended
 to be used by others.
 
 Misusing the module system can result in infinite recursion errors.
+
+Nix files or folder that you don't want auto-loaded need to begin with `_`.

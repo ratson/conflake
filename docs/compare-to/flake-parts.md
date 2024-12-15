@@ -1,21 +1,25 @@
 # Compare to Flake Parts
 
-[Flake Parts](https://flake.parts/) is a popular framework for writing Nix
+`Flake Parts` is a popular framework for writing Nix
 Flakes and it has a strong third-party modules community.
 
-## File-system based attributes
+[Documentation](https://flake.parts/)&nbsp;
+[GitHub](https://github.com/hercules-ci/flake-parts)
 
-Conflake by default loads `./nix` nix files into `outputs` attributeset.
+## Differences
 
-Flake Parts can achieve a similar result with [ez-configs](https://github.com/ehllie/ez-configs).
+### Load files to attributes
 
-## Default overlay
+`Conflake` by default loads `./nix` nix files into `outputs` attributeset.
 
-Conflake derived a `overlays.default` from `packages` by default.
+`Flake Parts` can achieve a similar result with [ez-configs](https://github.com/ehllie/ez-configs).
 
-Flake Parts requires to use the [`easyOverlay`](https://flake.parts/overlays#an-overlay-for-free-with-flake-parts) to enable that.
+### Default overlay
 
-## Compare to Flakelight
+`Conflake` derived a `overlays.default` from `packages` by default.
 
-The author of Flakelight has stated [some of the differences](https://discourse.nixos.org/t/flakelight-a-new-modular-flake-framework/32395/3),
-it applies to Conflake too, since Conflake is a fork of Flakelight.
+`Flake Parts` requires to use the [`easyOverlay`](https://flake.parts/overlays#an-overlay-for-free-with-flake-parts) to enable that.
+
+### Flakelight Inheritance
+
+As `Conflake` is a fork of `Flakelight`, the [differences](https://discourse.nixos.org/t/flakelight-a-new-modular-flake-framework/32395/3) mentioned by the author of `Flakelight` apply here too.

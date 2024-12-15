@@ -83,6 +83,7 @@ export default async () => {
           base: "/compare-to/",
           collapsed: true,
           items: [
+            { text: "Flakes", link: "flakes" },
             { text: "Flakelight", link: "flakelight" },
             { text: "Flake Parts", link: "flake-parts" },
           ],
