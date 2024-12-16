@@ -57,7 +57,7 @@ in
     default = null;
   };
 
-  config.outputs = mkIf (config.checks != null) {
-    checks = genSystems (pkgs: mapAttrs (_: v: v pkgs) (config.checks pkgs));
+  config = mkIf (config.checks != null) {
+    outputs.checks = genSystems (pkgs: mapAttrs (_: v: v pkgs) (config.checks pkgs));
   };
 }

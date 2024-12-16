@@ -4,7 +4,6 @@
   ./config/checks.nix
   ./config/conflakeModules.nix
   ./config/devShells.nix
-  ./config/editorconfig.nix
   ./config/formatters.nix
   ./config/functor.nix
   ./config/inputs.nix
@@ -27,6 +26,6 @@
   ./darwin/darwinModules.nix
   ./home-manager/homeConfigurations.nix
   ./home-manager/homeModules.nix
-  ./presets/formatters.nix
-  ./presets/overlay.nix
+  ./overlay.nix
+  ./presets
 ]

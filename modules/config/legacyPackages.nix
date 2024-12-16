@@ -10,6 +10,7 @@
 let
   inherit (builtins) isAttrs isPath mapAttrs;
   inherit (lib)
+    flip
     mkIf
     mkMerge
     mkOption
@@ -50,7 +51,7 @@ in
               (prev.emacsPackagesFor emacs).overrideScope (
                 final: _:
                 mapAttrs (
-                  _: v: final.callPackage v { }
+                  _: flip final.callPackage { }
                 ) config.loadedOutputs.legacyPackages.${prev.system}.emacsPackages
               );
 
@@ -63,7 +64,7 @@ in
 
           withOverlays = overlay;
 
-          legacyPackages = pkgs: transform pkgs entries;
+          legacyPackages = flip transform entries;
         }
       );
     }

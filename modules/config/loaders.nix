@@ -11,9 +11,9 @@ let
   inherit (builtins)
     attrValues
     filter
-    foldl'
     hasAttr
     head
+    listToAttrs
     mapAttrs
     readDir
     tail
@@ -35,7 +35,7 @@ let
     types
     ;
   inherit (lib.path) subpath;
-  inherit (lib.types) attrs functionTo lazyAttrsOf;
+  inherit (lib.types) functionTo lazyAttrsOf;
 
   cfg = config.loaders;
 
@@ -47,7 +47,7 @@ let
         let
           path = dir + /${name};
         in
-        if hasPrefix "." name then
+        if config.loadIgnore { inherit name path type; } then
           null
         else if type == "directory" then
           nameValuePair name (loadDir' f path)
@@ -61,7 +61,7 @@ let
       (mapAttrs toEntry)
       attrValues
       (remove null)
-      (flip foldl' { } (acc: { name, value }: acc // { ${name} = value; }))
+      listToAttrs
     ];
 
   loadDir = loadDir' lib.id;
@@ -104,6 +104,11 @@ in
       default = { };
     };
 
+    loadIgnore = mkOption {
+      type = functionTo types.bool;
+      default = { name, ... }: hasPrefix "." name || hasPrefix "_" name;
+    };
+
     finalLoaders = mkOption {
       internal = true;
       readOnly = true;
@@ -113,24 +118,19 @@ in
     loadDir = mkOption {
       internal = true;
       readOnly = true;
-      type = functionTo attrs;
+      type = functionTo (lazyAttrsOf types.unspecified);
       default = loadDir;
     };
     loadDir' = mkOption {
       internal = true;
       readOnly = true;
-      type = functionTo (functionTo attrs);
+      type = functionTo (functionTo (lazyAttrsOf types.unspecified));
       default = loadDir';
     };
 
     loadedOutputs = mkOption {
       internal = true;
-      type = types.submodule {
-        freeformType = lazyAttrsOf types.raw;
-        options = {
-          inherit (options) outputs;
-        };
-      };
+      type = lazyAttrsOf types.unspecified;
       default = { };
     };
 
@@ -171,8 +171,8 @@ in
     (pipe options [
       (flip removeAttrs [
         "_module"
-        "editorconfig"
         "loaders"
+        "loadIgnore"
         "moduleArgs"
         "nixDir"
         "nixpkgs"
