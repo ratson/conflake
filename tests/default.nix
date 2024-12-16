@@ -9,11 +9,13 @@ let
     attrNames
     deepSeq
     isList
+    mapAttrs
     tryEval
     ;
   inherit (lib)
     const
     fix
+    flip
     isDerivation
     pipe
     ;
@@ -30,10 +32,21 @@ let
     expected = true;
   };
 
-  conflake = self;
+  conflake =
+    src: m:
+    self src {
+      imports = [ m ];
+      inputs = lib.mkDefault inputs;
+    };
+
   conflake' = conflake fixtures.empty;
+
+  mkTests = flip pipe [
+    (withPrefix "test-")
+    (mapAttrs builtins.traceVerbose)
+  ];
 in
-withPrefix "test-" {
+mkTests {
   call-conflake = [
     (conflake' { outputs.test = true; })
     (x: x.test)
@@ -41,7 +54,10 @@ withPrefix "test-" {
   ];
 
   explicit-mkOutputs = [
-    (conflake.lib.mkOutputs fixtures.empty { outputs.test = true; })
+    (self.lib.mkOutputs fixtures.empty {
+      inherit inputs;
+      outputs.test = true;
+    })
     (x: x.test)
     true
   ];
@@ -1284,14 +1300,24 @@ withPrefix "test-" {
   ];
 
   extend-mkOutputs = [
-    (conflake.lib.mkOutputs.extend [ { outputs.test = true; } ])
+    (self.lib.mkOutputs.extend [
+      {
+        inherit inputs;
+        outputs.test = true;
+      }
+    ])
     (extended: extended fixtures.empty { })
     (x: x.test)
     true
   ];
 
   extend-mkOutputs-nested = [
-    (conflake.lib.mkOutputs.extend [ { outputs.test = true; } ])
+    (self.lib.mkOutputs.extend [
+      {
+        inherit inputs;
+        outputs.test = true;
+      }
+    ])
     (extended: extended.extend [ { outputs.test2 = true; } ])
     (extended2: extended2.extend [ { outputs.test3 = true; } ])
     (extended3: extended3 fixtures.empty { })
@@ -1308,13 +1334,13 @@ withPrefix "test-" {
   ];
 
   mkVersion = {
-    expr = conflake.lib.mkVersion null;
+    expr = self.lib.mkVersion null;
     expected = "0.0.0+date=19700101_dirty";
   };
 
   mkVersion-self = {
-    expr = conflake.lib.mkVersion self;
-    expected = conflake.lib.mkVersion {
+    expr = self.lib.mkVersion self;
+    expected = self.lib.mkVersion {
       inherit (self) lastModifiedDate;
       shortRev = self.shortRev or "dirty";
     };
