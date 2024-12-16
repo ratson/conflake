@@ -14,11 +14,31 @@ let
     mkIf
     mkMerge
     mkOption
+    nameValuePair
     removeSuffix
     types
     ;
   inherit (lib.types) functionTo lazyAttrsOf;
   inherit (conflake.types) nullable;
+
+  overlay =
+    _: prev:
+    let
+      inherit (prev.stdenv.hostPlatform) system;
+      epkgs = config.outputs.legacyPackages.${system}.emacsPackages or { };
+    in
+    {
+      emacsPackagesFor =
+        emacs:
+        if epkgs == { } then
+          prev.emacsPackages emacs
+        else
+          (prev.emacsPackagesFor emacs).overrideScope (
+            final: _: mapAttrs (_: flip final.callPackage { }) epkgs
+          );
+
+      emacsPackages = prev.emacsPackages // epkgs;
+    };
 in
 {
   options.legacyPackages = mkOption {
@@ -28,6 +48,10 @@ in
 
   config = mkMerge [
     (mkIf (config.legacyPackages != null) {
+      inherit overlay;
+
+      withOverlays = overlay;
+
       outputs.legacyPackages = genSystems config.legacyPackages;
     })
 
@@ -35,7 +59,7 @@ in
       loaders = config.nixDir.mkLoader "legacyPackages" (
         { src, ... }:
         let
-          entries = config.loadDir' (x: x // { name = removeSuffix ".nix" x.name; }) src;
+          entries = config.loadDir' (x: nameValuePair (removeSuffix ".nix" x.name) x.value) src;
           transform =
             pkgs:
             mapAttrs (
@@ -45,25 +69,8 @@ in
               else
                 pkgs.callPackage v moduleArgs
             );
-          overlay = _: prev: {
-            emacsPackagesFor =
-              emacs:
-              (prev.emacsPackagesFor emacs).overrideScope (
-                final: _:
-                mapAttrs (
-                  _: flip final.callPackage { }
-                ) config.loadedOutputs.legacyPackages.${prev.system}.emacsPackages
-              );
-
-            emacsPackages =
-              prev.emacsPackages // config.loadedOutputs.legacyPackages.${prev.system}.emacsPackages;
-          };
         in
         {
-          inherit overlay;
-
-          withOverlays = overlay;
-
           legacyPackages = flip transform entries;
         }
       );
