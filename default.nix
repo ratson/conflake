@@ -64,28 +64,25 @@ let
   mkOutputs = {
     __functor =
       self: src: module:
+      let
+        flakePath = src + /flake.nix;
+      in
       (evalModules {
         class = "conflake";
         modules =
           baseModules
           ++ self.extraModules
           ++ [
-            (setDefaultModuleLocation ./default.nix (
-              { flakePath, ... }:
-              {
-                imports = [
-                  (setDefaultModuleLocation flakePath module)
-                ];
-
-                config.finalInputs = {
-                  nixpkgs = mkDefault inputs.nixpkgs;
-                  conflake = mkDefault inputs.self;
-                };
-              }
-            ))
+            (setDefaultModuleLocation ./default.nix {
+              finalInputs = {
+                nixpkgs = mkDefault inputs.nixpkgs;
+                conflake = mkDefault inputs.self;
+              };
+            })
+            (setDefaultModuleLocation flakePath module)
           ];
         specialArgs = {
-          inherit conflake src;
+          inherit conflake flakePath src;
 
           modulesPath = ./modules;
         };
