@@ -1,9 +1,9 @@
 {
   config,
   lib,
+  conflake,
   genSystems,
   src,
-  conflake,
   ...
 }:
 
@@ -17,7 +17,6 @@ let
     optionalString
     types
     ;
-  inherit (conflake) mkCheck;
 
   cfg = config.presets.checks.editorconfig;
 
@@ -53,7 +52,7 @@ in
           outputs.checks = genSystems (
             pkgs:
             mkIf (elem pkgs.stdenv.hostPlatform.system platforms) {
-              editorconfig = mkCheck "editorconfig" pkgs src (
+              editorconfig = conflake.mkCheck "editorconfig" pkgs src (
                 concatStringsSep " " [
                   (getExe pkgs.editorconfig-checker)
                   (mkArgs entries)
