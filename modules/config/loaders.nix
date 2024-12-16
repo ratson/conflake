@@ -29,6 +29,8 @@ let
     mkMerge
     mkOption
     nameValuePair
+    optionalAttrs
+    pathIsDirectory
     pipe
     remove
     setAttrByPath
@@ -139,7 +141,7 @@ in
       internal = true;
       readOnly = true;
       type = types.attrs;
-      default = if lib.pathIsDirectory src then readDir src else { };
+      default = optionalAttrs (pathIsDirectory src) (readDir src);
     };
   };
 
