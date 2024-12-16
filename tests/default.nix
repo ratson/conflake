@@ -1094,8 +1094,8 @@ withPrefix "test-" {
               {
                 system.stateVersion = "24.05";
                 environment.variables = {
-                  TEST1 = config.inputs.nixpkgs.legacyPackages.x86_64-linux.hello;
-                  TEST2 = config.inputs.nixpkgs.legacyPackages.${pkgs.system}.hello;
+                  TEST1 = config.finalInputs.nixpkgs.legacyPackages.x86_64-linux.hello;
+                  TEST2 = config.finalInputs.nixpkgs.legacyPackages.${pkgs.system}.hello;
                 };
               }
             )

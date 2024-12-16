@@ -14,10 +14,12 @@ let
     mkOption
     types
     ;
-  inherit (config) inputs outputs;
+  inherit (config) outputs;
   inherit (conflake) selectAttr;
 
   cfg = config.moduleArgs;
+
+  inputs = config.finalInputs;
 
   pkgsFor = genAttrs config.systems (
     system:

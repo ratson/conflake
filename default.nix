@@ -77,9 +77,9 @@ let
                   (setDefaultModuleLocation flakePath module)
                 ];
 
-                config = {
-                  inputs.nixpkgs = mkDefault inputs.nixpkgs;
-                  inputs.conflake = mkDefault inputs.self;
+                config.finalInputs = {
+                  nixpkgs = mkDefault inputs.nixpkgs;
+                  conflake = mkDefault inputs.self;
                 };
               }
             ))
