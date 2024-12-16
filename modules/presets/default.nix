@@ -7,6 +7,7 @@ in
   imports = [
     ./checks
     ./formatters.nix
+    ./inputs.nix
   ];
 
   options.presets.enable = mkEnableOption "presets" // {

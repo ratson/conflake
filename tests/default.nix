@@ -17,7 +17,7 @@ let
     isDerivation
     pipe
     ;
-  inherit (inputs) self nixpkgs;
+  inherit (inputs) nixpkgs self;
   inherit (self.lib) withPrefix;
 
   fixtures = {
