@@ -42,19 +42,38 @@ let
   cfg = config.loaders;
 
   loadDir' =
-    f: dir:
+    {
+      root,
+      ignore ? config.loadIgnore,
+      maxDepth ? null,
+      mkPair ? nameValuePair,
+      # internal state
+      depth ? 0,
+      dir ? root,
+    }@args:
     let
       toEntry =
         name: type:
         let
           path = dir + /${name};
+          skip =
+            (type == "directory" && maxDepth != null && depth >= maxDepth)
+            || (ignore (args // { inherit name path type; }));
         in
-        if config.loadIgnore { inherit name path type; } then
+        if skip then
           null
         else if type == "directory" then
-          nameValuePair name (loadDir' f path)
+          nameValuePair name (
+            loadDir' (
+              args
+              // {
+                depth = depth + 1;
+                dir = path;
+              }
+            )
+          )
         else if type == "regular" && hasSuffix ".nix" name then
-          f (nameValuePair name path)
+          mkPair name path
         else
           null;
     in
@@ -66,7 +85,7 @@ let
       listToAttrs
     ];
 
-  loadDir = loadDir' lib.id;
+  loadDir = root: loadDir' { inherit root; };
 
   resolve =
     src: entries: loaders:
@@ -120,7 +139,7 @@ in
     loadDir' = mkOption {
       internal = true;
       readOnly = true;
-      type = functionTo (functionTo (lazyAttrsOf types.unspecified));
+      type = functionTo (lazyAttrsOf types.unspecified);
       default = loadDir';
     };
 
@@ -140,7 +159,7 @@ in
     srcEntries = mkOption {
       internal = true;
       readOnly = true;
-      type = types.attrs;
+      type = lazyAttrsOf types.str;
       default = optionalAttrs (pathIsDirectory src) (readDir src);
     };
   };

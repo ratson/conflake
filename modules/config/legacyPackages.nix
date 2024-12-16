@@ -59,7 +59,10 @@ in
       loaders = config.nixDir.mkLoader "legacyPackages" (
         { src, ... }:
         let
-          entries = config.loadDir' (x: nameValuePair (removeSuffix ".nix" x.name) x.value) src;
+          entries = config.loadDir' {
+            root = src;
+            mkPair = k: nameValuePair (removeSuffix ".nix" k);
+          };
           transform =
             pkgs:
             mapAttrs (
