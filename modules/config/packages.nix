@@ -17,12 +17,14 @@ let
     ;
   inherit (lib)
     findFirst
+    flip
     functionArgs
     mkIf
     mkMerge
     mkOption
     optionalAttrs
     optionals
+    pipe
     ;
   inherit (lib.types) lazyAttrsOf str uniq;
   inherit (conflake.types)
@@ -91,7 +93,7 @@ in
         let
           pkgDefs = getPkgDefs prev;
           getName = pkg: pkg.pname or (parseDrvName pkg.name).name;
-          mockPkgs = import ../../misc/nameMockedPkgs.nix prev;
+          mockPkgs = import ../_nameMockedPkgs.nix prev;
 
           defaultPkgName =
             findFirst (x: (tryEval x).success)
@@ -115,21 +117,37 @@ in
               ];
           default = genPkg final prev defaultPkgName pkgDefs.default;
         in
-        (optionalAttrs (pkgDefs ? default) {
-          inherit default;
-          ${defaultPkgName} = default;
-        })
-        // genPkgs final prev (removeAttrs pkgDefs [ "default" ]);
+        pipe pkgDefs [
+          (flip removeAttrs [ "default" ])
+          (genPkgs final prev)
+          (
+            x:
+            (optionalAttrs (pkgDefs ? default) {
+              inherit default;
+              ${defaultPkgName} = default;
+            })
+            // x
+          )
+        ];
 
       overlay =
-        final: prev:
-        removeAttrs (config.packageOverlay (final.appendOverlays config.withOverlays) prev) [ "default" ];
+        final:
+        flip pipe [
+          (config.packageOverlay (final.appendOverlays config.withOverlays))
+          (flip removeAttrs [ "default" ])
+        ];
 
       outputs = {
         inherit packages;
       };
 
-      devShell.inputsFrom = pkgs: optionals ((getPkgDefs pkgs) ? default) [ pkgs.default ];
+      devShell.inputsFrom =
+        pkgs:
+        pipe pkgs [
+          getPkgDefs
+          (hasAttr "default")
+          (flip optionals [ pkgs.default ])
+        ];
     })
 
     {
