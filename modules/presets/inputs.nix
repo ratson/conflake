@@ -19,9 +19,10 @@ let
     mkEnableOption
     mkIf
     mkOverride
-    pathIsRegularFile
     pipe
     ;
+
+  flakeLockExists = (config.srcEntries."flake.lock" or "") == "regular";
 
   flakeLock = src + /flake.lock;
 
@@ -80,7 +81,7 @@ in
     default = config.presets.enable;
   };
 
-  config = mkIf (config.inputs == null && pathIsRegularFile flakeLock) {
+  config = mkIf (config.inputs == null && flakeLockExists) {
     finalInputs = pipe flakeLock [
       readFile
       fromJSON

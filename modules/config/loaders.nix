@@ -67,31 +67,25 @@ let
   loadDir = loadDir' lib.id;
 
   resolve =
-    src: loaders:
-    pipe src [
-      readDir
-      (
-        entries:
-        pipe entries [
-          (filterAttrs (k: _: hasAttr k loaders))
-          (mapAttrs (
-            name: type: {
-              loader = loaders.${name};
-              args = {
-                inherit entries name type;
-                src = src + /${name};
-              };
-            }
-          ))
-        ]
-      )
+    src: entries: loaders:
+    pipe entries [
+      (filterAttrs (k: _: hasAttr k loaders))
+      (mapAttrs (
+        name: type: {
+          loader = loaders.${name};
+          args = {
+            inherit entries name type;
+            src = src + /${name};
+          };
+        }
+      ))
       attrValues
       (filter (x: x.loader.enable && x.loader.match x.args))
       (map (
         x:
         mkMerge [
           (x.loader.load x.args)
-          (mkIf (x.loader.loaders != { }) (resolve x.args.src x.loader.loaders))
+          (mkIf (x.loader.loaders != { }) (resolve x.args.src (readDir x.args.src) x.loader.loaders))
         ]
       ))
       mkMerge
@@ -140,6 +134,13 @@ in
       type = functionTo types.str;
       default = lib.path.removePrefix src;
     };
+
+    srcEntries = mkOption {
+      internal = true;
+      readOnly = true;
+      type = types.attrs;
+      default = if lib.pathIsDirectory src then readDir src else { };
+    };
   };
 
   config = mkMerge [
@@ -164,8 +165,8 @@ in
       ];
     }
 
-    (mkIf (config.finalLoaders != { } && lib.pathIsDirectory src) {
-      loadedOutputs = resolve src config.finalLoaders;
+    (mkIf (config.finalLoaders != { } && config.srcEntries != { }) {
+      loadedOutputs = resolve src config.srcEntries config.finalLoaders;
     })
 
     (pipe options [
@@ -177,7 +178,6 @@ in
         "nixDir"
         "nixpkgs"
         "presets"
-        "templatesDir"
       ])
       (filterAttrs (_: v: !(v.internal or false)))
       (mapAttrs (name: _: mkIf (config ? loadedOutputs.${name}) config.loadedOutputs.${name}))
