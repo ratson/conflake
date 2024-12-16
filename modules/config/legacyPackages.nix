@@ -42,7 +42,7 @@ let
 in
 {
   options.legacyPackages = mkOption {
-    type = nullable (functionTo (lazyAttrsOf types.raw));
+    type = nullable (functionTo (lazyAttrsOf types.unspecified));
     default = null;
   };
 

@@ -18,11 +18,9 @@ let
   inherit (lib)
     findFirst
     functionArgs
-    mapAttrs'
     mkIf
     mkMerge
     mkOption
-    nameValuePair
     optionalAttrs
     optionals
     ;
@@ -129,7 +127,6 @@ in
 
       outputs = {
         inherit packages;
-        checks = mapAttrs (_: mapAttrs' (n: nameValuePair ("packages-" + n))) packages;
       };
 
       devShell.inputsFrom = pkgs: optionals ((getPkgDefs pkgs) ? default) [ pkgs.default ];
