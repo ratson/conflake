@@ -28,12 +28,9 @@ let
     {
       emacsPackagesFor =
         emacs:
-        if epkgs == { } then
-          prev.emacsPackages emacs
-        else
-          (prev.emacsPackagesFor emacs).overrideScope (
-            final: _: mapAttrs (_: flip final.callPackage { }) epkgs
-          );
+        (prev.emacsPackagesFor emacs).overrideScope (
+          final: _: mapAttrs (_: flip final.callPackage { }) epkgs
+        );
 
       emacsPackages = prev.emacsPackages // epkgs;
     };

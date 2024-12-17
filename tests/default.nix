@@ -578,6 +578,35 @@ mkTests {
     { }
   ];
 
+  legacyPackages-emacsPackages-empty = [
+    (conflake' {
+      legacyPackages = pkgs: {
+        emacsPackages = { };
+      };
+      package =
+        {
+          emacs,
+          emacsPackagesFor,
+          extraPackages ? epkgs: [ ],
+          overrides ? final: prev: { },
+          ...
+        }:
+        let
+          emacsPackages = (emacsPackagesFor emacs).overrideScope overrides;
+          finalEmacs = emacsPackages.emacsWithPackages extraPackages;
+        in
+        finalEmacs;
+    })
+    (x: [
+      (attrNames x.legacyPackages.x86_64-linux)
+      (lib.hasPrefix "emacs-with-packages-" x.packages.x86_64-linux.default.name)
+    ])
+    [
+      [ "emacsPackages" ]
+      true
+    ]
+  ];
+
   devShell = test (conflake' {
     devShell = {
       inputsFrom = pkgs: [ pkgs.emacs ];
