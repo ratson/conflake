@@ -8,6 +8,7 @@ in
     ./checks
     ./formatters.nix
     ./inputs.nix
+    ./overlay
   ];
 
   options.presets.enable = mkEnableOption "presets" // {
