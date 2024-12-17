@@ -12,8 +12,7 @@ let
     mapAttrs
     readDir
     ;
-  inherit (inputs) nixpkgs;
-  inherit (nixpkgs) lib;
+  inherit (inputs.nixpkgs) lib;
   inherit (lib)
     attrsToList
     composeManyExtensions
@@ -27,7 +26,9 @@ let
     isDerivation
     isFunction
     isStringLike
+    last
     mapAttrs'
+    mergeDefinitions
     mkDefault
     mkEnableOption
     mkOption
@@ -63,28 +64,25 @@ let
   mkOutputs = {
     __functor =
       self: src: module:
+      let
+        flakePath = src + /flake.nix;
+      in
       (evalModules {
         class = "conflake";
         modules =
           baseModules
           ++ self.extraModules
           ++ [
-            (setDefaultModuleLocation ./default.nix (
-              { flakePath, ... }:
-              {
-                imports = [
-                  (setDefaultModuleLocation flakePath module)
-                ];
-
-                config = {
-                  inputs.nixpkgs = mkDefault nixpkgs;
-                  inputs.conflake = mkDefault inputs.self;
-                };
-              }
-            ))
+            (setDefaultModuleLocation ./default.nix {
+              finalInputs = {
+                nixpkgs = mkDefault inputs.nixpkgs;
+                conflake = mkDefault inputs.self;
+              };
+            })
+            (setDefaultModuleLocation flakePath module)
           ];
         specialArgs = {
-          inherit conflake src;
+          inherit conflake flakePath src;
 
           modulesPath = ./modules;
         };
@@ -113,6 +111,33 @@ let
   };
 
   types = rec {
+    mkCheck =
+      src:
+      mkOptionType {
+        name = "check";
+        description = pipe drv [
+          (coercedTo' stringLike (abort ""))
+          (optionDescriptionPhrase (class: class == "noun" || class == "composite"))
+          (targetDesc: "${targetDesc} or function that evaluates to it")
+        ];
+        descriptionClass = "composite";
+        check = x: isFunction x || drv.check x || stringLike.check x;
+        merge =
+          loc: defs: pkgs:
+          let
+            coerceFunc = conflake.mkCheck (last loc) pkgs src;
+            targetType = coercedTo' stringLike coerceFunc drv;
+          in
+          pipe defs [
+            (map (fn: {
+              inherit (fn) file;
+              value = if isFunction fn.value then fn.value pkgs else fn.value;
+            }))
+            (mergeDefinitions loc targetType)
+            (x: x.mergedValue)
+          ];
+      };
+
     coercedTo' =
       coercedType: coerceFunc: finalType:
       (coercedTo coercedType coerceFunc finalType)
@@ -306,7 +331,7 @@ let
 
   mkCheck =
     name: pkgs: src: cmd:
-    pkgs.runCommand "check-${name}" { } ''
+    pkgs.runCommandLocal "check-${name}" { } ''
       pushd "${src}"
       ${cmd}
       popd

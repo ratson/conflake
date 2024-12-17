@@ -27,6 +27,7 @@ let
     types
     ;
   inherit (lib.generators) toPretty;
+  inherit (lib.path) subpath;
   inherit (lib.types) lazyAttrsOf;
 
   cfg = config.presets.checks.tests;
@@ -49,9 +50,15 @@ let
     "flake.nix#tests" = null;
   };
 
+  loaderKey = config.mkLoaderKey cfg.src;
+
   mkCheck =
     tests: pkgs:
     let
+      finalTests = {
+        ${loaderKey} = tests;
+
+      } // testsPlaceholder;
       results = lib.mapAttrsRecursive (
         path:
         flip pipe [
@@ -63,14 +70,14 @@ let
             if cases == [ ] then
               "Unit tests successful"
             else
-              throw "Unit tests failed: ${toPretty { } cases}\nin ${toString path}"
+              lib.trace "Unit tests failed: ${toPretty { } cases}\nin ${subpath.join path}" cases
           )
         ]
-      ) tests;
+      ) finalTests;
     in
     pkgs.runCommandLocal "check-tests" { } ''
-      mkdir $out
       cp ${toFile "test-results.json" (toJSON results)} $out
+      cat $out | grep -v '{"expected":'
     '';
 in
 {
@@ -100,10 +107,10 @@ in
   config = mkIf cfg.enable {
     checks.${cfg.name} = mkDefault (mkCheck testsPlaceholder);
 
-    loaders.${config.mkLoaderKey cfg.src}.load =
+    loaders.${loaderKey}.load =
       { src, ... }:
       {
-        checks.${cfg.name} = mkCheck ((config.loadDir src) // testsPlaceholder);
+        checks.${cfg.name} = mkCheck (config.loadDir src);
       };
   };
 }

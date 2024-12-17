@@ -1,59 +1,21 @@
 {
   config,
-  src,
   lib,
   conflake,
   genSystems,
+  src,
   ...
 }:
 
 let
   inherit (builtins) mapAttrs;
-  inherit (lib)
-    isFunction
-    last
-    mergeDefinitions
-    mkIf
-    mkOption
-    mkOptionType
-    ;
-  inherit (lib.types) lazyAttrsOf optionDescriptionPhrase;
-  inherit (conflake) mkCheck;
-  inherit (conflake.types)
-    coercedTo'
-    drv
-    nullable
-    optFunctionTo
-    stringLike
-    ;
-
-  checkType = mkOptionType {
-    name = "checkType";
-    description =
-      let
-        targetDesc = optionDescriptionPhrase (class: class == "noun" || class == "composite") (
-          coercedTo' stringLike (abort "") drv
-        );
-      in
-      "${targetDesc} or function that evaluates to it";
-    descriptionClass = "composite";
-    check = x: isFunction x || drv.check x || stringLike.check x;
-    merge =
-      loc: defs: pkgs:
-      let
-        targetType = coercedTo' stringLike (mkCheck (last loc) pkgs src) drv;
-      in
-      (mergeDefinitions loc targetType (
-        map (fn: {
-          inherit (fn) file;
-          value = if isFunction fn.value then fn.value pkgs else fn.value;
-        }) defs
-      )).mergedValue;
-  };
+  inherit (lib) mkIf mkOption;
+  inherit (lib.types) lazyAttrsOf;
+  inherit (conflake.types) nullable optFunctionTo;
 in
 {
   options.checks = mkOption {
-    type = nullable (optFunctionTo (lazyAttrsOf checkType));
+    type = nullable (optFunctionTo (lazyAttrsOf (conflake.types.mkCheck src)));
     default = null;
   };
 

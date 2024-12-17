@@ -1,5 +1,5 @@
 # This is a fake pkgs set to enable efficiently extracting a derivation's name
-real:
+{ lib, stdenv, ... }:
 
 let
   inherit (builtins)
@@ -7,12 +7,12 @@ let
     intersectAttrs
     mapAttrs
     ;
-  inherit (real) lib;
   inherit (lib)
     fix
     filterAttrs
     functionArgs
     isFunction
+    pipe
     ;
 
   callPackageWith =
@@ -20,12 +20,16 @@ let
     let
       f = if isFunction fn then fn else import fn;
       fargs = functionArgs f;
-      mock = mapAttrs (_: _: throw "") (filterAttrs (_: v: !v) fargs);
     in
     assert fargs != { };
-    f (mock // intersectAttrs fargs autoArgs // args);
+    pipe fargs [
+      (filterAttrs (_: v: !v))
+      (mapAttrs (_: _: throw ""))
+      (mock: mock // intersectAttrs fargs autoArgs // args)
+      f
+    ];
 
-  mockStdenv = mapAttrs (_: _: throw "") real.stdenv // {
+  mockStdenv = mapAttrs (_: _: throw "") stdenv // {
     mkDerivation = args: if isFunction args then fix args else args;
   };
 in

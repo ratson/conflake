@@ -12,7 +12,7 @@
 }:
 
 let
-  inherit (builtins) isList pathExists;
+  inherit (builtins) isList;
   inherit (lib) mkOption mkOrder optionalAttrs;
   inherit (lib.types) listOf oneOf str;
   inherit (conflake.types) nullable;
@@ -21,7 +21,11 @@ in
   options = {
     description = mkOption {
       type = nullable str;
-      default = if pathExists flakePath then (import flakePath).description or null else null;
+      default =
+        if (config.srcEntries."flake.nix" or "") == "regular" then
+          (import flakePath).description or null
+        else
+          null;
     };
 
     license = mkOption {

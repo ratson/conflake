@@ -34,13 +34,15 @@ in
       loaders = config.nixDir.mkLoader "lib" (
         { src, ... }:
         {
-          lib = config.loadDir' (
-            x:
-            if hasSuffix ".fn.nix" x.name then
-              nameValuePair (removeSuffix ".fn.nix" x.name) (import x.value moduleArgs)
-            else
-              nameValuePair (removeSuffix ".nix" x.name) (import x.value)
-          ) src;
+          lib = config.loadDir' {
+            root = src;
+            mkPair =
+              name: value:
+              if hasSuffix ".fn.nix" name then
+                nameValuePair (removeSuffix ".fn.nix" name) (import value moduleArgs)
+              else
+                nameValuePair (removeSuffix ".nix" name) (import value);
+          };
         }
       );
     }
