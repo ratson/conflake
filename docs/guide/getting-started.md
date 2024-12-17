@@ -1,65 +1,77 @@
 # Getting Started
 
-If your project does not have a flake yet:
+If your project does not have `flake.nix` yet:
 
-```nix
+```shell
 nix flake init -t github:ratson/conflake
 ```
 
+<script setup>
+import { data } from './getting-started.data'
+</script>
+
+<details>
+  <summary>Files from template</summary>
+
+```-vue
+{{ data.templateFiles }}
+```
+
+You need [nix-direnv](https://github.com/nix-community/nix-direnv#use-flake) to use `.envrc`.
+
+</details>
+
 ## Add to project
 
-Otherwise, edit `flake.nix` to the following,
+<!--@include: ../compare-to/flakes.md#migration-->
+
+## Dev Shell
+
+The following is an example `flake.nix` for a devshell.
+It outputs`devShells.${system}.default`attributes for each configured
+system.
+`systems` can be set to change configured systems from the default.
 
 ```nix
 {
-  inputs.conflake.url = "github:ratson/conflake";
-  outputs = { conflake, ... }:
+  outputs = { conflake, ... }@inputs:
     conflake ./. {
       inherit inputs;
 
-      outputs = {
-        # Put your existing `outputs` here
-      };
+      devShell.packages = pkgs: [
+        pkgs.hello
+        pkgs.coreutils
+      ];
     };
-}
-```
 
-Then migrate your `outputs` to conflake [`options`](../options/).
-
-## Shell
-
-The following is an example flake.nix for a devshell, using the passed in
-nixpkgs. It outputs `devShell.${system}.default` attributes for each configured
-system. `systems` can be set to change configured systems from the default.
-
-```nix
-{
-  inputs.conflake.url = "github:ratson/conflake";
-  outputs = { conflake, ... }:
-    conflake ./. {
-      devShell.packages = pkgs: [ pkgs.hello pkgs.coreutils ];
+  inputs = {
+    conflake = {
+      url = "github:ratson/conflake";
+      inputs.nixpkgs.follows = "nixpkgs";
     };
+    nixpkgs.url = "github:NixOS/nixpkgs/nixpkgs-unstable";
+  };
 }
 ```
 
 With this flake, calling `nix develop` will make `hello` and `coreutils`
 available.
 
-To use a different nixpkgs, you can instead use:
+<details>
+  <summary>Minimal version</summary>
 
 ```nix
 {
-  inputs = {
-    nixpkgs.url = "github:NixOS/nixpkgs/nixpkgs-unstable";
-    conflake.url = "github:ratson/conflake";
-  };
-  outputs = { conflake, ... }@inputs:
+  outputs = { conflake, ... }:
     conflake ./. {
-      inherit inputs;
       devShell.packages = pkgs: [ pkgs.hello pkgs.coreutils ];
     };
+
+  inputs.conflake.url = "github:ratson/conflake";
 }
 ```
+
+</details>
 
 ## mkOutputs
 

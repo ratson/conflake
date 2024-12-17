@@ -17,9 +17,13 @@ See [What is Conflake?](../guide/introduction.md) for a list of provided feature
 
 ## Migration
 
-```nix
+<!-- #region migration -->
+
+Edit `flake.nix` to match the following format:
+
+```nix{6-8}
 {
-  outputs = { conflake, ... }:
+  outputs = { conflake, ... }@inputs:
     conflake ./. {
       inherit inputs;
 
@@ -31,3 +35,7 @@ See [What is Conflake?](../guide/introduction.md) for a list of provided feature
   inputs.conflake.url = "github:ratson/conflake";
 }
 ```
+
+Then migrate your `outputs` to Conflake [`options`](../options/).
+
+<!-- #endregion migration -->

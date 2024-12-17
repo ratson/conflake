@@ -4,7 +4,7 @@ A batteries included, convention-based configuration framework for Nix Flakes.
 
 ## Features
 
-- Load files to `outputs` attribute set according to [project layout](./project-layout.md)
+- Auto-load files into `outputs` attribute set according to [project layout](./project-layout.md)
 - Provide `outputs` and `perSystem` options for flexible configuration
 - Handle generating per-system attributes, with
   [`nix-systems`](../options/systems.md#nix-systems) support
