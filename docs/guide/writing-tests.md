@@ -6,8 +6,17 @@ Here is a minimal `outputs` to define tests,
 
 <<< @/../examples/tests/flake.nix#outputs{6-11}
 
+## Running Tests
+
 Run `nix flake check` will run the `tests` with
-[`lib.debug.runTests`][runTests].
+[`lib.debug.runTests`][runTests] along side with other checks.
+
+To run only the tests,
+
+```shell
+# Print nothing when tests passed
+nix build --no-link .#checks.x86_64-linux.tests
+```
 
 [runTests]: https://nixos.org/manual/nixpkgs/stable/#function-library-lib.debug.runTests
 

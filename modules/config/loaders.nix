@@ -35,6 +35,7 @@ let
     pathIsDirectory
     pipe
     remove
+    removePrefix
     removeSuffix
     setAttrByPath
     types
@@ -181,7 +182,10 @@ in
       internal = true;
       readOnly = true;
       type = functionTo types.str;
-      default = lib.path.removePrefix src;
+      default = flip pipe [
+        (lib.path.removePrefix src)
+        (removePrefix "./")
+      ];
     };
 
     srcEntries = mkOption {
