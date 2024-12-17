@@ -13,6 +13,8 @@ let
     filter
     hasAttr
     head
+    isAttrs
+    isPath
     listToAttrs
     mapAttrs
     readDir
@@ -33,6 +35,7 @@ let
     pathIsDirectory
     pipe
     remove
+    removeSuffix
     setAttrByPath
     types
     ;
@@ -86,6 +89,25 @@ let
     ];
 
   loadDir = root: loadDir' { inherit root; };
+
+  loadDirWithDefault =
+    { load, ... }@args:
+    let
+      entries = loadDir' (
+        {
+          mkPair = k: nameValuePair (removeSuffix ".nix" k);
+        }
+        // (removeAttrs args [ "load" ])
+      );
+      transform = mapAttrs (
+        _: v:
+        if isAttrs v then
+          if v ? default && isPath v.default then load v.default else transform v
+        else
+          load v
+      );
+    in
+    transform entries;
 
   resolve =
     src: entries: loaders:
@@ -141,6 +163,12 @@ in
       readOnly = true;
       type = functionTo (lazyAttrsOf types.unspecified);
       default = loadDir';
+    };
+    loadDirWithDefault = mkOption {
+      internal = true;
+      readOnly = true;
+      type = functionTo (lazyAttrsOf types.unspecified);
+      default = loadDirWithDefault;
     };
 
     loadedOutputs = mkOption {

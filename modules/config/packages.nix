@@ -154,7 +154,11 @@ in
       loaders = config.nixDir.mkLoader "packages" (
         { src, ... }:
         {
-          packages = (conflake.readNixDir src).toAttrs import;
+          packages = config.loadDirWithDefault {
+            root = src;
+            load = import;
+            maxDepth = 2;
+          };
         }
       );
     }

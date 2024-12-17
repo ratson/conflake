@@ -8,14 +8,12 @@
 }:
 
 let
-  inherit (builtins) isAttrs isPath mapAttrs;
+  inherit (builtins) mapAttrs;
   inherit (lib)
     flip
     mkIf
     mkMerge
     mkOption
-    nameValuePair
-    removeSuffix
     types
     ;
   inherit (lib.types) functionTo lazyAttrsOf;
@@ -58,23 +56,13 @@ in
     {
       loaders = config.nixDir.mkLoader "legacyPackages" (
         { src, ... }:
-        let
-          entries = config.loadDir' {
-            root = src;
-            mkPair = k: nameValuePair (removeSuffix ".nix" k);
-          };
-          transform =
-            pkgs:
-            mapAttrs (
-              _: v:
-              if isAttrs v then
-                if v ? default && isPath v.default then pkgs.callPackage v.default moduleArgs else transform pkgs v
-              else
-                pkgs.callPackage v moduleArgs
-            );
-        in
         {
-          legacyPackages = flip transform entries;
+          legacyPackages =
+            pkgs:
+            config.loadDirWithDefault {
+              root = src;
+              load = flip pkgs.callPackage moduleArgs;
+            };
         }
       );
     }
