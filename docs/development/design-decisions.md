@@ -1,7 +1,7 @@
 # Design Decisions
 
-This document attempts to describe some design choices of the project, to help
-understanding why some features are developed / not developed.
+This document attempts to describe some design choices of the project, helping to
+understand the rationale behind the development or omission of certain features.
 
 ## Using the module system
 
@@ -18,3 +18,9 @@ understanding why some features are developed / not developed.
 
 - Minimize download size
 - Keep `inputs.url` short as `github:ratson/conflake`
+
+## Load files from `nix/`
+
+- Indicate files under the folder are loaded by `Conflake`
+- Non-Nix projects could use identical folder names for different tasks
+- It can be changed if desirable
