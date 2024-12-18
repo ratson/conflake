@@ -45,7 +45,18 @@ in
     })
 
     {
-      loaders.templates.load =
+      loaders.${config.nixDir.mkLoaderKey "templates.nix"} = {
+        match = conflake.matchers.file;
+        load =
+          { src, ... }:
+          {
+            templates = import src;
+          };
+      };
+    }
+
+    {
+      loaders = config.nixDir.mkLoader "templates" (
         { src, ... }:
         {
           templates = pipe src [
@@ -58,7 +69,8 @@ in
               }
             ))
           ];
-        };
+        }
+      );
     }
   ];
 }

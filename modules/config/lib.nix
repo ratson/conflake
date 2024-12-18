@@ -9,6 +9,7 @@
 let
   inherit (lib)
     hasSuffix
+    isFunction
     mkMerge
     mkOption
     mkIf
@@ -37,11 +38,15 @@ in
           lib = config.loadDir' {
             root = src;
             mkPair =
-              name: value:
-              if hasSuffix ".fn.nix" name then
-                nameValuePair (removeSuffix ".fn.nix" name) (import value moduleArgs)
+              k: v:
+              let
+                value = import v;
+                value' = if isFunction value then value moduleArgs else value;
+              in
+              if hasSuffix ".raw.nix" k then
+                nameValuePair (removeSuffix ".raw.nix" k) value
               else
-                nameValuePair (removeSuffix ".nix" name) (import value);
+                nameValuePair (removeSuffix ".nix" k) value';
           };
         }
       );

@@ -8,7 +8,6 @@
 }:
 
 let
-  inherit (builtins) mapAttrs;
   inherit (lib)
     flip
     mkIf
@@ -18,22 +17,6 @@ let
     ;
   inherit (lib.types) functionTo lazyAttrsOf;
   inherit (conflake.types) nullable;
-
-  overlay =
-    _: prev:
-    let
-      inherit (prev.stdenv.hostPlatform) system;
-      epkgs = config.outputs.legacyPackages.${system}.emacsPackages or { };
-    in
-    {
-      emacsPackagesFor =
-        emacs:
-        (prev.emacsPackagesFor emacs).overrideScope (
-          final: _: mapAttrs (_: flip final.callPackage { }) epkgs
-        );
-
-      emacsPackages = prev.emacsPackages // epkgs;
-    };
 in
 {
   options.legacyPackages = mkOption {
@@ -43,10 +26,6 @@ in
 
   config = mkMerge [
     (mkIf (config.legacyPackages != null) {
-      inherit overlay;
-
-      withOverlays = overlay;
-
       outputs.legacyPackages = genSystems config.legacyPackages;
     })
 

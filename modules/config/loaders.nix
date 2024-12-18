@@ -174,7 +174,12 @@ in
 
     loadedOutputs = mkOption {
       internal = true;
-      type = lazyAttrsOf types.unspecified;
+      type = types.submodule {
+        freeformType = lazyAttrsOf types.unspecified;
+        options = {
+          inherit (options) templates;
+        };
+      };
       default = { };
     };
 

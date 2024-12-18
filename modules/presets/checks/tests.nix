@@ -2,7 +2,6 @@
   config,
   lib,
   moduleArgs,
-  src,
   ...
 }:
 
@@ -11,24 +10,26 @@ let
     isList
     length
     mapAttrs
-    toFile
     toJSON
     ;
   inherit (lib)
     flip
     head
     last
+    mapAttrsRecursive
     mkDefault
     mkEnableOption
     mkIf
     mkOption
+    optionalAttrs
     pipe
+    runTests
     sublist
+    toFunction
     types
     ;
   inherit (lib.generators) toPretty;
   inherit (lib.path) subpath;
-  inherit (lib.types) lazyAttrsOf;
 
   cfg = config.presets.checks.tests;
 
@@ -46,7 +47,7 @@ let
       v
   );
 
-  testsPlaceholder = {
+  testsPlaceholder = optionalAttrs (config.tests != null) {
     "flake.nix#tests" = null;
   };
 
@@ -55,16 +56,16 @@ let
   mkCheck =
     tests: pkgs:
     let
-      finalTests = {
+      testsTree = {
         ${loaderKey} = tests;
-
       } // testsPlaceholder;
-      results = lib.mapAttrsRecursive (
+      results = mapAttrsRecursive (
         path:
         flip pipe [
-          (x: if x == null then config.tests else pkgs.callPackage x (moduleArgs // cfg.args))
+          (x: if x == null then toFunction config.tests else x)
+          (flip pkgs.callPackage moduleArgs)
           mkSuite
-          lib.runTests
+          runTests
           (
             cases:
             if cases == [ ] then
@@ -73,26 +74,22 @@ let
               lib.trace "Unit tests failed: ${toPretty { } cases}\nin ${subpath.join path}" cases
           )
         ]
-      ) finalTests;
+      ) testsTree;
     in
-    pkgs.runCommandLocal "check-tests" { } ''
-      cp ${toFile "test-results.json" (toJSON results)} $out
-      cat $out | grep -v '{"expected":'
-    '';
+    pkgs.runCommandLocal "check-tests"
+      {
+        passAsFile = [ "results" ];
+        results = toJSON results;
+      }
+      ''
+        cp $resultsPath $out
+        cat $out | grep -v '{"expected":'
+      '';
 in
 {
-  options.tests = mkOption {
-    type = lazyAttrsOf types.attrs;
-    default = { };
-  };
-
   options.presets.checks.tests = {
     enable = mkEnableOption "tests" // {
       default = config.presets.enable;
-    };
-    args = mkOption {
-      type = lazyAttrsOf types.raw;
-      default = { };
     };
     name = mkOption {
       type = types.str;
@@ -100,7 +97,7 @@ in
     };
     src = mkOption {
       type = types.path;
-      default = src + /tests;
+      default = config.nixDir.src + /tests;
     };
   };
 

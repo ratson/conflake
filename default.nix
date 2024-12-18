@@ -314,6 +314,8 @@ let
         };
       }
     );
+
+    test = lib.types.either (lazyAttrsOf raw) (lib.types.nonEmptyListOf raw);
   };
 
   callWith =
@@ -337,14 +339,6 @@ let
       popd
       touch $out
     '';
-
-  mkVersion' =
-    version: src:
-    "${version}+date=${
-      builtins.substring 0 8 (src.lastModifiedDate or "19700101")
-    }_${src.shortRev or "dirty"}";
-
-  mkVersion = mkVersion' "0.0.0";
 
   readNixDir =
     src:
@@ -374,9 +368,6 @@ let
 
   selectAttr = attr: mapAttrs (_: v: v.${attr} or { });
 
-  # Add `prefix` to keys of an attrset
-  withPrefix = prefix: mapAttrs' (k: v: nameValuePair "${prefix}${k}" v);
-
   conflake = {
     inherit
       callWith
@@ -384,13 +375,13 @@ let
       matchers
       mkCheck
       mkOutputs
-      mkVersion
-      mkVersion'
       readNixDir
       selectAttr
       types
-      withPrefix
       ;
+
+    inherit (inputs.self.lib.attrsets) prefixAttrs;
+    inherit (inputs.self.lib.flake) mkVersion mkVersion';
   };
 in
 conflake

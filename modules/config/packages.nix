@@ -130,13 +130,6 @@ in
           )
         ];
 
-      overlay =
-        final:
-        flip pipe [
-          (config.packageOverlay (final.appendOverlays config.withOverlays))
-          (flip removeAttrs [ "default" ])
-        ];
-
       outputs = {
         inherit packages;
       };

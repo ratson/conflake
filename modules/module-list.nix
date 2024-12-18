@@ -21,11 +21,12 @@
   ./config/perSystem.nix
   ./config/systems.nix
   ./config/templates.nix
+  ./config/tests.nix
   ./config/withOverlays.nix
   ./darwin/darwinConfigurations.nix
   ./darwin/darwinModules.nix
   ./home-manager/homeConfigurations.nix
   ./home-manager/homeModules.nix
   ./overlay.nix
-  ./presets
+  ./presets/default.nix
 ]

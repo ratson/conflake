@@ -11,12 +11,6 @@
       inherit inputs lib;
 
       functor = _: conflake;
-
-      templates = {
-        default = {
-          description = "Minimal Conflake flake.";
-        };
-      };
     };
 
   inputs.nixpkgs.url = "github:NixOS/nixpkgs/nixpkgs-unstable";

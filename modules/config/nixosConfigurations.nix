@@ -35,9 +35,12 @@ let
             config.nixpkgs.hostPlatform = mkDefault "x86_64-linux";
           }
         ] ++ cfg.modules or [ ];
-        specialArgs = {
-          inherit hostname inputs;
-        } // (mkSystemArgs cfg.system) // cfg.specialArgs or { };
+        specialArgs =
+          {
+            inherit hostname inputs;
+          }
+          // (mkSystemArgs cfg.system)
+          // cfg.specialArgs or { };
       }
     );
 
@@ -58,7 +61,7 @@ in
         { system, ... }:
         pipe configs [
           (filterAttrs (_: v: v.pkgs.system == system))
-          (conflake.withPrefix "nixos-")
+          (conflake.prefixAttrs "nixos-")
           (mapAttrs (
             # Wrapping the drv is needed as computing its name is expensive
             # If not wrapped, it slows down `nix flake show` significantly
