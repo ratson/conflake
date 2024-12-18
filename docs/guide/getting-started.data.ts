@@ -5,7 +5,7 @@ export default defineLoader({
   async load() {
     const [templateFiles] = await Promise.all([
       ($({
-        cwd: "../templates/default",
+        cwd: "../nix/templates/default",
       })`tree -aF --noreport .`).then((
         x,
       ) => x.stdout),

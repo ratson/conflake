@@ -6,22 +6,10 @@ If your project does not have `flake.nix` yet:
 nix flake init -t github:ratson/conflake
 ```
 
-<script setup>
-import { data } from './getting-started.data'
-</script>
-
-<details>
-  <summary>Files from template</summary>
-
-```-vue
-{{ data.templateFiles }}
-```
-
-[View on GitHub](https://github.com/ratson/conflake/tree/release/templates/default)
+This will copy files from [default template](../templates/default#files)
+to the current directory.
 
 You need [nix-direnv](https://github.com/nix-community/nix-direnv#use-flake) to use `.envrc`.
-
-</details>
 
 ## Add to project
 

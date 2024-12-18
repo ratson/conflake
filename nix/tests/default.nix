@@ -1329,13 +1329,16 @@ mkTests {
     (x: [
       (x ? __functor)
       (x ? lib.mkOutputs)
-      (x ? templates.default.path)
+      (attrNames x.templates.default)
       (x.templates.default.description != "default")
     ])
     [
       true
       true
-      true
+      [
+        "description"
+        "path"
+      ]
       true
     ]
   ];

@@ -12,12 +12,6 @@
 
       functor = _: conflake;
 
-      templates = {
-        default = {
-          description = "Minimal Conflake flake.";
-        };
-      };
-
       presets.checks.deadnix = {
         enable = true;
         files = [

@@ -112,6 +112,12 @@ in
       type = functionTo (functionTo conflake.types.loaders);
       default = mkLoader;
     };
+    mkLoaderKey = mkOption {
+      internal = true;
+      readOnly = true;
+      type = functionTo str;
+      default = mkLoaderKey;
+    };
     mkModuleLoader = mkOption {
       internal = true;
       readOnly = true;

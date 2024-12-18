@@ -11,15 +11,15 @@ export default {
         ...v,
         name: k,
         hash: k === "default" ? "" : `#${k}`,
-        tree:
-          (await $({ cwd: `../templates/${k}` })`tree -a --noreport .`).stdout,
+        tree: (await $({ cwd: `../nix/templates/${k}` })`tree -a --noreport .`)
+          .stdout,
       })),
     )).map((x) => ({
       params: { name: x.name },
       content: `
 ${x.description}
 
-\`\`\`nix
+\`\`\`shell
 nix flake init -t github:ratson/conflake${x.hash}
 \`\`\`
 
@@ -29,7 +29,7 @@ nix flake init -t github:ratson/conflake${x.hash}
 ${x.tree}
 \`\`\`
 
-[View on GitHub](https://github.com/ratson/conflake/tree/release/templates/${x.name})
+[View on GitHub](https://github.com/ratson/conflake/tree/release/nix/templates/${x.name})
       `.trim(),
     }));
     return data;
