@@ -314,6 +314,8 @@ let
         };
       }
     );
+
+    test = lib.types.either (lazyAttrsOf raw) (lib.types.nonEmptyListOf raw);
   };
 
   callWith =

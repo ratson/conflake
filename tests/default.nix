@@ -1271,6 +1271,36 @@ mkTests {
     false
   ];
 
+  tests-empty = [
+    (conflake' { tests = { }; })
+    (x: x.checks.x86_64-linux.tests)
+    isDerivation
+    true
+  ];
+
+  tests-list = [
+    (conflake' {
+      tests = {
+        test-list = [
+          1
+          1
+        ];
+      };
+    })
+    (x: x.checks.x86_64-linux.tests)
+    isDerivation
+    true
+  ];
+
+  tests-fn = [
+    (conflake' {
+      tests = { lib, ... }: { };
+    })
+    (x: x.checks.x86_64-linux.tests)
+    isDerivation
+    true
+  ];
+
   presets-disable = [
     (conflake' {
       presets.enable = false;

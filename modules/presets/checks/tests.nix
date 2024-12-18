@@ -11,7 +11,6 @@ let
     isList
     length
     mapAttrs
-    toFile
     toJSON
     ;
   inherit (lib)
@@ -75,17 +74,17 @@ let
         ]
       ) finalTests;
     in
-    pkgs.runCommandLocal "check-tests" { } ''
-      cp ${toFile "test-results.json" (toJSON results)} $out
-      cat $out | grep -v '{"expected":'
-    '';
+    pkgs.runCommandLocal "check-tests"
+      {
+        passAsFile = [ "results" ];
+        results = toJSON results;
+      }
+      ''
+        cp $resultsPath $out
+        cat $out | grep -v '{"expected":'
+      '';
 in
 {
-  options.tests = mkOption {
-    type = lazyAttrsOf types.attrs;
-    default = { };
-  };
-
   options.presets.checks.tests = {
     enable = mkEnableOption "tests" // {
       default = config.presets.enable;
