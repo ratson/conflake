@@ -41,6 +41,8 @@ let
 
   conflake' = conflake fixtures.empty;
 
+  conflakeExample = s: conflake ../../examples/${s};
+
   mkTests = flip pipe [
     (prefixAttrs "test-")
     (mapAttrs builtins.traceVerbose)
@@ -1393,13 +1395,13 @@ mkTests {
   ];
 
   demo-example = [
-    (conflake ../examples/demo { })
+    (conflakeExample "demo" { })
     (f: attrNames f.overlays)
     [ "default" ]
   ];
 
   nixos-example = [
-    (conflake ../examples/nixos { })
+    (conflakeExample "nixos" { })
     (f: [
       (f.nixosConfigurations ? vm.config.system.build.toplevel)
       (attrNames f.nixosModules)
@@ -1424,7 +1426,7 @@ mkTests {
   ];
 
   packages-example = [
-    (conflake ../examples/packages { })
+    (conflakeExample "packages" { })
     (x: [
       (x.legacyPackages.x86_64-linux ? emacsPackages.greet)
       (attrNames x.packages.x86_64-linux)

@@ -2,7 +2,6 @@
   config,
   lib,
   moduleArgs,
-  src,
   ...
 }:
 
@@ -98,7 +97,7 @@ in
     };
     src = mkOption {
       type = types.path;
-      default = src + /tests;
+      default = config.nixDir.src + /tests;
     };
   };
 

@@ -21,10 +21,10 @@
       presets.checks.deadnix = {
         enable = true;
         files = [
-          "misc"
           "modules"
           "nix"
         ];
+        exclude = "nix/tests";
       };
     };
 
