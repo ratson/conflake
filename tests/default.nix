@@ -1310,7 +1310,7 @@ mkTests {
 
   empty-flake = [
     (conflake' {
-      disabledModules = [ "presets" ];
+      disabledModules = [ "presets/default.nix" ];
     })
     { }
   ];

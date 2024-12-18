@@ -5,10 +5,10 @@ let
 in
 {
   imports = [
-    ./checks
+    ./checks/default.nix
     ./formatters.nix
     ./inputs.nix
-    ./overlay
+    ./overlay/default.nix
   ];
 
   options.presets.enable = mkEnableOption "presets" // {

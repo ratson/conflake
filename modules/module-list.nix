@@ -27,5 +27,5 @@
   ./home-manager/homeConfigurations.nix
   ./home-manager/homeModules.nix
   ./overlay.nix
-  ./presets
+  ./presets/default.nix
 ]
