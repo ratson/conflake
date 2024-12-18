@@ -340,14 +340,6 @@ let
       touch $out
     '';
 
-  mkVersion' =
-    version: src:
-    "${version}+date=${
-      builtins.substring 0 8 (src.lastModifiedDate or "19700101")
-    }_${src.shortRev or "dirty"}";
-
-  mkVersion = mkVersion' "0.0.0";
-
   readNixDir =
     src:
     pipe src [
@@ -383,14 +375,13 @@ let
       matchers
       mkCheck
       mkOutputs
-      mkVersion
-      mkVersion'
       readNixDir
       selectAttr
       types
       ;
 
     inherit (inputs.self.lib.attrsets) prefixAttrs;
+    inherit (inputs.self.lib.flake) mkVersion mkVersion';
   };
 in
 conflake
