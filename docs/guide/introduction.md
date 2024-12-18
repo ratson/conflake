@@ -26,6 +26,9 @@ to navigate the project's file structure.
 This project introduces substantial amount of code to your project,
 and any bugs could prevent your configuration from building successfully.
 
+There is a performance overhead with extra runtime checks and module evaluations
+when compared to handcrafted imports.
+
 Running `nix flake update` without reviewing the changes
 and updating your code accordingly may disrupt your project.
 
