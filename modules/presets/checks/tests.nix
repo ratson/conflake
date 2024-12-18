@@ -27,7 +27,6 @@ let
     ;
   inherit (lib.generators) toPretty;
   inherit (lib.path) subpath;
-  inherit (lib.types) lazyAttrsOf;
 
   cfg = config.presets.checks.tests;
 
@@ -61,7 +60,7 @@ let
       results = lib.mapAttrsRecursive (
         path:
         flip pipe [
-          (x: if x == null then config.tests else pkgs.callPackage x (moduleArgs // cfg.args))
+          (x: if x == null then config.tests else pkgs.callPackage x moduleArgs)
           mkSuite
           lib.runTests
           (
@@ -88,10 +87,6 @@ in
   options.presets.checks.tests = {
     enable = mkEnableOption "tests" // {
       default = config.presets.enable;
-    };
-    args = mkOption {
-      type = lazyAttrsOf types.raw;
-      default = { };
     };
     name = mkOption {
       type = types.str;
