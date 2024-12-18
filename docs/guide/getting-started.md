@@ -17,6 +17,8 @@ import { data } from './getting-started.data'
 {{ data.templateFiles }}
 ```
 
+[View on GitHub](https://github.com/ratson/conflake/tree/release/templates/default)
+
 You need [nix-direnv](https://github.com/nix-community/nix-direnv#use-flake) to use `.envrc`.
 
 </details>
@@ -32,7 +34,7 @@ It outputs`devShells.${system}.default`attributes for each configured
 system.
 `systems` can be set to change configured systems from the default.
 
-```nix
+```nix:line-numbers
 {
   outputs = { conflake, ... }@inputs:
     conflake ./. {
@@ -54,13 +56,10 @@ system.
 }
 ```
 
-With this flake, calling `nix develop` will make `hello` and `coreutils`
-available.
-
 <details>
   <summary>Minimal version</summary>
 
-```nix
+```nix:line-numbers
 {
   outputs = { conflake, ... }:
     conflake ./. {
@@ -72,6 +71,9 @@ available.
 ```
 
 </details>
+
+With this flake, calling `nix develop` will make `hello` and `coreutils`
+available.
 
 ## mkOutputs
 

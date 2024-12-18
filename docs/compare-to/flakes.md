@@ -21,20 +21,25 @@ See [What is Conflake?](../guide/introduction.md) for a list of provided feature
 
 Edit `flake.nix` to match the following format:
 
-```nix{6-8}
+```nix:line-numbers {4,7-9}
 {
   outputs = { conflake, ... }@inputs:
+    let
+      outputs = {};  # Your existing `outputs`
+    in
     conflake ./. {
-      inherit inputs;
+      inherit inputs outputs;
 
-      outputs = {
-        # Move your existing Flakes `outputs` to here
-      };
+      presets.enable = false;
     };
 
   inputs.conflake.url = "github:ratson/conflake";
 }
 ```
+
+Line 4: Copy existing `outputs` to here.
+
+Line 9: Optional if your `outputs` is not conflicting to the presets.
 
 Then migrate your `outputs` to Conflake [`options`](../options/).
 
