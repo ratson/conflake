@@ -17,12 +17,16 @@ let
     flip
     head
     last
+    mapAttrsRecursive
     mkDefault
     mkEnableOption
     mkIf
     mkOption
+    optionalAttrs
     pipe
+    runTests
     sublist
+    toFunction
     types
     ;
   inherit (lib.generators) toPretty;
@@ -44,7 +48,7 @@ let
       v
   );
 
-  testsPlaceholder = {
+  testsPlaceholder = optionalAttrs (config.tests != null) {
     "flake.nix#tests" = null;
   };
 
@@ -53,16 +57,16 @@ let
   mkCheck =
     tests: pkgs:
     let
-      finalTests = {
+      testsTree = {
         ${loaderKey} = tests;
-
       } // testsPlaceholder;
-      results = lib.mapAttrsRecursive (
+      results = mapAttrsRecursive (
         path:
         flip pipe [
-          (x: if x == null then config.tests else pkgs.callPackage x moduleArgs)
+          (x: if x == null then toFunction config.tests else x)
+          (flip pkgs.callPackage moduleArgs)
           mkSuite
-          lib.runTests
+          runTests
           (
             cases:
             if cases == [ ] then
@@ -71,7 +75,7 @@ let
               lib.trace "Unit tests failed: ${toPretty { } cases}\nin ${subpath.join path}" cases
           )
         ]
-      ) finalTests;
+      ) testsTree;
     in
     pkgs.runCommandLocal "check-tests"
       {
