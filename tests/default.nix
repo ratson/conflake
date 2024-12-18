@@ -20,7 +20,7 @@ let
     pipe
     ;
   inherit (inputs) nixpkgs self;
-  inherit (self.lib) withPrefix;
+  inherit (self.lib) prefixAttrs;
 
   fixtures = {
     empty = ./_fixtures/empty;
@@ -42,7 +42,7 @@ let
   conflake' = conflake fixtures.empty;
 
   mkTests = flip pipe [
-    (withPrefix "test-")
+    (prefixAttrs "test-")
     (mapAttrs builtins.traceVerbose)
   ];
 in

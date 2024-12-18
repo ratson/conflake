@@ -24,7 +24,6 @@ let
     pipe
     ;
   inherit (lib.types) attrs lazyAttrsOf;
-  inherit (conflake) withPrefix;
   inherit (conflake.types) optCallWith;
 
   isHome = x: x ? activationPackage;
@@ -75,7 +74,7 @@ in
         { system, ... }:
         pipe configs [
           (filterAttrs (_: v: v.pkgs.system == system))
-          (withPrefix "home-")
+          (conflake.prefixAttrs "home-")
           (mapAttrs (_: v: v.activationPackage))
         ]
       );

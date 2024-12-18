@@ -376,9 +376,6 @@ let
 
   selectAttr = attr: mapAttrs (_: v: v.${attr} or { });
 
-  # Add `prefix` to keys of an attrset
-  withPrefix = prefix: mapAttrs' (k: v: nameValuePair "${prefix}${k}" v);
-
   conflake = {
     inherit
       callWith
@@ -391,8 +388,9 @@ let
       readNixDir
       selectAttr
       types
-      withPrefix
       ;
+
+    inherit (inputs.self.lib.attrsets) prefixAttrs;
   };
 in
 conflake
