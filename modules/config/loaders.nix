@@ -23,8 +23,9 @@ let
   inherit (lib)
     attrsToList
     concatMap
-    flip
     filterAttrs
+    flip
+    flatten
     hasPrefix
     hasSuffix
     mkIf
@@ -125,13 +126,16 @@ let
       ))
       attrValues
       (filter (x: x.loader.enable && x.loader.match x.args))
-      (map (
-        x:
-        mkMerge [
-          (x.loader.load x.args)
-          (mkIf (x.loader.loaders != { }) (resolve x.args.src (readDir x.args.src) x.loader.loaders))
-        ]
-      ))
+      (map (x: [
+        (x.loader.load x.args)
+        (mkIf (x.loader.loaders != { }) (
+          pipe x.args.src [
+            readDir
+            (entries: resolve x.args.src entries x.loader.loaders)
+          ]
+        ))
+      ]))
+      flatten
       mkMerge
     ];
 in
