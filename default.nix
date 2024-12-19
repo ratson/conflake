@@ -382,6 +382,17 @@ let
 
     inherit (inputs.self.lib.attrsets) prefixAttrs;
     inherit (inputs.self.lib.flake) mkVersion mkVersion';
+
+    loadBlacklist = [
+      "_module"
+      "inputs"
+      "loaders"
+      "loadIgnore"
+      "moduleArgs"
+      "nixDir"
+      "nixpkgs"
+      "presets"
+    ];
   };
 in
 conflake

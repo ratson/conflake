@@ -232,15 +232,7 @@ in
     })
 
     (pipe options [
-      (flip removeAttrs [
-        "_module"
-        "loaders"
-        "loadIgnore"
-        "moduleArgs"
-        "nixDir"
-        "nixpkgs"
-        "presets"
-      ])
+      (flip removeAttrs conflake.loadBlacklist)
       (filterAttrs (_: v: !(v.internal or false)))
       (mapAttrs (name: _: mkIf (config ? loadedOutputs.${name}) config.loadedOutputs.${name}))
     ])

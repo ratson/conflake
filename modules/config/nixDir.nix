@@ -4,6 +4,7 @@
   src,
   lib,
   conflake,
+  loadBlacklist,
   mkSystemArgs',
   moduleArgs,
   ...
@@ -165,10 +166,7 @@ in
           if val.success then nameValuePair name val.value else null;
       in
       pipe options [
-        (flip removeAttrs [
-          "_module"
-          "nixDir"
-        ])
+        (flip removeAttrs conflake.loadBlacklist)
         (filterAttrs (k: v: !(v.internal or false) && !hasLoader k))
         attrNames
         (map mkPair)
