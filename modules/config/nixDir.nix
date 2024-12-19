@@ -30,6 +30,7 @@ let
     mkEnableOption
     mkOption
     nameValuePair
+    optionalAttrs
     pipe
     remove
     removeSuffix
@@ -60,11 +61,15 @@ let
     ]) (p: import (if isFileEntry [ "${p}.nix" ] entries then entries."${p}.nix" else entries."${p}"));
 
   mkLoader = k: load: {
-    ${mkLoaderKey k} = {
-      inherit load;
+    ${mkLoaderKey k} =
+      {
+        inherit load;
 
-      enable = mkDefault cfg.enable;
-    };
+        enable = mkDefault cfg.enable;
+      }
+      // optionalAttrs (hasSuffix ".nix" k) {
+        match = conflake.matchers.file;
+      };
   };
 
   mkModule =
