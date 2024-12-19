@@ -135,7 +135,10 @@ in
     loaders = mkLoader "." (
       { src, ... }:
       let
-        entries = config.loadDir src;
+        entries = config.loadDir' {
+          root = src;
+          maxDepth = 3;
+        };
 
         importName =
           name:
