@@ -7,6 +7,7 @@
   loadBlacklist,
   mkSystemArgs',
   moduleArgs,
+  pkgsFor,
   ...
 }:
 
@@ -77,9 +78,11 @@ let
   mkModule =
     path:
     let
-      f = conflake.callWith' (
-        { pkgs, ... }: moduleArgs // (mkSystemArgs' pkgs) // config.moduleArgs.extra
-      ) path;
+      f =
+        { pkgs, ... }@args:
+        conflake.callWith (moduleArgs // (mkSystemArgs' pkgs) // config.moduleArgs.extra) path (
+          args // { pkgs = pkgsFor.${pkgs.stdenv.hostPlatform.system} or pkgs; }
+        );
     in
     if config.moduleArgs.enable then
       pipe f [

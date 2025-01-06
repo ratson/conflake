@@ -10,5 +10,6 @@
   home.packages = [
     pkgs.hello
     inputs'.greet.packages.greet
+    pkgs.bonjour
   ];
 }
