@@ -1406,6 +1406,7 @@ mkTests {
   nixos-example = [
     (conflakeExample "nixos" { })
     (f: [
+      (attrNames f.nixosConfigurations)
       (f.nixosConfigurations ? vm.config.system.build.toplevel)
       (attrNames f.nixosModules)
       (attrNames f.homeModules)
@@ -1413,6 +1414,10 @@ mkTests {
       f.lib.hello-world
     ])
     [
+      [
+        "vm"
+        "vm-dir"
+      ]
       true
       [
         "default"

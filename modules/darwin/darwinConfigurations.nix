@@ -21,9 +21,12 @@ let
     inputs.nix-darwin.lib.darwinSystem (
       cfg
       // {
-        specialArgs = {
-          inherit hostname inputs;
-        } // (mkSystemArgs cfg.system) // cfg.specialArgs or { };
+        specialArgs =
+          {
+            inherit hostname inputs;
+          }
+          // (mkSystemArgs cfg.system)
+          // cfg.specialArgs or { };
       }
     );
 
@@ -42,5 +45,6 @@ in
       darwinConfigurations = configs;
     };
     nixDir.aliases.darwinConfigurations = [ "darwin" ];
+    loaders = config.nixDir.mkHostLoader "darwinConfigurations";
   };
 }

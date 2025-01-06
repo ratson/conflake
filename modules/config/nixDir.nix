@@ -29,6 +29,7 @@ let
     hasSuffix
     mkDefault
     mkEnableOption
+    mkMerge
     mkOption
     nameValuePair
     optionalAttrs
@@ -98,6 +99,21 @@ let
         outputs.${attr} = (conflake.readNixDir src).toAttrs mkModule;
       }
     );
+
+  mkHostLoader =
+    attr:
+    mkMerge (
+      map (flip config.nixDir.mkLoader (
+        { src, ... }:
+        {
+          ${attr} = config.loadDirWithDefault {
+            root = src;
+            load = import;
+            maxDepth = 2;
+          };
+        }
+      )) ([ attr ] ++ config.nixDir.aliases.${attr} or [ ])
+    );
 in
 {
   options.nixDir = {
@@ -123,6 +139,12 @@ in
       readOnly = true;
       type = functionTo str;
       default = mkLoaderKey;
+    };
+    mkHostLoader = mkOption {
+      internal = true;
+      readOnly = true;
+      type = functionTo conflake.types.loaders;
+      default = mkHostLoader;
     };
     mkModuleLoader = mkOption {
       internal = true;
