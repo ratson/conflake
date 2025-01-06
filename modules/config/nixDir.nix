@@ -4,8 +4,10 @@
   src,
   lib,
   conflake,
+  loadBlacklist,
   mkSystemArgs',
   moduleArgs,
+  pkgsFor,
   ...
 }:
 
@@ -28,8 +30,10 @@ let
     hasSuffix
     mkDefault
     mkEnableOption
+    mkMerge
     mkOption
     nameValuePair
+    optionalAttrs
     pipe
     remove
     removeSuffix
@@ -60,19 +64,25 @@ let
     ]) (p: import (if isFileEntry [ "${p}.nix" ] entries then entries."${p}.nix" else entries."${p}"));
 
   mkLoader = k: load: {
-    ${mkLoaderKey k} = {
-      inherit load;
+    ${mkLoaderKey k} =
+      {
+        inherit load;
 
-      enable = mkDefault cfg.enable;
-    };
+        enable = mkDefault cfg.enable;
+      }
+      // optionalAttrs (hasSuffix ".nix" k) {
+        match = conflake.matchers.file;
+      };
   };
 
   mkModule =
     path:
     let
-      f = conflake.callWith' (
-        { pkgs, ... }: moduleArgs // (mkSystemArgs' pkgs) // config.moduleArgs.extra
-      ) path;
+      f =
+        { pkgs, ... }@args:
+        conflake.callWith (moduleArgs // (mkSystemArgs' pkgs) // config.moduleArgs.extra) path (
+          args // { pkgs = pkgsFor.${pkgs.stdenv.hostPlatform.system} or pkgs; }
+        );
     in
     if config.moduleArgs.enable then
       pipe f [
@@ -91,6 +101,21 @@ let
       {
         outputs.${attr} = (conflake.readNixDir src).toAttrs mkModule;
       }
+    );
+
+  mkHostLoader =
+    attr:
+    mkMerge (
+      map (flip config.nixDir.mkLoader (
+        { src, ... }:
+        {
+          ${attr} = config.loadDirWithDefault {
+            root = src;
+            load = import;
+            maxDepth = 2;
+          };
+        }
+      )) ([ attr ] ++ config.nixDir.aliases.${attr} or [ ])
     );
 in
 {
@@ -118,6 +143,12 @@ in
       type = functionTo str;
       default = mkLoaderKey;
     };
+    mkHostLoader = mkOption {
+      internal = true;
+      readOnly = true;
+      type = functionTo conflake.types.loaders;
+      default = mkHostLoader;
+    };
     mkModuleLoader = mkOption {
       internal = true;
       readOnly = true;
@@ -130,7 +161,10 @@ in
     loaders = mkLoader "." (
       { src, ... }:
       let
-        entries = config.loadDir src;
+        entries = config.loadDir' {
+          root = src;
+          maxDepth = 3;
+        };
 
         importName =
           name:
@@ -157,10 +191,7 @@ in
           if val.success then nameValuePair name val.value else null;
       in
       pipe options [
-        (flip removeAttrs [
-          "_module"
-          "nixDir"
-        ])
+        (flip removeAttrs conflake.loadBlacklist)
         (filterAttrs (k: v: !(v.internal or false) && !hasLoader k))
         attrNames
         (map mkPair)

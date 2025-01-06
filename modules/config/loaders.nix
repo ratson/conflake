@@ -23,8 +23,9 @@ let
   inherit (lib)
     attrsToList
     concatMap
-    flip
     filterAttrs
+    flip
+    flatten
     hasPrefix
     hasSuffix
     mkIf
@@ -92,7 +93,11 @@ let
   loadDir = root: loadDir' { inherit root; };
 
   loadDirWithDefault =
-    { load, ... }@args:
+    {
+      load,
+      maxDepth ? null,
+      ...
+    }@args:
     let
       entries = loadDir' (
         {
@@ -100,15 +105,37 @@ let
         }
         // (removeAttrs args [ "load" ])
       );
-      transform = mapAttrs (
-        _: v:
-        if isAttrs v then
-          if v ? default && isPath v.default then load v.default else transform v
-        else
-          load v
-      );
+      transform =
+        {
+          entries,
+          depth ? 0,
+        }:
+        pipe entries [
+          (mapAttrs (
+            k: v:
+            if maxDepth != null && depth + 1 >= maxDepth then
+              null
+            else if isAttrs v then
+              if v ? default && isPath v.default then
+                nameValuePair k v.default
+              else
+                nameValuePair k (transform {
+                  entries = v;
+                  depth = depth + 1;
+                })
+            else
+              nameValuePair k v
+          ))
+          attrValues
+          (remove null)
+          listToAttrs
+          (filterAttrs (_: v: v != {}))
+        ];
     in
-    transform entries;
+    pipe {inherit entries;} [
+      transform
+      (lib.mapAttrsRecursive (_: load))
+    ];
 
   resolve =
     src: entries: loaders:
@@ -125,13 +152,16 @@ let
       ))
       attrValues
       (filter (x: x.loader.enable && x.loader.match x.args))
-      (map (
-        x:
-        mkMerge [
-          (x.loader.load x.args)
-          (mkIf (x.loader.loaders != { }) (resolve x.args.src (readDir x.args.src) x.loader.loaders))
-        ]
-      ))
+      (map (x: [
+        (x.loader.load x.args)
+        (mkIf (x.loader.loaders != { }) (
+          pipe x.args.src [
+            readDir
+            (entries: resolve x.args.src entries x.loader.loaders)
+          ]
+        ))
+      ]))
+      flatten
       mkMerge
     ];
 in
@@ -228,15 +258,7 @@ in
     })
 
     (pipe options [
-      (flip removeAttrs [
-        "_module"
-        "loaders"
-        "loadIgnore"
-        "moduleArgs"
-        "nixDir"
-        "nixpkgs"
-        "presets"
-      ])
+      (flip removeAttrs conflake.loadBlacklist)
       (filterAttrs (_: v: !(v.internal or false)))
       (mapAttrs (name: _: mkIf (config ? loadedOutputs.${name}) config.loadedOutputs.${name}))
     ])
