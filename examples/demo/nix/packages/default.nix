@@ -1,6 +1,3 @@
-{ stdenv, ... }:
+{ hello, ... }:
 
-stdenv.mkDerivation {
-  pname = "dummy-package";
-  version = "0.0";
-}
+hello

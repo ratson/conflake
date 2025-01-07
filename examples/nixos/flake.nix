@@ -45,6 +45,15 @@
       url = "../..";
       inputs.nixpkgs.follows = "nixpkgs";
     };
+    demo = {
+      url = "../demo";
+      inputs = {
+        conflake.follows = "conflake";
+        home-manager.follows = "home-manager";
+        nixpkgs.follows = "nixpkgs";
+        systems.follows = "systems";
+      };
+    };
     greet = {
       url = "../packages";
       inputs.conflake.follows = "conflake";
