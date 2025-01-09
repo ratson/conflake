@@ -1,13 +1,13 @@
 {
   config,
-  options,
-  src,
   lib,
+  options,
   conflake,
   loadBlacklist,
   mkSystemArgs',
   moduleArgs,
   pkgsFor,
+  src,
   ...
 }:
 
@@ -80,8 +80,12 @@ let
     let
       f =
         { pkgs, ... }@args:
-        conflake.callWith (moduleArgs // (mkSystemArgs' pkgs) // config.moduleArgs.extra) path (
-          args // { pkgs = pkgsFor.${pkgs.stdenv.hostPlatform.system} or pkgs; }
+        conflake.callWith (moduleArgs // config.moduleArgs.extra) path (
+          args
+          // (mkSystemArgs' pkgs)
+          // {
+            pkgs = (pkgsFor.${pkgs.stdenv.hostPlatform.system} or { }) // pkgs;
+          }
         );
     in
     if config.moduleArgs.enable then
