@@ -28,7 +28,7 @@ flake check` too.
 Each test files should define a function returning an attribute set of test cases,
 e.g.
 
-<<< @/../examples/tests/tests/default.nix
+<<< @/../examples/tests/nix/tests/default.nix
 
 The function arguments is a combination of `pkgs`, `moduleArgs` and
 `presets.checks.tests.args`.
@@ -40,4 +40,4 @@ test case can be defined as a list,
 which is convenient when the testing value need to be transformed
 before comparing against the expected value.
 
-<<< @/../examples/tests/tests/list.nix
+<<< @/../examples/tests/nix/tests/list.nix
