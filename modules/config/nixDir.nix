@@ -1,9 +1,7 @@
 {
   config,
   lib,
-  options,
   conflake,
-  loadBlacklist,
   mkSystemArgs',
   moduleArgs,
   pkgsFor,
@@ -12,31 +10,16 @@
 }:
 
 let
-  inherit (builtins)
-    attrNames
-    filter
-    hasAttr
-    isPath
-    listToAttrs
-    ;
   inherit (lib)
-    filterAttrs
-    findFirst
     flip
     functionArgs
-    genAttrs
-    getAttrFromPath
-    hasAttrByPath
     hasSuffix
     mkDefault
     mkEnableOption
     mkMerge
     mkOption
-    nameValuePair
     optionalAttrs
     pipe
-    remove
-    removeSuffix
     setDefaultModuleLocation
     setFunctionArgs
     ;
@@ -49,19 +32,7 @@ let
 
   cfg = config.nixDir;
 
-  isFileEntry = attrPath: set: hasAttrByPath attrPath set && isPath (getAttrFromPath attrPath set);
-
   mkLoaderKey = s: config.mkLoaderKey (cfg.src + /${s});
-
-  hasLoader = name: hasAttr (mkLoaderKey name) config.loaders;
-
-  importDir =
-    entries:
-    genAttrs (pipe entries [
-      attrNames
-      (filter (hasSuffix ".nix"))
-      (map (removeSuffix ".nix"))
-    ]) (p: import (if isFileEntry [ "${p}.nix" ] entries then entries."${p}.nix" else entries."${p}"));
 
   mkLoader = k: load: {
     ${mkLoaderKey k} =
@@ -159,49 +130,5 @@ in
       type = functionTo conflake.types.loaders;
       default = mkModuleLoader;
     };
-  };
-
-  config = {
-    loaders = mkLoader "." (
-      { src, ... }:
-      let
-        entries = config.loadDir' {
-          root = src;
-          maxDepth = 3;
-        };
-
-        importName =
-          name:
-          if isFileEntry [ "${name}.nix" ] entries then
-            {
-              success = true;
-              value = import entries."${name}.nix";
-            }
-          else if entries ? ${name} then
-            {
-              success = true;
-              value = importDir entries.${name};
-            }
-          else
-            { success = false; };
-
-        importNames = names: findFirst (x: x.success) { success = false; } (map importName names);
-
-        mkPair =
-          name:
-          let
-            val = importNames ([ name ] ++ cfg.aliases.${name} or [ ]);
-          in
-          if val.success then nameValuePair name val.value else null;
-      in
-      pipe options [
-        (flip removeAttrs conflake.loadBlacklist)
-        (filterAttrs (k: v: !(v.internal or false) && !hasLoader k))
-        attrNames
-        (map mkPair)
-        (remove null)
-        listToAttrs
-      ]
-    );
   };
 }

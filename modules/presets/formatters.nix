@@ -65,31 +65,35 @@ in
     };
   };
 
-  config = mkMerge [
-    (mkIf cfg.nix {
-      devShell.packages =
-        pkgs:
-        optionals (hasNixfmt pkgs) [
-          pkgs.nixfmt-rfc-style
-        ];
-      formatters =
-        pkgs:
-        optionalAttrs (hasNixfmt pkgs) {
-          "*.nix" = mkDefault (getExe pkgs.nixfmt-rfc-style);
-        };
-    })
-    (mkIf (cfg.json || cfg.markdown || cfg.yaml) {
-      devShell.packages =
-        pkgs:
-        optionals (hasNodejs pkgs) [
-          pkgs.nodePackages.prettier
-        ];
-    })
-    (mkPrettier cfg.json "*.json")
-    (mkPrettier cfg.markdown "*.md")
-    (mkPrettier cfg.yaml [
-      "*.yml"
-      "*.yaml"
-    ])
-  ];
+  config.final =
+    { config, ... }:
+    {
+      config = mkMerge [
+        (mkIf cfg.nix {
+          devShell.packages =
+            pkgs:
+            optionals (hasNixfmt pkgs) [
+              pkgs.nixfmt-rfc-style
+            ];
+          formatters =
+            pkgs:
+            optionalAttrs (hasNixfmt pkgs) {
+              "*.nix" = mkDefault (getExe pkgs.nixfmt-rfc-style);
+            };
+        })
+        (mkIf (cfg.json || cfg.markdown || cfg.yaml) {
+          devShell.packages =
+            pkgs:
+            optionals (hasNodejs pkgs) [
+              pkgs.nodePackages.prettier
+            ];
+        })
+        (mkPrettier cfg.json "*.json")
+        (mkPrettier cfg.markdown "*.md")
+        (mkPrettier cfg.yaml [
+          "*.yml"
+          "*.yaml"
+        ])
+      ];
+    };
 }

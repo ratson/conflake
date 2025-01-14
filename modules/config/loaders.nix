@@ -1,6 +1,5 @@
 {
   config,
-  options,
   lib,
   conflake,
   src,
@@ -129,10 +128,10 @@ let
           attrValues
           (remove null)
           listToAttrs
-          (filterAttrs (_: v: v != {}))
+          (filterAttrs (_: v: v != { }))
         ];
     in
-    pipe {inherit entries;} [
+    pipe { inherit entries; } [
       transform
       (lib.mapAttrsRecursive (_: load))
     ];
@@ -202,17 +201,6 @@ in
       default = loadDirWithDefault;
     };
 
-    loadedOutputs = mkOption {
-      internal = true;
-      type = types.submodule {
-        freeformType = lazyAttrsOf types.unspecified;
-        options = {
-          inherit (options) templates;
-        };
-      };
-      default = { };
-    };
-
     mkLoaderKey = mkOption {
       internal = true;
       readOnly = true;
@@ -253,14 +241,8 @@ in
       ];
     }
 
-    (mkIf (config.finalLoaders != { } && config.srcEntries != { }) {
-      loadedOutputs = resolve src config.srcEntries config.finalLoaders;
+    (mkIf (config.loaders != { } && config.finalLoaders != { } && config.srcEntries != { }) {
+      final = resolve src config.srcEntries config.finalLoaders;
     })
-
-    (pipe options [
-      (flip removeAttrs conflake.loadBlacklist)
-      (filterAttrs (_: v: !(v.internal or false)))
-      (mapAttrs (name: _: mkIf (config ? loadedOutputs.${name}) config.loadedOutputs.${name}))
-    ])
   ];
 }

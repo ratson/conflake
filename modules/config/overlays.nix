@@ -7,32 +7,57 @@
 }:
 
 let
-  inherit (lib) mkMerge mkOption mkIf;
+  inherit (lib)
+    mkIf
+    mkMerge
+    mkOption
+    types
+    ;
   inherit (lib.types) lazyAttrsOf;
   inherit (conflake.types) nullable optCallWith overlay;
+
+  rootConfig = config;
 in
 {
   options = {
     overlay = mkOption {
-      type = nullable overlay;
+      type = types.anything;
       default = null;
     };
 
     overlays = mkOption {
-      type = optCallWith moduleArgs (lazyAttrsOf overlay);
+      type = types.anything;
       default = { };
     };
   };
 
-  config = mkMerge [
-    (mkIf (config.overlay != null) {
-      overlays.default = config.overlay;
-    })
+  config.final =
+    { config, ... }:
+    {
+      options = {
+        overlay = mkOption {
+          type = nullable overlay;
+          default = null;
+        };
 
-    (mkIf (config.overlays != { }) {
-      outputs = {
-        inherit (config) overlays;
+        overlays = mkOption {
+          type = optCallWith moduleArgs (lazyAttrsOf overlay);
+          default = { };
+        };
       };
-    })
-  ];
+
+      config = mkMerge [
+        { inherit (rootConfig) overlay overlays; }
+
+        (mkIf (config.overlay != null) {
+          overlays.default = config.overlay;
+        })
+
+        (mkIf (config.overlays != { }) {
+          outputs = {
+            inherit (config) overlays;
+          };
+        })
+      ];
+    };
 }

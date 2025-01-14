@@ -13,36 +13,12 @@ let
     mkOption
     types
     ;
-  inherit (config) outputs;
+  inherit (config) systems;
   inherit (conflake) selectAttr;
 
   cfg = config.moduleArgs;
-
   inputs = config.finalInputs;
-
-  pkgsFor = genAttrs config.systems (
-    system:
-    import inputs.nixpkgs {
-      inherit system;
-      inherit (config.nixpkgs) config;
-
-      overlays = config.withOverlays ++ [ config.packageOverlay ];
-    }
-  );
-
-  genSystems = f: genAttrs config.systems (system: f pkgsFor.${system});
-
-  mkSystemArgs' =
-    pkgs:
-    let
-      inherit (pkgs.stdenv.hostPlatform) system;
-    in
-    {
-      inputs' = mapAttrs (_: selectAttr system) inputs;
-      outputs' = selectAttr system outputs;
-    };
-
-  mkSystemArgs = system: mkSystemArgs' pkgsFor.${system};
+  rootConfig = config;
 in
 {
   options.moduleArgs = {
@@ -57,9 +33,9 @@ in
 
   config = {
     _module.args = {
-      inherit
+      inherit inputs;
+      inherit (config.final)
         genSystems
-        inputs
         mkSystemArgs
         mkSystemArgs'
         outputs
@@ -68,5 +44,56 @@ in
 
       moduleArgs = args // config._module.args // cfg.extra;
     };
+
+    final =
+      { config, ... }:
+      {
+        options = {
+          pkgsFor = mkOption {
+            internal = true;
+            readOnly = true;
+            type = types.unspecified;
+            default = genAttrs systems (
+              system:
+              import inputs.nixpkgs {
+                inherit system;
+                inherit (rootConfig.nixpkgs) config;
+
+                overlays = config.withOverlays ++ [ config.packageOverlay ];
+              }
+            );
+          };
+          genSystems = mkOption {
+            internal = true;
+            readOnly = true;
+            type = types.unspecified;
+            default = f: genAttrs systems (system: f config.pkgsFor.${system});
+          };
+          mkSystemArgs' = mkOption {
+            internal = true;
+            readOnly = true;
+            type = types.unspecified;
+            default =
+              pkgs:
+              let
+                inherit (pkgs.stdenv.hostPlatform) system;
+              in
+              {
+                inputs' = mapAttrs (_: selectAttr system) inputs;
+                outputs' = selectAttr system config.outputs;
+              };
+          };
+          mkSystemArgs = mkOption {
+            internal = true;
+            readOnly = true;
+            type = types.unspecified;
+            default = system: config.mkSystemArgs' config.pkgsFor.${system};
+          };
+        };
+
+        config._module = {
+          inherit (rootConfig._module) args;
+        };
+      };
   };
 }

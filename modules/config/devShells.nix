@@ -2,7 +2,6 @@
   config,
   lib,
   conflake,
-  genSystems,
   moduleArgs,
   ...
 }:
@@ -28,6 +27,8 @@ let
     optCallWith
     optFunctionTo
     ;
+
+  rootConfig = config;
 
   devShellModule = {
     freeformType = lazyAttrsOf (optFunctionTo types.unspecified);
@@ -77,23 +78,45 @@ in
 {
   options = {
     devShell = mkOption {
-      type = nullable devShellType;
+      type = types.unspecified;
       default = null;
     };
 
     devShells = mkOption {
-      type = optCallWith moduleArgs (lazyAttrsOf devShellType);
+      type = types.unspecified;
       default = { };
     };
   };
 
-  config = mkMerge [
-    (mkIf (config.devShell != null) {
-      devShells.default = config.devShell;
-    })
+  config = {
+    final =
+      { config, ... }:
+      {
+        options = {
+          devShell = mkOption {
+            type = nullable devShellType;
+            default = null;
+          };
 
-    (mkIf (config.devShells != { }) {
-      outputs.devShells = genSystems (pkgs: mapAttrs (_: v: genDevShell pkgs (v pkgs)) config.devShells);
-    })
-  ];
+          devShells = mkOption {
+            type = optCallWith moduleArgs (lazyAttrsOf devShellType);
+            default = { };
+          };
+        };
+
+        config = mkMerge [
+          { inherit (rootConfig) devShell devShells; }
+
+          (mkIf (config.devShell != null) {
+            devShells.default = config.devShell;
+          })
+
+          (mkIf (config.devShells != { }) {
+            outputs.devShells = config.genSystems (
+              pkgs: mapAttrs (_: v: genDevShell pkgs (v pkgs)) config.devShells
+            );
+          })
+        ];
+      };
+  };
 }

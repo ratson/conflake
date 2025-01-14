@@ -19,17 +19,35 @@ let
     ;
   inherit (lib.types) lazyAttrsOf;
   inherit (conflake.types) optCallWith;
+
+  cfg = config.lib;
 in
 {
   options.lib = mkOption {
-    type = optCallWith moduleArgs (lazyAttrsOf types.unspecified);
+    type = types.unspecified;
     default = { };
   };
 
   config = mkMerge [
-    (mkIf (config.lib != { }) {
-      outputs.lib = config.lib;
-    })
+    {
+      final =
+        { config, ... }:
+        {
+          options.lib = mkOption {
+            type = optCallWith moduleArgs (lazyAttrsOf types.unspecified);
+            default = { };
+          };
+
+          config = mkMerge [
+            { lib = cfg; }
+
+            (mkIf (config.lib != { }) {
+              outputs.lib = config.lib;
+            })
+
+          ];
+        };
+    }
 
     {
       loaders = config.nixDir.mkLoader "lib" (

@@ -15,34 +15,59 @@ let
     mkMerge
     mkOption
     pipe
+    types
     ;
   inherit (lib.types) lazyAttrsOf;
   inherit (conflake.types) nullable optCallWith template;
+
+  rootConfig = config;
 in
 {
   options = {
     template = mkOption {
-      type = nullable (optCallWith moduleArgs template);
+      type = types.unspecified;
       default = null;
     };
 
     templates = mkOption {
-      type = optCallWith moduleArgs (lazyAttrsOf (optCallWith moduleArgs template));
+      type = types.unspecified;
       default = { };
-      apply = mapAttrs (_: filterAttrs (_: v: v != null));
     };
   };
 
   config = mkMerge [
-    (mkIf (config.template != null) {
-      templates.default = config.template;
-    })
+    {
+      final =
+        { config, ... }:
+        {
+          options = {
+            template = mkOption {
+              type = nullable (optCallWith moduleArgs template);
+              default = null;
+            };
 
-    (mkIf (config.templates != { }) {
-      outputs = {
-        inherit (config) templates;
-      };
-    })
+            templates = mkOption {
+              type = optCallWith moduleArgs (lazyAttrsOf (optCallWith moduleArgs template));
+              default = { };
+              apply = mapAttrs (_: filterAttrs (_: v: v != null));
+            };
+          };
+
+          config = mkMerge [
+            { inherit (rootConfig) template templates; }
+
+            (mkIf (config.template != null) {
+              templates.default = config.template;
+            })
+
+            (mkIf (config.templates != { }) {
+              outputs = {
+                inherit (config) templates;
+              };
+            })
+          ];
+        };
+    }
 
     {
       loaders = config.nixDir.mkLoader "templates.nix" (

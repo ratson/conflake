@@ -49,17 +49,19 @@ in
       load =
         { entries, ... }:
         {
-          outputs.checks = genSystems (
-            pkgs:
-            mkIf (elem pkgs.stdenv.hostPlatform.system platforms) {
-              editorconfig = conflake.mkCheck "editorconfig" pkgs src (
-                concatStringsSep " " [
-                  (getExe pkgs.editorconfig-checker)
-                  (mkArgs entries)
-                ]
-              );
-            }
-          );
+          outputs = {
+            checks = genSystems (
+              pkgs:
+              mkIf (elem pkgs.stdenv.hostPlatform.system platforms) {
+                editorconfig = conflake.mkCheck "editorconfig" pkgs src (
+                  concatStringsSep " " [
+                    (getExe pkgs.editorconfig-checker)
+                    (mkArgs entries)
+                  ]
+                );
+              }
+            );
+          };
         };
     };
   };
