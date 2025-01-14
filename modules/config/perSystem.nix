@@ -2,7 +2,6 @@
   config,
   lib,
   conflake,
-  pkgsFor,
   ...
 }:
 
@@ -15,21 +14,36 @@ let
     pipe
     types
     ;
+
+  rootConfig = config;
 in
 {
   options.perSystem = mkOption {
-    type = types.functionTo conflake.types.outputs;
+    type = types.unspecified;
     default = _: { };
   };
 
-  config.outputs = pipe config.systems [
-    (map (
-      system:
-      pipe pkgsFor.${system} [
-        config.perSystem
-        (mapAttrs (_: v: { ${system} = v; }))
-      ]
-    ))
-    (foldAttrs mergeAttrs { })
-  ];
+  config.final =
+    { config, ... }:
+    {
+      options.perSystem = mkOption {
+        type = types.functionTo conflake.types.outputs;
+        default = _: { };
+      };
+
+      config = {
+        inherit (rootConfig) perSystem;
+
+        outputs = pipe rootConfig.systems [
+          (map (
+            system:
+            pipe config.pkgsFor.${system} [
+              config.perSystem
+              (mapAttrs (_: v: { ${system} = v; }))
+            ]
+          ))
+          (foldAttrs mergeAttrs { })
+        ];
+      };
+    };
 }

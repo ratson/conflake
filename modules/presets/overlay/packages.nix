@@ -15,12 +15,16 @@ in
     default = config.presets.overlay.enable;
   };
 
-  config = mkIf (cfg && config.packages != null) {
-    overlay =
-      final:
-      flip pipe [
-        (config.packageOverlay (final.appendOverlays config.withOverlays))
-        (flip removeAttrs [ "default" ])
-      ];
-  };
+  config.final =
+    { config, ... }:
+    {
+      config = mkIf (cfg && config.packages != null) {
+        overlay =
+          final:
+          flip pipe [
+            (config.packageOverlay (final.appendOverlays config.withOverlays))
+            (flip removeAttrs [ "default" ])
+          ];
+      };
+    };
 }

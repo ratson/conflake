@@ -216,6 +216,10 @@ mkTests {
 
   moduleArgs-add = test (conflake' {
     _module.args.test-val = true;
+    # moduleArgs.extra = {
+    #   test-val = true;
+    # };
+
     outputs =
       { test-val, ... }:
       {

@@ -3,10 +3,8 @@
   src,
   lib,
   inputs,
-  outputs,
   conflake,
   flakePath,
-  mkSystemArgs',
   moduleArgs,
   ...
 }:
@@ -16,6 +14,8 @@ let
   inherit (lib) mkOption mkOrder optionalAttrs;
   inherit (lib.types) listOf oneOf str;
   inherit (conflake.types) nullable;
+
+  rootConfig = config;
 in
 {
   options = {
@@ -37,36 +37,41 @@ in
     };
   };
 
-  config.withOverlays = mkOrder 10 (
-    final: prev:
-    let
-      inherit (prev.stdenv.hostPlatform) system;
+  config.final =
+    { config, ... }:
+    {
+      config.withOverlays = mkOrder 10 (
+        final: prev:
+        let
+          inherit (config) mkSystemArgs' outputs;
+          inherit (prev.stdenv.hostPlatform) system;
+          inherit (rootConfig) description license systems;
 
-      getLicense =
-        license: final.lib.licenses.${license} or (final.lib.meta.getLicenseFromSpdxId license);
-    in
-    (mkSystemArgs' prev)
-    // {
-      inherit
-        conflake
-        inputs
-        moduleArgs
-        outputs
-        src
-        system
-        ;
+          getLicense =
+            license: final.lib.licenses.${license} or (final.lib.meta.getLicenseFromSpdxId license);
+        in
+        (mkSystemArgs' prev)
+        // {
+          inherit
+            conflake
+            inputs
+            moduleArgs
+            outputs
+            src
+            system
+            ;
 
-      defaultMeta =
-        {
-          platforms = config.systems;
+          defaultMeta =
+            {
+              platforms = systems;
+            }
+            // optionalAttrs (description != null) {
+              inherit description;
+            }
+            // optionalAttrs (license != null) {
+              license = if isList license then map getLicense license else getLicense license;
+            };
         }
-        // optionalAttrs (config.description != null) {
-          inherit (config) description;
-        }
-        // optionalAttrs (config.license != null) {
-          license =
-            if isList config.license then map getLicense config.license else getLicense config.license;
-        };
-    }
-  );
+      );
+    };
 }

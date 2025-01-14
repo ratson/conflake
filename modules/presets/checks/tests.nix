@@ -101,13 +101,19 @@ in
     };
   };
 
-  config = mkIf cfg.enable {
-    checks.${cfg.name} = mkDefault (mkCheck testsPlaceholder);
+  config = {
+    final = {
+      config = mkIf cfg.enable {
+        checks.${cfg.name} = mkDefault (mkCheck testsPlaceholder);
+      };
+    };
 
     loaders.${loaderKey}.load =
       { src, ... }:
       {
-        checks.${cfg.name} = mkCheck (config.loadDir src);
+        checks = {
+          ${cfg.name} = mkCheck (config.loadDir src);
+        };
       };
   };
 }

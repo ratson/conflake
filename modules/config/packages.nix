@@ -3,7 +3,6 @@
   lib,
   inputs,
   conflake,
-  genSystems,
   moduleArgs,
   ...
 }:
@@ -25,6 +24,7 @@ let
     optionalAttrs
     optionals
     pipe
+    types
     ;
   inherit (lib.types) lazyAttrsOf str uniq;
   inherit (conflake.types)
@@ -34,115 +34,144 @@ let
     packageDef
     ;
 
-  genPkg =
-    final: prev: name: pkg:
-    let
-      args = functionArgs pkg;
-      noArgs = args == { };
-      pkg' = if noArgs then { pkgs }: pkg pkgs else pkg;
-      dependsOnSelf = hasAttr name (functionArgs pkg);
-      dependsOnPkgs = noArgs || (args ? pkgs);
-      selfOverride = {
-        ${name} = prev.${name} or (throw "${name} depends on ${name}, but no existing ${name}.");
-      };
-      overrides =
-        optionalAttrs dependsOnSelf selfOverride
-        // optionalAttrs dependsOnPkgs { pkgs = final.pkgs // selfOverride; };
-    in
-    final.callPackage pkg' overrides;
-  genPkgs =
-    final: prev: pkgs:
-    mapAttrs (name: genPkg final prev name) pkgs;
-
-  getPkgDefs = pkgs: config.packages (moduleArgs // { inherit (pkgs) system; });
-
-  packages = genSystems (pkgs: mapAttrs (k: _: pkgs.${k}) (getPkgDefs pkgs));
+  rootConfig = config;
 in
 {
   options = {
     package = mkOption {
-      type = nullable packageDef;
+      type = types.unspecified;
       default = null;
     };
 
     packages = mkOption {
-      type = nullable (optFunctionTo (lazyAttrsOf packageDef));
+      type = types.unspecified;
       default = null;
     };
 
     pname = mkOption {
-      type = nullable str;
+      type = types.unspecified;
       default = null;
-    };
-
-    packageOverlay = mkOption {
-      internal = true;
-      type = uniq overlay;
-      default = _: _: { };
     };
   };
 
   config = mkMerge [
-    (mkIf (config.package != null) {
-      packages.default = config.package;
-    })
-
-    (mkIf (config.packages != null) {
-      packageOverlay =
-        final: prev:
+    {
+      final =
+        { config, ... }:
         let
-          pkgDefs = getPkgDefs prev;
-          getName = pkg: pkg.pname or (parseDrvName pkg.name).name;
-          mockPkgs = import ../_nameMockedPkgs.nix prev;
+          genPkg =
+            final: prev: name: pkg:
+            let
+              args = functionArgs pkg;
+              noArgs = args == { };
+              pkg' = if noArgs then { pkgs }: pkg pkgs else pkg;
+              dependsOnSelf = hasAttr name (functionArgs pkg);
+              dependsOnPkgs = noArgs || (args ? pkgs);
+              selfOverride = {
+                ${name} = prev.${name} or (throw "${name} depends on ${name}, but no existing ${name}.");
+              };
+              overrides =
+                optionalAttrs dependsOnSelf selfOverride
+                // optionalAttrs dependsOnPkgs { pkgs = final.pkgs // selfOverride; };
+            in
+            final.callPackage pkg' overrides;
+          genPkgs =
+            final: prev: pkgs:
+            mapAttrs (name: genPkg final prev name) pkgs;
 
-          defaultPkgName =
-            findFirst (x: (tryEval x).success)
-              (throw (
-                "Could not determine the name of the default package; "
-                + "please set the `pname` conflake option to the intended name."
-              ))
-              [
-                (
-                  assert config.pname != null;
-                  config.pname
-                )
-                (getName (mockPkgs.callPackage pkgDefs.default { }))
-                (getName
-                  (import inputs.nixpkgs {
-                    inherit (prev.stdenv.hostPlatform) system;
-                    inherit (config.nixpkgs) config;
-                    overlays = config.withOverlays ++ [ (final: prev: genPkgs final prev pkgDefs) ];
-                  }).default
-                )
-              ];
-          default = genPkg final prev defaultPkgName pkgDefs.default;
+          getPkgDefs = pkgs: config.packages (moduleArgs // { inherit (pkgs) system; });
+
+          packages = config.genSystems (pkgs: mapAttrs (k: _: pkgs.${k}) (getPkgDefs pkgs));
         in
-        pipe pkgDefs [
-          (flip removeAttrs [ "default" ])
-          (genPkgs final prev)
-          (
-            x:
-            (optionalAttrs (pkgDefs ? default) {
-              inherit default;
-              ${defaultPkgName} = default;
+        {
+          options = {
+            package = mkOption {
+              type = nullable packageDef;
+              default = null;
+            };
+
+            packages = mkOption {
+              type = nullable (optFunctionTo (lazyAttrsOf packageDef));
+              default = null;
+            };
+
+            pname = mkOption {
+              type = nullable str;
+              default = null;
+            };
+
+            packageOverlay = mkOption {
+              internal = true;
+              type = uniq overlay;
+              default = _: _: { };
+            };
+          };
+
+          config = mkMerge [
+            { inherit (rootConfig) package packages pname; }
+
+            (mkIf (config.package != null) {
+              packages.default = config.package;
             })
-            // x
-          )
-        ];
 
-      outputs = {
-        inherit packages;
-      };
+            (mkIf (config.packages != null) {
+              packageOverlay =
+                final: prev:
+                let
+                  pkgDefs = getPkgDefs prev;
+                  getName = pkg: pkg.pname or (parseDrvName pkg.name).name;
+                  mockPkgs = import ../_nameMockedPkgs.nix prev;
 
-      devShell.inputsFrom =
-        pkgs:
-        pipe pkgs [
-          getPkgDefs
-          (hasAttr "default")
-          (flip optionals [ pkgs.default ])
-        ];
-    })
+                  defaultPkgName =
+                    findFirst (x: (tryEval x).success)
+                      (throw (
+                        "Could not determine the name of the default package; "
+                        + "please set the `pname` conflake option to the intended name."
+                      ))
+                      [
+                        (
+                          assert config.pname != null;
+                          config.pname
+                        )
+                        (getName (mockPkgs.callPackage pkgDefs.default { }))
+                        (getName
+                          (import inputs.nixpkgs {
+                            inherit (prev.stdenv.hostPlatform) system;
+                            inherit (rootConfig.nixpkgs) config;
+                            overlays = config.withOverlays ++ [ (final: prev: genPkgs final prev pkgDefs) ];
+                          }).default
+                        )
+                      ];
+                  default = genPkg final prev defaultPkgName pkgDefs.default;
+                in
+                pipe pkgDefs [
+                  (flip removeAttrs [ "default" ])
+                  (genPkgs final prev)
+                  (
+                    x:
+                    (optionalAttrs (pkgDefs ? default) {
+                      inherit default;
+                      ${defaultPkgName} = default;
+                    })
+                    // x
+                  )
+                ];
 
+              outputs = {
+                inherit packages;
+              };
+
+              devShell.inputsFrom =
+                pkgs:
+                pipe pkgs [
+                  getPkgDefs
+                  (hasAttr "default")
+                  (flip optionals [ pkgs.default ])
+                ];
+            })
+          ];
+        };
+    }
     {
       loaders = config.nixDir.mkLoader "packages" (
         { src, ... }:
