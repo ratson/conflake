@@ -367,24 +367,19 @@ let
 
   selectAttr = attr: mapAttrs (_: v: v.${attr} or { });
 
-  conflake = lib.makeExtensible (self: {
-    inherit
-      callWith
-      callWith'
-      matchers
-      mkCheck
-      mkOutputs
-      readNixDir
-      selectAttr
-      types
-      ;
-
-    attrsets = import ./lib/attrsets.nix { inherit lib; };
-
-    flake = import ./lib/flake.nix { inherit lib; };
-
-    inherit (self.attrsets) prefixAttrs;
-    inherit (self.flake) mkVersion mkVersion';
-  });
+  conflake = (import ./lib/default.nix { inherit lib; }).extend (
+    _: _: {
+      inherit
+        callWith
+        callWith'
+        matchers
+        mkCheck
+        mkOutputs
+        readNixDir
+        selectAttr
+        types
+        ;
+    }
+  );
 in
 conflake
