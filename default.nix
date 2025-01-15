@@ -367,7 +367,7 @@ let
 
   selectAttr = attr: mapAttrs (_: v: v.${attr} or { });
 
-  conflake = {
+  conflake = lib.makeExtensible (self: {
     inherit
       callWith
       callWith'
@@ -379,8 +379,12 @@ let
       types
       ;
 
-    inherit (inputs.self.lib.attrsets) prefixAttrs;
-    inherit (inputs.self.lib.flake) mkVersion mkVersion';
-  };
+    attrsets = import ./lib/attrsets.nix { inherit lib; };
+
+    flake = import ./lib/flake.nix { inherit lib; };
+
+    inherit (self.attrsets) prefixAttrs;
+    inherit (self.flake) mkVersion mkVersion';
+  });
 in
 conflake
