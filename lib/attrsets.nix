@@ -1,6 +1,7 @@
 { lib }:
 
 let
+  inherit (builtins) mapAttrs;
   inherit (lib) mapAttrs' nameValuePair;
 in
 {
@@ -31,4 +32,6 @@ in
     :::
   */
   prefixAttrs = prefix: mapAttrs' (k: nameValuePair "${prefix}${k}");
+
+  selectAttr = attr: mapAttrs (_: v: v.${attr} or { });
 }

@@ -9,7 +9,7 @@ lib.makeExtensible (self: {
 
   types = import ./types.nix { inherit lib self; };
 
-  inherit (self.attrsets) prefixAttrs;
+  inherit (self.attrsets) selectAttr prefixAttrs;
   inherit (self.flake) mkVersion mkVersion';
 
   mkCheck =

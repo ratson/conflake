@@ -4,7 +4,6 @@ let
   inherit (builtins)
     intersectAttrs
     listToAttrs
-    mapAttrs
     readDir
     ;
   inherit (inputs.nixpkgs) lib;
@@ -110,8 +109,6 @@ let
       })
     ];
 
-  selectAttr = attr: mapAttrs (_: v: v.${attr} or { });
-
   conflake = (import ./lib/default.nix { inherit lib; }).extend (
     _: _: {
       inherit
@@ -119,7 +116,6 @@ let
         callWith'
         mkOutputs
         readNixDir
-        selectAttr
         ;
     }
   );
