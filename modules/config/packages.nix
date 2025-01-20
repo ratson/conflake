@@ -65,13 +65,14 @@ in
               args = functionArgs pkg;
               noArgs = args == { };
               pkg' = if noArgs then { pkgs }: pkg pkgs else pkg;
-              dependsOnSelf = hasAttr name (functionArgs pkg);
+              dependsOnSelf = hasAttr name args;
               dependsOnPkgs = noArgs || (args ? pkgs);
               selfOverride = {
                 ${name} = prev.${name} or (throw "${name} depends on ${name}, but no existing ${name}.");
               };
               overrides =
-                optionalAttrs dependsOnSelf selfOverride
+                lib.filterAttrs (k: _: hasAttr k args) moduleArgs
+                // optionalAttrs dependsOnSelf selfOverride
                 // optionalAttrs dependsOnPkgs { pkgs = final.pkgs // selfOverride; };
             in
             final.callPackage pkg' overrides;

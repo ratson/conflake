@@ -4,6 +4,10 @@
     conflake ./. {
       inherit inputs;
 
+      moduleArgs.extra = {
+        extra-arg = true;
+      };
+
       packages.hi = { pkgs, ... }: pkgs.hello;
 
       perSystem =
