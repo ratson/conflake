@@ -136,6 +136,42 @@ let
       (lib.mapAttrsRecursive (_: load))
     ];
 
+  collect =
+    {
+      dir,
+      ignore ? config.loadIgnore,
+      loaders ? config.finalLoaders,
+      ...
+    }@args:
+    pipe dir [
+      readDir
+      (
+        x:
+        mapAttrs (
+          name: type:
+          let
+            path = dir + /${name};
+            args' = args // {
+              inherit name type;
+              dir = path;
+              entries = x;
+            };
+          in
+          if ignore args' then
+            null
+          else if type == "directory" then
+            nameValuePair name (optionalAttrs (hasAttr name loaders) (loaders.${name}.collect args'))
+          else if type == "regular" then
+            nameValuePair name path
+          else
+            null
+        ) x
+      )
+      attrValues
+      (remove null)
+      listToAttrs
+    ];
+
   resolve =
     src: entries: loaders:
     pipe entries [
@@ -216,6 +252,14 @@ in
       readOnly = true;
       type = lazyAttrsOf types.str;
       default = optionalAttrs (pathIsDirectory src) (readDir src);
+    };
+    srcTree = mkOption {
+      internal = true;
+      readOnly = true;
+      type = lazyAttrsOf (types.either types.path types.attrs);
+      default = optionalAttrs (pathIsDirectory src) (collect {
+        dir = src;
+      });
     };
   };
 

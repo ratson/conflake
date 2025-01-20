@@ -1,0 +1,5 @@
+{ emacsPackages, ... }:
+
+{
+  hei = emacsPackages.dash;
+}

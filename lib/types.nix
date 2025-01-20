@@ -114,6 +114,10 @@ rec {
         enable = mkEnableOption "${name} loader" // {
           default = true;
         };
+        collect = mkOption {
+          type = functionTo (lazyAttrsOf raw);
+          default = _: { };
+        };
         match = mkOption {
           type = functionTo bool;
           default = self.matchers.dir;

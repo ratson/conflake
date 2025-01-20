@@ -7,7 +7,7 @@
 }:
 
 let
-  inherit (builtins) mapAttrs;
+  inherit (builtins) isPath mapAttrs;
   inherit (lib)
     mkEnableOption
     mkIf
@@ -20,7 +20,7 @@ let
 
   cfg = config.presets.inputs;
 
-  flakeLockExists = (config.srcEntries."flake.lock" or "") == "regular";
+  flakeLockExists = isPath (config.srcTree."flake.lock" or null);
 in
 {
   options.presets.inputs = {

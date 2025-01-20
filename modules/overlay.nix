@@ -10,7 +10,7 @@
 }:
 
 let
-  inherit (builtins) isList;
+  inherit (builtins) isList isPath;
   inherit (lib) mkOption mkOrder optionalAttrs;
   inherit (lib.types) listOf oneOf str;
   inherit (conflake.types) nullable;
@@ -22,7 +22,7 @@ in
     description = mkOption {
       type = nullable str;
       default =
-        if (config.srcEntries."flake.nix" or "") == "regular" then
+        if isPath (config.srcTree."flake.nix" or null) then
           (import flakePath).description or null
         else
           null;
