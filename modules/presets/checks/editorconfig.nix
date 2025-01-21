@@ -8,7 +8,7 @@
 }:
 
 let
-  inherit (builtins) concatStringsSep elem;
+  inherit (builtins) concatStringsSep elem isPath;
   inherit (lib)
     getExe
     mkEnableOption
@@ -21,16 +21,6 @@ let
   cfg = config.presets.checks.editorconfig;
 
   platforms = lib.platforms.darwin ++ lib.platforms.linux;
-
-  mkArgs =
-    entries:
-    if (cfg.args != null) then
-      cfg.args
-    else
-      # By default, high false-positive flags are disabled.
-      optionalString (
-        (entries.".ecrc" or "") != "regular"
-      ) "-disable-indent-size -disable-max-line-length";
 in
 {
   options.presets.checks.editorconfig = {
@@ -38,31 +28,30 @@ in
       default = config.presets.checks.enable;
     };
     args = mkOption {
-      type = types.nullOr types.str;
-      default = null;
+      type = types.str;
+      # By default, high false-positive flags are disabled.
+      default = optionalString (
+        !isPath (config.srcTree.".ecrc" or null)
+      ) "-disable-indent-size -disable-max-line-length";
     };
   };
 
   config = mkIf cfg.enable {
     loaders.".editorconfig" = {
       match = conflake.matchers.file;
-      load =
-        { entries, ... }:
-        {
-          outputs = {
-            checks = genSystems (
-              pkgs:
-              mkIf (elem pkgs.stdenv.hostPlatform.system platforms) {
-                editorconfig = conflake.mkCheck "editorconfig" pkgs src (
-                  concatStringsSep " " [
-                    (getExe pkgs.editorconfig-checker)
-                    (mkArgs entries)
-                  ]
-                );
-              }
+      load = _: {
+        outputs.checks = genSystems (
+          pkgs:
+          mkIf (elem pkgs.stdenv.hostPlatform.system platforms) {
+            editorconfig = conflake.mkCheck "editorconfig" pkgs src (
+              concatStringsSep " " [
+                (getExe pkgs.editorconfig-checker)
+                cfg.args
+              ]
             );
-          };
-        };
+          }
+        );
+      };
     };
   };
 }

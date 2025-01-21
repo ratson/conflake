@@ -136,65 +136,35 @@ let
       (lib.mapAttrsRecursive (_: load))
     ];
 
-  collect =
-    {
-      dir,
-      ignore ? config.loadIgnore,
-      loaders ? config.finalLoaders,
-      ...
-    }@args:
-    pipe dir [
-      readDir
-      (
-        x:
-        mapAttrs (
-          name: type:
-          let
-            path = dir + /${name};
-            args' = args // {
-              inherit name type;
-              dir = path;
-              entries = x;
-            };
-          in
-          if ignore args' then
-            null
-          else if type == "directory" then
-            nameValuePair name (optionalAttrs (hasAttr name loaders) (loaders.${name}.collect args'))
-          else if type == "regular" then
-            nameValuePair name path
-          else
-            null
-        ) x
-      )
-      attrValues
-      (remove null)
-      listToAttrs
-    ];
-
   resolve =
-    src: entries: loaders:
-    pipe entries [
-      (filterAttrs (k: _: hasAttr k loaders))
+    {
+      src,
+      dirTree,
+      loader,
+      ...
+    }:
+    pipe dirTree [
+      (filterAttrs (k: _: hasAttr k loader.loaders))
       (mapAttrs (
-        name: type: {
-          loader = loaders.${name};
-          args = {
-            inherit entries name type;
-            src = src + /${name};
-          };
+        name: v: {
+          inherit name;
+          dirTree = optionalAttrs (isAttrs v) v;
+          loader = loader.loaders.${name};
+          src = src + /${name};
+          type =
+            if isAttrs v then
+              "directory"
+            else if isPath v then
+              "regular"
+            else
+              "unknown";
         }
       ))
       attrValues
-      (filter (x: x.loader.enable && x.loader.match x.args))
+      (filter (x: x.loader.enable && x.loader.match x))
       (map (x: [
-        (x.loader.load x.args)
-        (mkIf (x.loader.loaders != { }) (
-          pipe x.args.src [
-            readDir
-            (entries: resolve x.args.src entries x.loader.loaders)
-          ]
-        ))
+        (x.loader.load x)
+        (mkIf (x.loader.loaders != { }) (resolve x))
       ]))
       flatten
       mkMerge
@@ -209,7 +179,13 @@ in
 
     loadIgnore = mkOption {
       type = functionTo types.bool;
-      default = { name, ... }: hasPrefix "." name || hasPrefix "_" name;
+      default =
+        {
+          loaders ? { },
+          name,
+          ...
+        }:
+        !hasAttr name loaders && (hasPrefix "." name || hasPrefix "_" name);
     };
 
     finalLoaders = mkOption {
@@ -247,19 +223,25 @@ in
       ];
     };
 
-    srcEntries = mkOption {
+    srcLoader = mkOption {
       internal = true;
       readOnly = true;
-      type = lazyAttrsOf types.str;
-      default = optionalAttrs (pathIsDirectory src) (readDir src);
+      type = conflake.types.loader;
+      default = {
+        loaders = config.finalLoaders;
+      };
     };
     srcTree = mkOption {
       internal = true;
       readOnly = true;
-      type = lazyAttrsOf (types.either types.path types.attrs);
-      default = optionalAttrs (pathIsDirectory src) (collect {
-        dir = src;
-      });
+      type = conflake.types.pathTree;
+      default = optionalAttrs (pathIsDirectory src) (
+        config.srcLoader.collect {
+          dir = src;
+          ignore = config.loadIgnore;
+          loaders = config.finalLoaders;
+        }
+      );
     };
   };
 
@@ -285,8 +267,12 @@ in
       ];
     }
 
-    (mkIf (config.loaders != { } && config.finalLoaders != { } && config.srcEntries != { }) {
-      final = resolve src config.srcEntries config.finalLoaders;
+    (mkIf (config.loaders != { } && config.finalLoaders != { } && config.srcTree != { }) {
+      final = resolve {
+        inherit src;
+        dirTree = config.srcTree;
+        loader = config.srcLoader;
+      };
     })
   ];
 }

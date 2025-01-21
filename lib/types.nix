@@ -3,10 +3,15 @@
 let
   inherit (builtins)
     all
+    attrValues
     head
     isAttrs
     isPath
     length
+    listToAttrs
+    hasAttr
+    mapAttrs
+    readDir
     ;
   inherit (lib)
     composeManyExtensions
@@ -21,10 +26,14 @@ let
     mkEnableOption
     mkOption
     mkOptionType
+    nameValuePair
+    optionalAttrs
     pipe
+    remove
     showFiles
     showOption
     singleton
+    types
     ;
   inherit (lib.types)
     bool
@@ -43,6 +52,46 @@ let
     submodule
     ;
   inherit (lib.options) mergeEqualOption mergeOneOption;
+
+  collect =
+    {
+      dir,
+      ignore ? _: false,
+      loaders,
+      ...
+    }@args:
+    pipe dir [
+      readDir
+      (
+        x:
+        mapAttrs (
+          name: type:
+          let
+            path = dir + /${name};
+            args' = args // {
+              inherit name type;
+              dir = path;
+              entries = x;
+            };
+          in
+          if ignore args' then
+            null
+          else if type == "directory" then
+            nameValuePair name (
+              optionalAttrs (hasAttr name loaders) (
+                loaders.${name}.collect (args' // { inherit (loaders.${name}) loaders; })
+              )
+            )
+          else if type == "regular" then
+            nameValuePair name path
+          else
+            null
+        ) x
+      )
+      attrValues
+      (remove null)
+      listToAttrs
+    ];
 in
 rec {
   mkCheck =
@@ -116,7 +165,7 @@ rec {
         };
         collect = mkOption {
           type = functionTo (lazyAttrsOf raw);
-          default = _: { };
+          default = collect;
         };
         match = mkOption {
           type = functionTo bool;
@@ -182,9 +231,11 @@ rec {
     merge = mergeOneOption;
   };
 
-  path = lib.types.path // {
+  path = types.path // {
     check = isPath;
   };
+
+  pathTree = lazyAttrsOf (either path pathTree);
 
   optCallWith = args: elemType: coercedTo function (x: x args) elemType;
 
