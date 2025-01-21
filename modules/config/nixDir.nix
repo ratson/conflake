@@ -34,17 +34,22 @@ let
 
   mkLoaderKey = s: config.mkLoaderKey (cfg.src + /${s});
 
-  mkLoader = k: load: {
-    ${mkLoaderKey k} =
+  mkLoader' = k: loader: {
+    ${mkLoaderKey k} = {
+      enable = mkDefault cfg.enable;
+    } // loader;
+  };
+
+  mkLoader =
+    k: load:
+    mkLoader' k (
       {
         inherit load;
-
-        enable = mkDefault cfg.enable;
       }
       // optionalAttrs (hasSuffix ".nix" k) {
         match = conflake.matchers.file;
-      };
-  };
+      }
+    );
 
   mkModule =
     path:
@@ -105,6 +110,12 @@ in
     aliases = mkOption {
       type = lazyAttrsOf (listOf str);
       default = { };
+    };
+    mkLoader' = mkOption {
+      internal = true;
+      readOnly = true;
+      type = functionTo (functionTo conflake.types.loaders);
+      default = mkLoader';
     };
     mkLoader = mkOption {
       internal = true;
