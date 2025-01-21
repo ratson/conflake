@@ -49,19 +49,24 @@ let
     {
       dir,
       dirTree,
+      maxDepth ? null,
       mkDirValue ? loadDirTree,
       mkFilePair ? nameValuePair,
+      depth ? 1,
       ...
     }@args:
     pipe dirTree [
       (mapAttrs (
         name: v:
-        if isAttrs v then
+        if (isAttrs v && maxDepth != null && depth >= maxDepth) then
+          null
+        else if isAttrs v then
           nameValuePair name (
             mkDirValue (
               args
               // {
                 inherit name;
+                depth = depth + 1;
                 dir = dir + /${name};
                 dirTree = v;
               }
@@ -78,19 +83,16 @@ let
     ];
 
   loadDirTreeWithDefault =
-    {
-      dir,
-      dirTree,
-      load,
-      ...
-    }:
-    loadDirTree {
-      inherit dir dirTree;
-      mkDirValue =
-        { dirTree, ... }@args:
-        if isPath (dirTree."default.nix" or null) then load dirTree."default.nix" else loadDirTree args;
-      mkFilePair = k: v: nameValuePair (removeSuffix ".nix" k) (load v);
-    };
+    { load, ... }@args:
+    loadDirTree (
+      (removeAttrs args [ "load" ])
+      // {
+        mkDirValue =
+          { dirTree, ... }@args:
+          if isPath (dirTree."default.nix" or null) then load dirTree."default.nix" else loadDirTree args;
+        mkFilePair = k: v: nameValuePair (removeSuffix ".nix" k) (load v);
+      }
+    );
 
   loadDir' =
     {

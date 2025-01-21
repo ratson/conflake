@@ -52,10 +52,9 @@ in
     {
       loaders = config.nixDir.mkLoader' "lib" {
         collect =
-          { dir, ... }:
+          { dir, ignore, ... }:
           conflake.collectPaths {
-            inherit dir;
-            ignore = config.loadIgnore;
+            inherit dir ignore;
           };
         load =
           { src, dirTree, ... }:

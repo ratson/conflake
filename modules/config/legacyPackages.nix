@@ -45,10 +45,9 @@ in
 
     loaders = config.nixDir.mkLoader' "legacyPackages" {
       collect =
-        { dir, ... }:
+        { dir, ignore, ... }:
         conflake.collectPaths {
-          inherit dir;
-          ignore = config.loadIgnore;
+          inherit dir ignore;
         };
       load =
         { src, dirTree, ... }:
