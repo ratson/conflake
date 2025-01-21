@@ -43,16 +43,24 @@ in
         ];
       };
 
-    loaders = config.nixDir.mkLoader "legacyPackages" (
-      { src, ... }:
-      {
-        legacyPackages =
-          pkgs:
-          config.loadDirWithDefault {
-            root = src;
-            load = flip pkgs.callPackage moduleArgs;
-          };
-      }
-    );
+    loaders = config.nixDir.mkLoader' "legacyPackages" {
+      collect =
+        { dir, ... }:
+        conflake.collectPaths {
+          inherit dir;
+          ignore = config.loadIgnore;
+        };
+      load =
+        { src, dirTree, ... }:
+        {
+          legacyPackages =
+            pkgs:
+            config.loadDirTreeWithDefault {
+              inherit dirTree;
+              dir = src;
+              load = flip pkgs.callPackage moduleArgs;
+            };
+        };
+    };
   };
 }

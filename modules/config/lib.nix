@@ -63,7 +63,7 @@ in
             lib = config.loadDirTree {
               inherit dirTree;
               dir = src;
-              mkPair =
+              mkFilePair =
                 k: v:
                 let
                   value = import v;

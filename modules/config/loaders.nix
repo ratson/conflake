@@ -49,23 +49,26 @@ let
     {
       dir,
       dirTree,
-      mkPair ? nameValuePair,
+      mkDirValue ? loadDirTree,
+      mkFilePair ? nameValuePair,
+      ...
     }@args:
     pipe dirTree [
       (mapAttrs (
         name: v:
-        if builtins.isAttrs v then
+        if isAttrs v then
           nameValuePair name (
-            loadDirTree (
+            mkDirValue (
               args
               // {
+                inherit name;
                 dir = dir + /${name};
-                dirTree = dirTree.${name};
+                dirTree = v;
               }
             )
           )
-        else if builtins.isPath v && hasSuffix ".nix" name then
-          mkPair name v
+        else if isPath v && hasSuffix ".nix" name then
+          mkFilePair name v
         else
           null
       ))
@@ -73,6 +76,21 @@ let
       (remove null)
       listToAttrs
     ];
+
+  loadDirTreeWithDefault =
+    {
+      dir,
+      dirTree,
+      load,
+      ...
+    }:
+    loadDirTree {
+      inherit dir dirTree;
+      mkDirValue =
+        { dirTree, ... }@args:
+        if isPath (dirTree."default.nix" or null) then load dirTree."default.nix" else loadDirTree args;
+      mkFilePair = k: v: nameValuePair (removeSuffix ".nix" k) (load v);
+    };
 
   loadDir' =
     {
@@ -228,6 +246,12 @@ in
       readOnly = true;
       type = functionTo (lazyAttrsOf types.unspecified);
       default = loadDirTree;
+    };
+    loadDirTreeWithDefault = mkOption {
+      internal = true;
+      readOnly = true;
+      type = functionTo (lazyAttrsOf types.unspecified);
+      default = loadDirTreeWithDefault;
     };
     loadDir = mkOption {
       internal = true;
