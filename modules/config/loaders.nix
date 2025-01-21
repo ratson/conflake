@@ -49,16 +49,24 @@ let
     {
       dir,
       dirTree,
-      maxDepth ? null,
       mkDirValue ? loadDirTree,
       mkFilePair ? nameValuePair,
-      depth ? 1,
+      ignore ? _: false,
+      depth ? 0,
       ...
     }@args:
     pipe dirTree [
       (mapAttrs (
         name: v:
-        if (isAttrs v && maxDepth != null && depth >= maxDepth) then
+        if
+          ignore (
+            args
+            // {
+              inherit name;
+              value = v;
+            }
+          )
+        then
           null
         else if isAttrs v then
           nameValuePair name (
@@ -139,51 +147,6 @@ let
     ];
 
   loadDir = root: loadDir' { inherit root; };
-
-  loadDirWithDefault =
-    {
-      load,
-      maxDepth ? null,
-      ...
-    }@args:
-    let
-      entries = loadDir' (
-        {
-          mkPair = k: nameValuePair (removeSuffix ".nix" k);
-        }
-        // (removeAttrs args [ "load" ])
-      );
-      transform =
-        {
-          entries,
-          depth ? 0,
-        }:
-        pipe entries [
-          (mapAttrs (
-            k: v:
-            if maxDepth != null && depth + 1 >= maxDepth then
-              null
-            else if isAttrs v then
-              if v ? default && isPath v.default then
-                nameValuePair k v.default
-              else
-                nameValuePair k (transform {
-                  entries = v;
-                  depth = depth + 1;
-                })
-            else
-              nameValuePair k v
-          ))
-          attrValues
-          (remove null)
-          listToAttrs
-          (filterAttrs (_: v: v != { }))
-        ];
-    in
-    pipe { inherit entries; } [
-      transform
-      (lib.mapAttrsRecursive (_: load))
-    ];
 
   resolve =
     {
@@ -266,12 +229,6 @@ in
       readOnly = true;
       type = functionTo (lazyAttrsOf types.unspecified);
       default = loadDir';
-    };
-    loadDirWithDefault = mkOption {
-      internal = true;
-      readOnly = true;
-      type = functionTo (lazyAttrsOf types.unspecified);
-      default = loadDirWithDefault;
     };
 
     mkLoaderKey = mkOption {

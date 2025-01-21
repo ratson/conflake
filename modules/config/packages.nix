@@ -174,24 +174,7 @@ in
         };
     }
     {
-      loaders = config.nixDir.mkLoader' "packages" {
-        collect =
-          { dir, ignore, ... }:
-          conflake.collectPaths {
-            inherit dir ignore;
-            maxDepth = 2;
-          };
-        load =
-          { src, dirTree, ... }:
-          {
-            packages = config.loadDirTreeWithDefault {
-              inherit dirTree;
-              dir = src;
-              load = import;
-              maxDepth = 2;
-            };
-          };
-      };
+      loaders = config.nixDir.mkHostLoader "packages";
     }
   ];
 }

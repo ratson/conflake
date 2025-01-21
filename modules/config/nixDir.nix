@@ -10,6 +10,7 @@
 }:
 
 let
+  inherit (builtins) isAttrs;
   inherit (lib)
     flip
     functionArgs
@@ -86,16 +87,24 @@ let
   mkHostLoader =
     attr:
     mkMerge (
-      map (flip config.nixDir.mkLoader (
-        { src, ... }:
-        {
-          ${attr} = config.loadDirWithDefault {
-            root = src;
-            load = import;
+      map (flip cfg.mkLoader' {
+        collect =
+          { dir, ignore, ... }:
+          conflake.collectPaths {
+            inherit dir ignore;
             maxDepth = 2;
           };
-        }
-      )) ([ attr ] ++ config.nixDir.aliases.${attr} or [ ])
+        load =
+          { src, dirTree, ... }:
+          {
+            ${attr} = config.loadDirTreeWithDefault {
+              inherit dirTree;
+              dir = src;
+              load = import;
+              ignore = { value, ... }: isAttrs value && !(value ? "default.nix");
+            };
+          };
+      }) ([ attr ] ++ cfg.aliases.${attr} or [ ])
     );
 in
 {
