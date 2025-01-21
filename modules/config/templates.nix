@@ -7,7 +7,7 @@
 }:
 
 let
-  inherit (builtins) mapAttrs readDir;
+  inherit (builtins) isAttrs mapAttrs;
   inherit (lib)
     filterAttrs
     mkDefault
@@ -80,11 +80,10 @@ in
 
     {
       loaders = config.nixDir.mkLoader "templates" (
-        { src, ... }:
+        { src, dirTree, ... }:
         {
-          templates = pipe src [
-            readDir
-            (filterAttrs (_: type: type == "directory"))
+          templates = pipe dirTree [
+            (filterAttrs (_: isAttrs))
             (mapAttrs (
               name: _: {
                 description = mkDefault name;
