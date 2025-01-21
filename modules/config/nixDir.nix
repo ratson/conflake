@@ -10,10 +10,11 @@
 }:
 
 let
-  inherit (builtins) isAttrs;
+  inherit (builtins) attrValues isAttrs mapAttrs;
   inherit (lib)
     flip
     functionArgs
+    genAttrs
     hasSuffix
     mkDefault
     mkEnableOption
@@ -84,28 +85,26 @@ let
       }
     );
 
-  mkHostLoader =
-    attr:
-    mkMerge (
-      map (flip cfg.mkLoader' {
-        collect =
-          { dir, ignore, ... }:
-          conflake.collectPaths {
-            inherit dir ignore;
-            maxDepth = 2;
+  mkImportLoaders = attr: {
+    ${attr} = {
+      collect =
+        { dir, ignore, ... }:
+        conflake.collectPaths {
+          inherit dir ignore;
+          maxDepth = 2;
+        };
+      load =
+        { src, dirTree, ... }:
+        {
+          ${attr} = config.loadDirTreeWithDefault {
+            inherit dirTree;
+            dir = src;
+            load = import;
+            ignore = { value, ... }: isAttrs value && !(value ? "default.nix");
           };
-        load =
-          { src, dirTree, ... }:
-          {
-            ${attr} = config.loadDirTreeWithDefault {
-              inherit dirTree;
-              dir = src;
-              load = import;
-              ignore = { value, ... }: isAttrs value && !(value ? "default.nix");
-            };
-          };
-      }) ([ attr ] ++ cfg.aliases.${attr} or [ ])
-    );
+        };
+    };
+  };
 in
 {
   options.nixDir = {
@@ -119,6 +118,16 @@ in
     aliases = mkOption {
       type = lazyAttrsOf (listOf str);
       default = { };
+    };
+    loaders = mkOption {
+      type = conflake.types.loaders;
+      default = { };
+    };
+    mkImportLoaders = mkOption {
+      internal = true;
+      readOnly = true;
+      type = functionTo conflake.types.loaders;
+      default = mkImportLoaders;
     };
     mkLoader' = mkOption {
       internal = true;
@@ -138,17 +147,35 @@ in
       type = functionTo str;
       default = mkLoaderKey;
     };
-    mkHostLoader = mkOption {
-      internal = true;
-      readOnly = true;
-      type = functionTo conflake.types.loaders;
-      default = mkHostLoader;
-    };
     mkModuleLoader = mkOption {
       internal = true;
       readOnly = true;
       type = functionTo conflake.types.loaders;
       default = mkModuleLoader;
     };
+  };
+
+  config = {
+    loaders = pipe cfg.loaders [
+      (mapAttrs (
+        k: v:
+        pipe cfg.aliases [
+          (x: [ k ] ++ (x.${k} or [ ]))
+          (map mkLoaderKey)
+          (flip genAttrs (
+            _:
+            {
+              inherit (cfg) enable;
+            }
+            // (optionalAttrs (hasSuffix ".nix" k) {
+              match = conflake.matchers.file;
+            })
+            // v
+          ))
+        ]
+      ))
+      attrValues
+      mkMerge
+    ];
   };
 }

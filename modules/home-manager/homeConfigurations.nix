@@ -97,6 +97,6 @@ in
       };
 
     nixDir.aliases.homeConfigurations = [ "home" ];
-    loaders = config.nixDir.mkHostLoader "homeConfigurations";
+    nixDir.loaders = config.nixDir.mkImportLoaders "homeConfigurations";
   };
 }

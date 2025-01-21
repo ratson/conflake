@@ -174,7 +174,7 @@ in
         };
     }
     {
-      loaders = config.nixDir.mkHostLoader "packages";
+      nixDir.loaders = config.nixDir.mkImportLoaders "packages";
     }
   ];
 }

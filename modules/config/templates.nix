@@ -67,19 +67,17 @@ in
             })
           ];
         };
-    }
 
-    {
-      loaders = config.nixDir.mkLoader "templates.nix" (
-        { src, ... }:
-        {
-          templates = import src;
-        }
-      );
-    }
+      nixDir.loaders."templates.nix" = {
+        match = conflake.matchers.file;
+        load =
+          { src, ... }:
+          {
+            templates = import src;
+          };
+      };
 
-    {
-      loaders = config.nixDir.mkLoader "templates" (
+      nixDir.loaders."templates".load =
         { src, dirTree, ... }:
         {
           templates = pipe dirTree [
@@ -91,8 +89,7 @@ in
               }
             ))
           ];
-        }
-      );
+        };
     }
   ];
 }

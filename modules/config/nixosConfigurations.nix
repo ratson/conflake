@@ -88,6 +88,6 @@ in
       };
 
     nixDir.aliases.nixosConfigurations = [ "nixos" ];
-    loaders = config.nixDir.mkHostLoader "nixosConfigurations";
+    nixDir.loaders = config.nixDir.mkImportLoaders "nixosConfigurations";
   };
 }

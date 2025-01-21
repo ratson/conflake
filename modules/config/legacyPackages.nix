@@ -43,7 +43,7 @@ in
         ];
       };
 
-    loaders = config.nixDir.mkLoader' "legacyPackages" {
+    nixDir.loaders.legacyPackages = {
       collect =
         { dir, ignore, ... }:
         conflake.collectPaths {

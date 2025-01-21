@@ -62,6 +62,6 @@ in
       };
 
     nixDir.aliases.darwinConfigurations = [ "darwin" ];
-    loaders = config.nixDir.mkHostLoader "darwinConfigurations";
+    nixDir.loaders = config.nixDir.mkImportLoaders "darwinConfigurations";
   };
 }
