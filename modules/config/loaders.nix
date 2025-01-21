@@ -16,7 +16,6 @@ let
     isPath
     listToAttrs
     mapAttrs
-    readDir
     tail
     ;
   inherit (lib)
@@ -102,52 +101,6 @@ let
       }
     );
 
-  loadDir' =
-    {
-      root,
-      ignore ? config.loadIgnore,
-      maxDepth ? null,
-      mkPair ? nameValuePair,
-      # internal state
-      depth ? 0,
-      dir ? root,
-    }@args:
-    let
-      toEntry =
-        name: type:
-        let
-          path = dir + /${name};
-          skip =
-            (type == "directory" && maxDepth != null && depth >= maxDepth)
-            || (ignore (args // { inherit name path type; }));
-        in
-        if skip then
-          null
-        else if type == "directory" then
-          nameValuePair name (
-            loadDir' (
-              args
-              // {
-                depth = depth + 1;
-                dir = path;
-              }
-            )
-          )
-        else if type == "regular" && hasSuffix ".nix" name then
-          mkPair name path
-        else
-          null;
-    in
-    pipe dir [
-      readDir
-      (mapAttrs toEntry)
-      attrValues
-      (remove null)
-      listToAttrs
-    ];
-
-  loadDir = root: loadDir' { inherit root; };
-
   resolve =
     {
       src,
@@ -217,18 +170,6 @@ in
       readOnly = true;
       type = functionTo (lazyAttrsOf types.unspecified);
       default = loadDirTreeWithDefault;
-    };
-    loadDir = mkOption {
-      internal = true;
-      readOnly = true;
-      type = functionTo (lazyAttrsOf types.unspecified);
-      default = loadDir;
-    };
-    loadDir' = mkOption {
-      internal = true;
-      readOnly = true;
-      type = functionTo (lazyAttrsOf types.unspecified);
-      default = loadDir';
     };
 
     mkLoaderKey = mkOption {

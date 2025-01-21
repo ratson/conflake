@@ -1,6 +1,7 @@
 {
   config,
   lib,
+  conflake,
   moduleArgs,
   ...
 }:
@@ -108,12 +109,28 @@ in
       };
     };
 
-    loaders.${loaderKey}.load =
-      { src, ... }:
-      {
-        checks = {
-          ${cfg.name} = mkCheck (config.loadDir src);
+    loaders.${loaderKey} = {
+      collect =
+        { dir, ignore, ... }:
+        conflake.collectPaths {
+          inherit dir ignore;
         };
-      };
+      load =
+        { src, dirTree, ... }:
+        {
+          checks = {
+            ${cfg.name} =
+              pipe
+                {
+                  inherit dirTree;
+                  dir = src;
+                }
+                [
+                  config.loadDirTree
+                  mkCheck
+                ];
+          };
+        };
+    };
   };
 }
