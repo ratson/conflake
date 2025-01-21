@@ -45,6 +45,35 @@ let
 
   cfg = config.loaders;
 
+  loadDirTree =
+    {
+      dir,
+      dirTree,
+      mkPair ? nameValuePair,
+    }@args:
+    pipe dirTree [
+      (mapAttrs (
+        name: v:
+        if builtins.isAttrs v then
+          nameValuePair name (
+            loadDirTree (
+              args
+              // {
+                dir = dir + /${name};
+                dirTree = dirTree.${name};
+              }
+            )
+          )
+        else if builtins.isPath v && hasSuffix ".nix" name then
+          mkPair name v
+        else
+          null
+      ))
+      attrValues
+      (remove null)
+      listToAttrs
+    ];
+
   loadDir' =
     {
       root,
@@ -194,6 +223,12 @@ in
       type = conflake.types.loaders;
     };
 
+    loadDirTree = mkOption {
+      internal = true;
+      readOnly = true;
+      type = functionTo (lazyAttrsOf types.unspecified);
+      default = loadDirTree;
+    };
     loadDir = mkOption {
       internal = true;
       readOnly = true;

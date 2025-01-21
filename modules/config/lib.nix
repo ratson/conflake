@@ -50,24 +50,32 @@ in
     }
 
     {
-      loaders = config.nixDir.mkLoader "lib" (
-        { src, ... }:
-        {
-          lib = config.loadDir' {
-            root = src;
-            mkPair =
-              k: v:
-              let
-                value = import v;
-                value' = if isFunction value then value moduleArgs else value;
-              in
-              if hasSuffix ".raw.nix" k then
-                nameValuePair (removeSuffix ".raw.nix" k) value
-              else
-                nameValuePair (removeSuffix ".nix" k) value';
+      loaders = config.nixDir.mkLoader' "lib" {
+        collect =
+          { dir, ... }:
+          conflake.collectPaths {
+            inherit dir;
+            ignore = config.loadIgnore;
           };
-        }
-      );
+        load =
+          { src, dirTree, ... }:
+          {
+            lib = config.loadDirTree {
+              inherit dirTree;
+              dir = src;
+              mkPair =
+                k: v:
+                let
+                  value = import v;
+                  value' = if isFunction value then value moduleArgs else value;
+                in
+                if hasSuffix ".raw.nix" k then
+                  nameValuePair (removeSuffix ".raw.nix" k) value
+                else
+                  nameValuePair (removeSuffix ".nix" k) value';
+            };
+          };
+      };
     }
   ];
 }
