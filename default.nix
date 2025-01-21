@@ -1,26 +1,14 @@
 inputs:
 
 let
-  inherit (builtins)
-    intersectAttrs
-    listToAttrs
-    readDir
-    ;
+  inherit (builtins) intersectAttrs;
   inherit (inputs.nixpkgs) lib;
   inherit (lib)
-    attrsToList
     evalModules
-    filter
     fix
     functionArgs
-    hasSuffix
     isFunction
     mkDefault
-    nameValuePair
-    partition
-    pathIsRegularFile
-    pipe
-    removeSuffix
     setDefaultModuleLocation
     ;
 
@@ -83,39 +71,12 @@ let
     mkAutoArgs: fn: args:
     callWith (mkAutoArgs args) fn args;
 
-  readNixDir =
-    src:
-    pipe src [
-      readDir
-      attrsToList
-      (partition ({ name, value }: value == "regular" && hasSuffix ".nix" name))
-      (x: {
-        filePairs = x.right;
-        dirPairs = filter (
-          { name, value }: value == "directory" && pathIsRegularFile (src + /${name}/default.nix)
-        ) x.wrong;
-      })
-      (args: {
-        inherit src;
-        inherit (args) dirPairs filePairs;
-
-        toAttrs =
-          f:
-          pipe args.filePairs [
-            (map (x: nameValuePair (removeSuffix ".nix" x.name) (f (src + /${x.name}))))
-            (x: x ++ (map (x: x // { value = f (src + /${x.name}); }) args.dirPairs))
-            listToAttrs
-          ];
-      })
-    ];
-
   conflake = (import ./lib/default.nix { inherit lib; }).extend (
     _: _: {
       inherit
         callWith
         callWith'
         mkOutputs
-        readNixDir
         ;
     }
   );

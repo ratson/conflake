@@ -10,8 +10,16 @@
 }:
 
 let
-  inherit (builtins) attrValues isAttrs mapAttrs;
+  inherit (builtins)
+    attrValues
+    isAttrs
+    listToAttrs
+    mapAttrs
+    readDir
+    ;
   inherit (lib)
+    attrsToList
+    filter
     flip
     functionArgs
     genAttrs
@@ -20,8 +28,12 @@ let
     mkEnableOption
     mkMerge
     mkOption
+    nameValuePair
     optionalAttrs
+    partition
+    pathIsRegularFile
     pipe
+    removeSuffix
     setDefaultModuleLocation
     setFunctionArgs
     ;
@@ -76,12 +88,38 @@ let
     else
       path;
 
+  readNixDir =
+    src:
+    pipe src [
+      readDir
+      attrsToList
+      (partition ({ name, value }: value == "regular" && hasSuffix ".nix" name))
+      (x: {
+        filePairs = x.right;
+        dirPairs = filter (
+          { name, value }: value == "directory" && pathIsRegularFile (src + /${name}/default.nix)
+        ) x.wrong;
+      })
+      (args: {
+        inherit src;
+        inherit (args) dirPairs filePairs;
+
+        toAttrs =
+          f:
+          pipe args.filePairs [
+            (map (x: nameValuePair (removeSuffix ".nix" x.name) (f (src + /${x.name}))))
+            (x: x ++ (map (x: x // { value = f (src + /${x.name}); }) args.dirPairs))
+            listToAttrs
+          ];
+      })
+    ];
+
   mkModuleLoader =
     attr:
     mkLoader attr (
       { src, ... }:
       {
-        outputs.${attr} = (conflake.readNixDir src).toAttrs mkModule;
+        outputs.${attr} = (readNixDir src).toAttrs mkModule;
       }
     );
 
