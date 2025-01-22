@@ -26,7 +26,7 @@ in
     };
 
     conflakeModules = mkOption {
-      type = types.unspecified;
+      type = conflake.types.loadable;
       default = { };
     };
   };
@@ -59,6 +59,5 @@ in
           };
         })
       ];
-
     };
 }

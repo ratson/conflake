@@ -31,7 +31,7 @@ in
     };
 
     bundlers = mkOption {
-      type = types.unspecified;
+      type = conflake.types.loadable;
       default = null;
     };
   };

@@ -3,6 +3,7 @@
   lib,
   conflake,
   src,
+  options,
   ...
 }:
 

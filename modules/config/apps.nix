@@ -104,7 +104,7 @@ in
     };
 
     apps = mkOption {
-      type = types.unspecified;
+      type = conflake.types.loadable;
       default = null;
     };
   };

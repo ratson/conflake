@@ -156,6 +156,10 @@ rec {
     merge = mergeOneOption;
   };
 
+  loadable = types.unspecified // {
+    name = "loadble";
+  };
+
   loader = submodule (
     { name, ... }:
     {

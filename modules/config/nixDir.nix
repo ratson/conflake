@@ -1,6 +1,7 @@
 {
   config,
   lib,
+  options,
   conflake,
   mkSystemArgs',
   moduleArgs,
@@ -12,10 +13,12 @@
 let
   inherit (builtins) attrValues isAttrs mapAttrs;
   inherit (lib)
+    filterAttrs
     flip
     functionArgs
     genAttrs
     hasSuffix
+    mkDefault
     mkEnableOption
     mkMerge
     mkOption
@@ -58,29 +61,27 @@ let
     else
       path;
 
-  mkShallowLoaders =
+  mkShallowLoader =
     {
       attr,
       load ? import,
     }:
     {
-      ${attr} = {
-        collect =
-          { dir, ignore, ... }:
-          conflake.collectPaths {
-            inherit dir ignore;
-            maxDepth = 2;
+      collect =
+        { dir, ignore, ... }:
+        conflake.collectPaths {
+          inherit dir ignore;
+          maxDepth = 2;
+        };
+      load =
+        { src, dirTree, ... }:
+        {
+          ${attr} = config.loadDirTreeWithDefault {
+            inherit dirTree load;
+            dir = src;
+            ignore = { value, ... }: isAttrs value && !(value ? "default.nix");
           };
-        load =
-          { src, dirTree, ... }:
-          {
-            ${attr} = config.loadDirTreeWithDefault {
-              inherit dirTree load;
-              dir = src;
-              ignore = { value, ... }: isAttrs value && !(value ? "default.nix");
-            };
-          };
-      };
+        };
     };
 in
 {
@@ -100,22 +101,16 @@ in
       type = conflake.types.loaders;
       default = { };
     };
-    mkImportLoaders = mkOption {
-      internal = true;
-      readOnly = true;
-      type = functionTo conflake.types.loaders;
-      default = attr: mkShallowLoaders { inherit attr; };
-    };
     mkModuleLoaders = mkOption {
       internal = true;
       readOnly = true;
       type = functionTo conflake.types.loaders;
-      default =
-        attr:
-        mkShallowLoaders {
+      default = attr: {
+        ${attr} = mkShallowLoader {
           inherit attr;
           load = mkModule;
         };
+      };
     };
     mkLoaderKey = mkOption {
       internal = true;
@@ -146,6 +141,16 @@ in
       ))
       attrValues
       mkMerge
+    ];
+
+    nixDir.loaders = pipe options [
+      (filterAttrs (_: v: (v.type or null) == conflake.types.loadable))
+      (mapAttrs (
+        attr: _:
+        mkDefault (mkShallowLoader {
+          inherit attr;
+        })
+      ))
     ];
   };
 }

@@ -10,7 +10,7 @@
 
 let
   inherit (builtins) mapAttrs;
-  inherit (lib) mkIf mkOption types;
+  inherit (lib) mkIf mkOption;
   inherit (lib.types) attrs lazyAttrsOf;
   inherit (conflake.types) optCallWith;
 
@@ -34,7 +34,7 @@ let
 in
 {
   options.darwinConfigurations = mkOption {
-    type = types.unspecified;
+    type = conflake.types.loadable;
     default = { };
   };
 
@@ -62,6 +62,5 @@ in
       };
 
     nixDir.aliases.darwinConfigurations = [ "darwin" ];
-    nixDir.loaders = config.nixDir.mkImportLoaders "darwinConfigurations";
   };
 }

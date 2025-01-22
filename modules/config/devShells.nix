@@ -83,7 +83,7 @@ in
     };
 
     devShells = mkOption {
-      type = types.unspecified;
+      type = conflake.types.loadable;
       default = { };
     };
   };

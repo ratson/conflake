@@ -33,7 +33,7 @@ in
       default = null;
     };
     formatters = mkOption {
-      type = types.unspecified;
+      type = conflake.types.loadable;
       default = null;
     };
   };

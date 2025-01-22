@@ -26,7 +26,7 @@ in
     };
 
     darwinModules = mkOption {
-      type = types.unspecified;
+      type = conflake.types.loadable;
       default = { };
     };
   };

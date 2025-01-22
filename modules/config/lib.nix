@@ -24,7 +24,7 @@ let
 in
 {
   options.lib = mkOption {
-    type = types.unspecified;
+    type = conflake.types.loadable;
     default = { };
   };
 
@@ -33,7 +33,7 @@ in
       { config, ... }:
       {
         options.lib = mkOption {
-          type = optCallWith moduleArgs (lazyAttrsOf types.unspecified);
+          type = optCallWith moduleArgs (lazyAttrsOf types.raw);
           default = { };
         };
 

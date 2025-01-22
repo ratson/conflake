@@ -15,7 +15,6 @@ let
     mkIf
     mkOption
     pipe
-    types
     ;
   inherit (lib.types) attrs lazyAttrsOf;
   inherit (conflake.types) optCallWith;
@@ -28,7 +27,7 @@ let
 in
 {
   options.nixosConfigurations = mkOption {
-    type = types.unspecified;
+    type = conflake.types.loadable;
     default = { };
   };
 
@@ -88,6 +87,5 @@ in
       };
 
     nixDir.aliases.nixosConfigurations = [ "nixos" ];
-    nixDir.loaders = config.nixDir.mkImportLoaders "nixosConfigurations";
   };
 }

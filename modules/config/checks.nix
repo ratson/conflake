@@ -9,12 +9,7 @@
 
 let
   inherit (builtins) mapAttrs;
-  inherit (lib)
-    mkIf
-    mkMerge
-    mkOption
-    types
-    ;
+  inherit (lib) mkIf mkMerge mkOption;
   inherit (lib.types) lazyAttrsOf;
   inherit (conflake.types) nullable optFunctionTo;
 
@@ -22,7 +17,7 @@ let
 in
 {
   options.checks = mkOption {
-    type = types.unspecified;
+    type = conflake.types.loadable;
     default = null;
   };
 
