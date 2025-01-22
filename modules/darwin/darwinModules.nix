@@ -61,6 +61,6 @@ in
         ];
       };
 
-    loaders = config.nixDir.mkModuleLoader "darwinModules";
+    nixDir.loaders = config.nixDir.mkModuleLoaders "darwinModules";
   };
 }

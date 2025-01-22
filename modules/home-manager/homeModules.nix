@@ -61,6 +61,6 @@ in
         ];
       };
 
-    loaders = config.nixDir.mkModuleLoader "homeModules";
+    nixDir.loaders = config.nixDir.mkModuleLoaders "homeModules";
   };
 }
