@@ -17,7 +17,6 @@ let
     mkMerge
     mkOption
     mkOptionType
-    types
     ;
   inherit (lib.types)
     coercedTo
@@ -27,9 +26,11 @@ let
     pathInStore
     submoduleWith
     ;
-  inherit (conflake.types) nullable optFunctionTo stringLike;
-
-  rootConfig = config;
+  inherit (conflake.types)
+    nullable
+    optFunctionTo
+    stringLike
+    ;
 
   isStorePath = s: match "${storeDir}/[^.][^ \n]*" s != null;
 
@@ -101,41 +102,23 @@ in
 {
   options = {
     app = mkOption {
-      type = types.unspecified;
+      type = nullable appType;
       default = null;
     };
 
     apps = mkOption {
-      type = conflake.types.loadable;
+      type = nullable (optFunctionTo (lazyAttrsOf appType));
       default = null;
     };
   };
 
-  config.final =
-    { config, ... }:
-    {
-      options = {
-        app = mkOption {
-          type = nullable appType;
-          default = null;
-        };
+  config = mkMerge [
+    (mkIf (config.app != null) {
+      apps.default = config.app;
+    })
 
-        apps = mkOption {
-          type = nullable (optFunctionTo (lazyAttrsOf appType));
-          default = null;
-        };
-      };
-
-      config = mkMerge [
-        { inherit (rootConfig) app apps; }
-
-        (mkIf (config.app != null) {
-          apps.default = config.app;
-        })
-
-        (mkIf (config.apps != null) {
-          outputs.apps = config.genSystems (pkgs: mapAttrs (_: v: v pkgs) (config.apps pkgs));
-        })
-      ];
-    };
+    (mkIf (config.apps != null) {
+      outputs.apps = config.genSystems (pkgs: mapAttrs (_: v: v pkgs) (config.apps pkgs));
+    })
+  ];
 }

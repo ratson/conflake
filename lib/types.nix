@@ -1,17 +1,13 @@
-{ lib, self }:
+{ lib, lib' }:
 
 let
   inherit (builtins)
     all
-    attrValues
     head
     isAttrs
     isPath
+    isString
     length
-    listToAttrs
-    hasAttr
-    mapAttrs
-    readDir
     ;
   inherit (lib)
     composeManyExtensions
@@ -19,18 +15,14 @@ let
     fix
     getFiles
     getValues
+    last
     isDerivation
     isFunction
     isStringLike
-    last
     mergeDefinitions
-    mkEnableOption
     mkOption
     mkOptionType
-    nameValuePair
-    optionalAttrs
     pipe
-    remove
     showFiles
     showOption
     singleton
@@ -51,48 +43,9 @@ let
     raw
     str
     submodule
+    unspecified
     ;
   inherit (lib.options) mergeEqualOption mergeOneOption;
-
-  collect =
-    {
-      dir,
-      ignore ? _: false,
-      loaders,
-      ...
-    }@args:
-    pipe dir [
-      readDir
-      (
-        x:
-        mapAttrs (
-          name: type:
-          let
-            path = dir + /${name};
-            args' = args // {
-              inherit name type;
-              dir = path;
-              entries = x;
-            };
-          in
-          if ignore args' then
-            null
-          else if type == "directory" then
-            nameValuePair name (
-              optionalAttrs (hasAttr name loaders) (
-                loaders.${name}.collect (args' // { inherit (loaders.${name}) loaders; })
-              )
-            )
-          else if type == "regular" then
-            nameValuePair name path
-          else
-            null
-        ) x
-      )
-      attrValues
-      (remove null)
-      listToAttrs
-    ];
 in
 fix (
   types':
@@ -101,7 +54,7 @@ fix (
       coercedTo'
       drv
       function
-      loader
+      matcher
       nullable
       outputsValue
       path
@@ -124,7 +77,7 @@ fix (
         merge =
           loc: defs: pkgs:
           let
-            coerceFunc = self.mkCheck (last loc) pkgs src;
+            coerceFunc = lib'.mkCheck (last loc) pkgs src;
             targetType = coercedTo' stringLike coerceFunc drv;
           in
           pipe defs [
@@ -172,38 +125,23 @@ fix (
       merge = mergeOneOption;
     };
 
-    loadable = types.unspecified // {
-      name = "loadble";
-    };
+    loader = functionTo unspecified;
 
-    loader = submodule (
-      { name, ... }:
+    matcher = coercedTo (either path str) (
+      value:
       {
-        options = {
-          enable = mkEnableOption "${name} loader" // {
-            default = true;
-          };
-          collect = mkOption {
-            type = functionTo (lazyAttrsOf raw);
-            default = collect;
-          };
-          match = mkOption {
-            type = functionTo bool;
-            default = self.matchers.dir;
-          };
-          load = mkOption {
-            type = functionTo (lazyAttrsOf raw);
-            default = _: { };
-          };
-          loaders = mkOption {
-            type = lazyAttrsOf loader;
-            default = { };
-          };
-        };
-      }
-    );
+        dir,
+        path,
+        root,
+        ...
+      }:
+      pipe value [
+        (x: if isString x then root + /${x} else x)
+        (x: x == dir || x == path)
+      ]
+    ) (functionTo bool);
 
-    loaders = lazyAttrsOf loader;
+    matchers = listOf matcher;
 
     module = mkOptionType {
       name = "module";

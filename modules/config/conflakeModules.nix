@@ -7,57 +7,32 @@
 }:
 
 let
-  inherit (lib)
-    mkOption
-    mkIf
-    mkMerge
-    types
-    ;
+  inherit (lib) mkOption mkIf mkMerge;
   inherit (lib.types) lazyAttrsOf;
   inherit (conflake.types) module nullable optCallWith;
-
-  rootConfig = config;
 in
 {
   options = {
     conflakeModule = mkOption {
-      type = types.unspecified;
+      type = nullable module;
       default = null;
     };
 
     conflakeModules = mkOption {
-      type = conflake.types.loadable;
+      type = optCallWith moduleArgs (lazyAttrsOf module);
       default = { };
     };
   };
 
-  config.final =
-    { config, ... }:
-    {
-      options = {
-        conflakeModule = mkOption {
-          type = nullable module;
-          default = null;
-        };
+  config = mkMerge [
+    (mkIf (config.conflakeModule != null) {
+      conflakeModules.default = config.conflakeModule;
+    })
 
-        conflakeModules = mkOption {
-          type = optCallWith moduleArgs (lazyAttrsOf module);
-          default = { };
-        };
+    (mkIf (config.conflakeModules != { }) {
+      outputs = {
+        inherit (config) conflakeModules;
       };
-
-      config = mkMerge [
-        { inherit (rootConfig) conflakeModule conflakeModules; }
-
-        (mkIf (config.conflakeModule != null) {
-          conflakeModules.default = config.conflakeModule;
-        })
-
-        (mkIf (config.conflakeModules != { }) {
-          outputs = {
-            inherit (config) conflakeModules;
-          };
-        })
-      ];
-    };
+    })
+  ];
 }

@@ -25,21 +25,17 @@ in
     };
   };
 
-  config.final =
-    { config, ... }:
-    {
-      config = mkMerge [
-        (mkIf (cfg.enable && config.packages != null) {
-          outputs.checks = mapAttrs (_: mapAttrs' (k: nameValuePair "packages-${k}")) config.outputs.packages;
-        })
+  config = mkMerge [
+    (mkIf (cfg.enable && config.packages != null) {
+      outputs.checks = mapAttrs (_: mapAttrs' (k: nameValuePair "packages-${k}")) config.outputs.packages;
+    })
 
-        (mkIf (cfg.emacs && config.legacyPackages != null) {
-          checks =
-            { system, ... }:
-            mapAttrs' (
-              k: nameValuePair "emacsPackages-${k}"
-            ) config.outputs.legacyPackages.${system}.emacsPackages or { };
-        })
-      ];
-    };
+    (mkIf (cfg.emacs && config.legacyPackages != null) {
+      checks =
+        { system, ... }:
+        mapAttrs' (
+          k: nameValuePair "emacsPackages-${k}"
+        ) config.outputs.legacyPackages.${system}.emacsPackages or { };
+    })
+  ];
 }

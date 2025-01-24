@@ -8,7 +8,7 @@
 }:
 
 let
-  inherit (builtins) concatStringsSep elem isPath;
+  inherit (builtins) concatStringsSep elem;
   inherit (lib)
     getExe
     mkEnableOption
@@ -17,6 +17,7 @@ let
     optionalString
     types
     ;
+  inherit (config.src) has;
 
   cfg = config.presets.checks.editorconfig;
 
@@ -30,17 +31,15 @@ in
     args = mkOption {
       type = types.str;
       # By default, high false-positive flags are disabled.
-      default = optionalString (
-        !isPath (config.srcTree.".ecrc" or null)
-      ) "-disable-indent-size -disable-max-line-length";
+      default = optionalString (!(has ".ecrc")) "-disable-indent-size -disable-max-line-length";
     };
   };
 
-  config = mkIf cfg.enable {
-    loaders.".editorconfig" = {
-      match = conflake.matchers.file;
-      load = _: {
-        outputs.checks = genSystems (
+  # config = mkIf (cfg.enable && isPath (config.src.tree.".editorconfig" or null)) {
+  config = mkIf (cfg.enable && has ".editorconfig") {
+    loaders.outputs = [
+      (_: {
+        checks = genSystems (
           pkgs:
           mkIf (elem pkgs.stdenv.hostPlatform.system platforms) {
             editorconfig = conflake.mkCheck "editorconfig" pkgs src (
@@ -51,7 +50,7 @@ in
             );
           }
         );
-      };
-    };
+      })
+    ];
   };
 }

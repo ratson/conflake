@@ -11,56 +11,34 @@ let
     mkIf
     mkMerge
     mkOption
-    types
     ;
   inherit (lib.types) lazyAttrsOf deferredModule;
   inherit (conflake.types) nullable optCallWith;
-
-  rootConfig = config;
 in
 {
   options = {
     darwinModule = mkOption {
-      type = types.unspecified;
+      type = nullable deferredModule;
       default = null;
     };
 
     darwinModules = mkOption {
-      type = conflake.types.loadable;
+      type = optCallWith moduleArgs (lazyAttrsOf deferredModule);
       default = { };
     };
   };
 
-  config = {
-    final =
-      { config, ... }:
-      {
-        options = {
-          darwinModule = mkOption {
-            type = nullable deferredModule;
-            default = null;
-          };
-
-          darwinModules = mkOption {
-            type = optCallWith moduleArgs (lazyAttrsOf deferredModule);
-            default = { };
-          };
-        };
-
-        config = mkMerge [
-          { inherit (rootConfig) darwinModule darwinModules; }
-
-          (mkIf (config.darwinModule != null) {
-            darwinModules.default = config.darwinModule;
-          })
-          (mkIf (config.darwinModules != { }) {
-            outputs = {
-              inherit (config) darwinModules;
-            };
-          })
-        ];
+  config = mkMerge [
+    (mkIf (config.darwinModule != null) {
+      darwinModules.default = config.darwinModule;
+    })
+    (mkIf (config.darwinModules != { }) {
+      outputs = {
+        inherit (config) darwinModules;
       };
-
-    nixDir.loaders = config.nixDir.mkModuleLoaders "darwinModules";
-  };
+    })
+    {
+      nixDir.loaders.darwinModules = config.loaderForModule;
+    }
+  ];
 }

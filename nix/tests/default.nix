@@ -196,8 +196,8 @@ mkTests {
     [
       "config"
       "conflake"
+      "conflake'"
       "extendModules"
-      "flakePath"
       "genSystems"
       "inputs"
       "lib"

@@ -2,6 +2,8 @@
   config,
   lib,
   conflake,
+  conflake',
+  genSystems,
   moduleArgs,
   ...
 }:
@@ -16,50 +18,29 @@ let
     ;
   inherit (lib.types) functionTo lazyAttrsOf;
   inherit (conflake.types) nullable;
-
-  cfg = config.legacyPackages;
 in
 {
   options.legacyPackages = mkOption {
-    type = conflake.types.loadable;
+    type = nullable (functionTo (lazyAttrsOf types.unspecified));
     default = null;
   };
 
-  config = {
-    final =
-      { config, ... }:
-      {
-        options.legacyPackages = mkOption {
-          type = nullable (functionTo (lazyAttrsOf types.unspecified));
-          default = null;
+  config = mkMerge [
+    (mkIf (config.legacyPackages != null) {
+      outputs.legacyPackages = genSystems config.legacyPackages;
+    })
+
+    {
+      nixDir.loaders.legacyPackages =
+        { node, path, ... }:
+        pkgs:
+        conflake'.loadDirWithDefault {
+          root = path;
+          tree = node;
+          load = flip pkgs.callPackage moduleArgs;
         };
 
-        config = mkMerge [
-          { legacyPackages = cfg; }
-
-          (mkIf (config.legacyPackages != null) {
-            outputs.legacyPackages = config.genSystems config.legacyPackages;
-          })
-        ];
-      };
-
-    nixDir.loaders.legacyPackages = {
-      collect =
-        { dir, ignore, ... }:
-        conflake.collectPaths {
-          inherit dir ignore;
-        };
-      load =
-        { src, dirTree, ... }:
-        {
-          legacyPackages =
-            pkgs:
-            config.loadDirTreeWithDefault {
-              inherit dirTree;
-              dir = src;
-              load = flip pkgs.callPackage moduleArgs;
-            };
-        };
-    };
-  };
+      nixDir.matchers.legacyPackages = conflake.matchers.always;
+    }
+  ];
 }

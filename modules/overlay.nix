@@ -4,7 +4,6 @@
   lib,
   inputs,
   conflake,
-  flakePath,
   moduleArgs,
   ...
 }:
@@ -15,17 +14,13 @@ let
   inherit (lib.types) listOf oneOf str;
   inherit (conflake.types) nullable;
 
-  rootConfig = config;
+  flakePath = config.srcTree."flake.nix" or null;
 in
 {
   options = {
     description = mkOption {
       type = nullable str;
-      default =
-        if isPath (config.srcTree."flake.nix" or null) then
-          (import flakePath).description or null
-        else
-          null;
+      default = if isPath flakePath then (import flakePath).description or null else null;
     };
 
     license = mkOption {
@@ -37,41 +32,37 @@ in
     };
   };
 
-  config.final =
-    { config, ... }:
-    {
-      config.withOverlays = mkOrder 10 (
-        final: prev:
-        let
-          inherit (config) mkSystemArgs' outputs;
-          inherit (prev.stdenv.hostPlatform) system;
-          inherit (rootConfig) description license systems;
+  config.withOverlays = mkOrder 10 (
+    final: prev:
+    let
+      inherit (config) mkSystemArgs' outputs;
+      inherit (prev.stdenv.hostPlatform) system;
+      inherit (config) description license systems;
 
-          getLicense =
-            license: final.lib.licenses.${license} or (final.lib.meta.getLicenseFromSpdxId license);
-        in
-        (mkSystemArgs' prev)
-        // {
-          inherit
-            conflake
-            inputs
-            moduleArgs
-            outputs
-            src
-            system
-            ;
+      getLicense =
+        license: final.lib.licenses.${license} or (final.lib.meta.getLicenseFromSpdxId license);
+    in
+    (mkSystemArgs' prev)
+    // {
+      inherit
+        conflake
+        inputs
+        moduleArgs
+        outputs
+        src
+        system
+        ;
 
-          defaultMeta =
-            {
-              platforms = systems;
-            }
-            // optionalAttrs (description != null) {
-              inherit description;
-            }
-            // optionalAttrs (license != null) {
-              license = if isList license then map getLicense license else getLicense license;
-            };
+      defaultMeta =
+        {
+          platforms = systems;
         }
-      );
-    };
+        // optionalAttrs (description != null) {
+          inherit description;
+        }
+        // optionalAttrs (license != null) {
+          license = if isList license then map getLicense license else getLicense license;
+        };
+    }
+  );
 }

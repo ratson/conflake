@@ -19,6 +19,7 @@ let
       self: src: module:
       let
         flakePath = src + /flake.nix;
+        conflake' = ((import ./modules/lib.nix) { inherit lib; }).extend (_: _: { inherit flakePath src; });
       in
       (evalModules {
         class = "conflake";
@@ -35,11 +36,11 @@ let
             (setDefaultModuleLocation flakePath module)
           ];
         specialArgs = {
-          inherit conflake flakePath src;
+          inherit conflake conflake' src;
 
           modulesPath = ./modules;
         };
-      }).config.final.outputs;
+      }).config.outputs;
 
     # Attributes to allow module flakes to extend mkOutputs
     extraModules = [ ];
@@ -72,13 +73,7 @@ let
     callWith (mkAutoArgs args) fn args;
 
   conflake = (import ./lib/default.nix { inherit lib; }).extend (
-    _: _: {
-      inherit
-        callWith
-        callWith'
-        mkOutputs
-        ;
-    }
+    _: _: { inherit callWith callWith' mkOutputs; }
   );
 in
 conflake

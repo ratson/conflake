@@ -12,31 +12,33 @@ let
   final = {
     collectPaths =
       {
-        dir,
+        root,
         ignore ? _: false,
-        maxDepth ? null,
-        depth ? 1,
+        # internal state
+        depth ? 0,
+        dir ? root,
+        path ? root,
         ...
       }@args:
-      pipe dir [
+      pipe path [
         readDir
         (mapAttrs (
           name: type:
           let
-            path = dir + /${name};
             args' = args // {
               inherit name type;
               depth = depth + 1;
               dir = path;
+              path = path + /${name};
             };
-            isIgnored = (type == "directory" && maxDepth != null && depth >= maxDepth) || ignore args';
+            isIgnored = ignore args';
           in
           if isIgnored then
             null
           else if type == "directory" then
             nameValuePair name (final.collectPaths args')
           else if type == "regular" then
-            nameValuePair name path
+            nameValuePair name args'.path
           else
             null
         ))

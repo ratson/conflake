@@ -12,12 +12,13 @@ let
     mkIf
     mkMerge
     mkOption
-    types
     ;
   inherit (lib.types) lazyAttrsOf;
-  inherit (conflake.types) function nullable optFunctionTo;
-
-  rootConfig = config;
+  inherit (conflake.types)
+    function
+    nullable
+    optFunctionTo
+    ;
 
   wrapBundler =
     pkgs: bundler: drv:
@@ -26,41 +27,24 @@ in
 {
   options = {
     bundler = mkOption {
-      type = types.unspecified;
+      type = nullable function;
       default = null;
     };
 
     bundlers = mkOption {
-      type = conflake.types.loadable;
+      type = nullable (optFunctionTo (lazyAttrsOf function));
       default = null;
     };
   };
 
-  config.final =
-    { config, ... }:
-    {
-      options = {
-        bundler = mkOption {
-          type = nullable function;
-          default = null;
-        };
+  config = mkMerge [
 
-        bundlers = mkOption {
-          type = nullable (optFunctionTo (lazyAttrsOf function));
-          default = null;
-        };
-      };
+    (mkIf (config.bundler != null) {
+      bundlers.default = config.bundler;
+    })
 
-      config = mkMerge [
-        { inherit (rootConfig) bundler bundlers; }
-
-        (mkIf (config.bundler != null) {
-          bundlers.default = config.bundler;
-        })
-
-        (mkIf (config.bundlers != null) {
-          outputs.bundlers = config.genSystems (pkgs: mapAttrs (_: wrapBundler pkgs) (config.bundlers pkgs));
-        })
-      ];
-    };
+    (mkIf (config.bundlers != null) {
+      outputs.bundlers = config.genSystems (pkgs: mapAttrs (_: wrapBundler pkgs) (config.bundlers pkgs));
+    })
+  ];
 }

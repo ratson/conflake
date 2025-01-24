@@ -2,12 +2,14 @@
   config,
   lib,
   conflake,
+  conflake',
   moduleArgs,
   ...
 }:
 
 let
   inherit (builtins)
+    isAttrs
     isList
     length
     mapAttrs
@@ -21,6 +23,7 @@ let
     mkDefault
     mkEnableOption
     mkIf
+    mkMerge
     mkOption
     optionalAttrs
     pipe
@@ -31,8 +34,11 @@ let
     ;
   inherit (lib.generators) toPretty;
   inherit (lib.path) subpath;
+  inherit (conflake) matchers;
 
   cfg = config.presets.checks.tests;
+
+  tree = config.src.get cfg.src;
 
   mkSuite = mapAttrs (
     k: v:
@@ -52,13 +58,11 @@ let
     "flake.nix#tests" = null;
   };
 
-  loaderKey = config.mkLoaderKey cfg.src;
-
   mkCheck =
     tests: pkgs:
     let
       testsTree = {
-        ${loaderKey} = tests;
+        ${config.src.relTo cfg.src} = tests;
       } // testsPlaceholder;
       results = mapAttrsRecursive (
         path:
@@ -102,35 +106,19 @@ in
     };
   };
 
-  config = {
-    final = {
-      config = mkIf cfg.enable {
-        checks.${cfg.name} = mkDefault (mkCheck testsPlaceholder);
-      };
-    };
+  config = mkIf cfg.enable (mkMerge [
+    (mkIf (config.tests != null) {
+      checks.${cfg.name} = mkDefault (mkCheck testsPlaceholder);
+    })
 
-    loaders.${loaderKey} = {
-      collect =
-        { dir, ignore, ... }:
-        conflake.collectPaths {
-          inherit dir ignore;
-        };
-      load =
-        { src, dirTree, ... }:
-        {
-          checks = {
-            ${cfg.name} =
-              pipe
-                {
-                  inherit dirTree;
-                  dir = src;
-                }
-                [
-                  config.loadDirTree
-                  mkCheck
-                ];
-          };
-        };
-    };
-  };
+    (mkIf (isAttrs tree) {
+      checks.${cfg.name} = pipe cfg.src [
+        (root: { inherit root tree; })
+        conflake'.loadDir'
+        mkCheck
+      ];
+    })
+
+    { matchers = [ (matchers.mkIn cfg.src) ]; }
+  ]);
 }
