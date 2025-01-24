@@ -1,32 +1,18 @@
 {
-  config,
   lib,
   conflake,
   ...
 }:
 
 let
-  inherit (lib) mkOption types;
+  inherit (lib) mkOption;
   inherit (conflake.types) optListOf overlay;
-
-  cfg = config.withOverlays;
 in
 {
   options = {
     withOverlays = mkOption {
-      type = types.unspecified;
+      type = optListOf overlay;
       default = [ ];
     };
-  };
-
-  config.final = {
-    options = {
-      withOverlays = mkOption {
-        type = optListOf overlay;
-        default = [ ];
-      };
-    };
-
-    config.withOverlays = cfg;
   };
 }

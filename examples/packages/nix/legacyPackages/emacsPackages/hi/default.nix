@@ -1,3 +1,4 @@
 { emacsPackages, ... }:
 
-emacsPackages.greet
+# emacsPackages.greet
+emacsPackages.s

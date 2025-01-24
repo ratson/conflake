@@ -28,8 +28,6 @@ let
     optFunctionTo
     ;
 
-  rootConfig = config;
-
   devShellModule = {
     freeformType = lazyAttrsOf (optFunctionTo types.unspecified);
 
@@ -78,45 +76,25 @@ in
 {
   options = {
     devShell = mkOption {
-      type = types.unspecified;
+      type = nullable devShellType;
       default = null;
     };
 
     devShells = mkOption {
-      type = types.unspecified;
+      type = optCallWith moduleArgs (lazyAttrsOf devShellType);
       default = { };
     };
   };
 
-  config = {
-    final =
-      { config, ... }:
-      {
-        options = {
-          devShell = mkOption {
-            type = nullable devShellType;
-            default = null;
-          };
+  config = mkMerge [
+    (mkIf (config.devShell != null) {
+      devShells.default = config.devShell;
+    })
 
-          devShells = mkOption {
-            type = optCallWith moduleArgs (lazyAttrsOf devShellType);
-            default = { };
-          };
-        };
-
-        config = mkMerge [
-          { inherit (rootConfig) devShell devShells; }
-
-          (mkIf (config.devShell != null) {
-            devShells.default = config.devShell;
-          })
-
-          (mkIf (config.devShells != { }) {
-            outputs.devShells = config.genSystems (
-              pkgs: mapAttrs (_: v: genDevShell pkgs (v pkgs)) config.devShells
-            );
-          })
-        ];
-      };
-  };
+    (mkIf (config.devShells != { }) {
+      outputs.devShells = config.genSystems (
+        pkgs: mapAttrs (_: v: genDevShell pkgs (v pkgs)) config.devShells
+      );
+    })
+  ];
 }

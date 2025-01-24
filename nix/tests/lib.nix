@@ -2,16 +2,17 @@
 
 let
   inherit (inputs) self;
+  inherit (self.lib) mkVersion prefixAttrs;
 in
-{
+prefixAttrs "test-" {
   mkVersion = [
-    (self.lib.mkVersion null)
+    (mkVersion null)
     "0.0.0+date=19700101_dirty"
   ];
 
   mkVersion-self = [
-    (self.lib.mkVersion self)
-    (self.lib.mkVersion {
+    (mkVersion self)
+    (mkVersion {
       inherit (self) lastModifiedDate;
       shortRev = self.shortRev or "dirty";
     })

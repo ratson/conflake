@@ -7,7 +7,7 @@
 }:
 
 let
-  inherit (builtins) mapAttrs readDir;
+  inherit (builtins) isAttrs mapAttrs;
   inherit (lib)
     filterAttrs
     mkDefault
@@ -15,85 +15,59 @@ let
     mkMerge
     mkOption
     pipe
-    types
     ;
   inherit (lib.types) lazyAttrsOf;
   inherit (conflake.types) nullable optCallWith template;
-
-  rootConfig = config;
 in
 {
   options = {
     template = mkOption {
-      type = types.unspecified;
+      type = nullable (optCallWith moduleArgs template);
       default = null;
     };
 
     templates = mkOption {
-      type = types.unspecified;
+      type = optCallWith moduleArgs (lazyAttrsOf (optCallWith moduleArgs template));
       default = { };
+      apply = mapAttrs (_: filterAttrs (_: v: v != null));
     };
   };
 
   config = mkMerge [
-    {
-      final =
-        { config, ... }:
-        {
-          options = {
-            template = mkOption {
-              type = nullable (optCallWith moduleArgs template);
-              default = null;
-            };
+    (mkIf (config.template != null) {
+      templates.default = config.template;
+    })
 
-            templates = mkOption {
-              type = optCallWith moduleArgs (lazyAttrsOf (optCallWith moduleArgs template));
-              default = { };
-              apply = mapAttrs (_: filterAttrs (_: v: v != null));
-            };
-          };
-
-          config = mkMerge [
-            { inherit (rootConfig) template templates; }
-
-            (mkIf (config.template != null) {
-              templates.default = config.template;
-            })
-
-            (mkIf (config.templates != { }) {
-              outputs = {
-                inherit (config) templates;
-              };
-            })
-          ];
-        };
-    }
+    (mkIf (config.templates != { }) {
+      outputs = {
+        inherit (config) templates;
+      };
+    })
 
     {
-      loaders = config.nixDir.mkLoader "templates.nix" (
-        { src, ... }:
+      nixDir.loaders.templates =
         {
-          templates = import src;
-        }
-      );
-    }
-
-    {
-      loaders = config.nixDir.mkLoader "templates" (
-        { src, ... }:
-        {
-          templates = pipe src [
-            readDir
-            (filterAttrs (_: type: type == "directory"))
+          node,
+          path,
+          type,
+          ...
+        }:
+        if type == "regular" then
+          import path
+        else if type == "directory" then
+          pipe node [
+            (filterAttrs (_: isAttrs))
             (mapAttrs (
               name: _: {
                 description = mkDefault name;
-                path = mkDefault (src + /${name});
+                path = mkDefault (path + /${name});
               }
             ))
-          ];
-        }
-      );
+          ]
+        else
+          { };
+
+      nixDir.matchers.templates = conflake.matchers.always;
     }
   ];
 }

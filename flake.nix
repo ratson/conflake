@@ -18,7 +18,7 @@
           "modules"
           "nix"
         ];
-        exclude = "nix/tests";
+        exclude = "nix/tests/default.nix";
       };
     };
 

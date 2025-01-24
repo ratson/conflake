@@ -1,97 +1,55 @@
 {
   config,
   lib,
+  options,
   conflake,
-  mkSystemArgs',
-  moduleArgs,
-  pkgsFor,
+  conflake',
   src,
   ...
 }:
 
 let
+  inherit (builtins)
+    attrNames
+    attrValues
+    hasAttr
+    isAttrs
+    isPath
+    length
+    mapAttrs
+    ;
   inherit (lib)
+    filterAttrs
+    flatten
     flip
-    functionArgs
-    hasSuffix
+    genAttrs
     mkDefault
     mkEnableOption
+    mkIf
     mkMerge
     mkOption
-    optionalAttrs
     pipe
-    setDefaultModuleLocation
-    setFunctionArgs
+    types
     ;
+  inherit (lib.path) subpath;
   inherit (lib.types)
     lazyAttrsOf
     listOf
-    str
     functionTo
+    nonEmptyListOf
+    nullOr
+    str
     ;
 
   cfg = config.nixDir;
 
-  mkLoaderKey = s: config.mkLoaderKey (cfg.src + /${s});
+  loadable = conflake'.filterLoadable options;
 
-  mkLoader = k: load: {
-    ${mkLoaderKey k} =
-      {
-        inherit load;
-
-        enable = mkDefault cfg.enable;
-      }
-      // optionalAttrs (hasSuffix ".nix" k) {
-        match = conflake.matchers.file;
-      };
-  };
-
-  mkModule =
-    path:
-    let
-      f =
-        { pkgs, ... }@args:
-        conflake.callWith (moduleArgs // config.moduleArgs.extra) path (
-          args
-          // (mkSystemArgs' pkgs)
-          // {
-            pkgs = (pkgsFor.${pkgs.stdenv.hostPlatform.system} or { }) // pkgs;
-          }
-        );
-    in
-    if config.moduleArgs.enable then
-      pipe f [
-        functionArgs
-        (x: x // { pkgs = true; })
-        (setFunctionArgs f)
-        (setDefaultModuleLocation path)
-      ]
-    else
-      path;
-
-  mkModuleLoader =
-    attr:
-    mkLoader attr (
-      { src, ... }:
-      {
-        outputs.${attr} = (conflake.readNixDir src).toAttrs mkModule;
-      }
-    );
-
-  mkHostLoader =
-    attr:
-    mkMerge (
-      map (flip config.nixDir.mkLoader (
-        { src, ... }:
-        {
-          ${attr} = config.loadDirWithDefault {
-            root = src;
-            load = import;
-            maxDepth = 2;
-          };
-        }
-      )) ([ attr ] ++ config.nixDir.aliases.${attr} or [ ])
-    );
+  loadableNames = pipe loadable [
+    attrNames
+    (map cfg.namesFor)
+    flatten
+  ];
 in
 {
   options.nixDir = {
@@ -106,29 +64,119 @@ in
       type = lazyAttrsOf (listOf str);
       default = { };
     };
-    mkLoader = mkOption {
+    loaders = mkOption {
+      type = types.lazyAttrsOf conflake.types.loader;
+      default = { };
+    };
+    matchers = mkOption {
+      type = lazyAttrsOf conflake.types.matcher;
+      default = { };
+    };
+    depth = mkOption {
       internal = true;
       readOnly = true;
-      type = functionTo (functionTo conflake.types.loaders);
-      default = mkLoader;
+      type = types.int;
+      default = pipe cfg.src [
+        (lib.path.removePrefix src)
+        subpath.components
+        length
+      ];
     };
-    mkLoaderKey = mkOption {
+    finalMatchers = mkOption {
       internal = true;
       readOnly = true;
-      type = functionTo str;
-      default = mkLoaderKey;
+      type = lazyAttrsOf conflake.types.matcher;
     };
-    mkHostLoader = mkOption {
+    namesFor = mkOption {
       internal = true;
       readOnly = true;
-      type = functionTo conflake.types.loaders;
-      default = mkHostLoader;
+      type = functionTo (nonEmptyListOf str);
+      default = name: [ name ] ++ (cfg.aliases.${name} or [ ]);
     };
-    mkModuleLoader = mkOption {
+    tree = mkOption {
       internal = true;
       readOnly = true;
-      type = functionTo conflake.types.loaders;
-      default = mkModuleLoader;
+      type = nullOr conflake.types.pathTree;
+      default = config.src.get cfg.src;
     };
+  };
+
+  config = {
+    nixDir = {
+      finalMatchers = mkMerge [
+        cfg.matchers
+        (pipe cfg.aliases [
+          (filterAttrs (k: _: hasAttr k cfg.matchers))
+          (mapAttrs (k: flip genAttrs (_: cfg.matchers.${k})))
+          attrValues
+          mkMerge
+        ])
+      ];
+
+      loaders = pipe loadableNames [
+        (map (name: {
+          ${name} = mkDefault config.loaderDefault;
+        }))
+        mkMerge
+      ];
+
+      matchers = pipe loadableNames [
+        (map (name: {
+          ${name} = mkDefault ({ depth, ... }: depth <= 2);
+        }))
+        mkMerge
+      ];
+    };
+
+    loaders = pipe loadable [
+      (mapAttrs (k: _: cfg.loaders.${k}))
+      (mapAttrs (
+        attr: f:
+        pipe attr [
+          cfg.namesFor
+          (map (
+            name:
+            let
+              args = {
+                inherit name;
+              };
+              dirArgs = args // {
+                node = cfg.tree.${name} or null;
+                path = cfg.src + /${name};
+                type = "directory";
+              };
+              fileArgs = args // {
+                node = cfg.tree.${name + ".nix"} or null;
+                path = cfg.src + /${name + ".nix"};
+                type = "regular";
+              };
+            in
+            [
+              (mkIf (isPath fileArgs.node) (args: f (args // fileArgs)))
+              (mkIf (isAttrs dirArgs.node) (args: f (args // dirArgs)))
+            ]
+          ))
+          mkMerge
+        ]
+      ))
+    ];
+
+    matchers =
+      [ cfg.src ]
+      ++ (pipe cfg.finalMatchers [
+        (mapAttrs (
+          k: f:
+          { depth, path, ... }@args:
+          let
+            root = cfg.src + /${k};
+            args' = args // {
+              inherit root;
+              depth = depth - cfg.depth - 1;
+            };
+          in
+          lib.path.hasPrefix root path && f args'
+        ))
+        attrValues
+      ]);
   };
 }
