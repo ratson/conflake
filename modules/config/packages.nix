@@ -15,6 +15,7 @@ let
     tryEval
     ;
   inherit (lib)
+    filterAttrs
     findFirst
     flip
     functionArgs
@@ -45,7 +46,7 @@ let
         ${name} = prev.${name} or (throw "${name} depends on ${name}, but no existing ${name}.");
       };
       overrides =
-        lib.filterAttrs (k: _: hasAttr k args) moduleArgs
+        filterAttrs (k: _: hasAttr k args) moduleArgs
         // optionalAttrs dependsOnSelf selfOverride
         // optionalAttrs dependsOnPkgs { pkgs = final.pkgs // selfOverride; };
     in

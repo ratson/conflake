@@ -125,6 +125,8 @@ fix (
       merge = mergeOneOption;
     };
 
+    legacyPackages = lazyAttrsOf (either (lazyAttrsOf raw) raw);
+
     loader = functionTo unspecified;
 
     matcher = coercedTo (either path str) (

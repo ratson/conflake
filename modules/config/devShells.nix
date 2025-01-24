@@ -21,6 +21,7 @@ let
     lazyAttrsOf
     package
     ;
+  inherit (config) genSystems;
   inherit (conflake.types)
     function
     nullable
@@ -92,9 +93,7 @@ in
     })
 
     (mkIf (config.devShells != { }) {
-      outputs.devShells = config.genSystems (
-        pkgs: mapAttrs (_: v: genDevShell pkgs (v pkgs)) config.devShells
-      );
+      outputs.devShells = genSystems (pkgs: mapAttrs (_: v: genDevShell pkgs (v pkgs)) config.devShells);
     })
   ];
 }

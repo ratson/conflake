@@ -2,7 +2,6 @@
   config,
   lib,
   conflake,
-  genSystems,
   src,
   ...
 }:
@@ -17,6 +16,7 @@ let
     optionalString
     types
     ;
+  inherit (config) genSystems;
   inherit (config.src) has;
 
   cfg = config.presets.checks.editorconfig;

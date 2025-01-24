@@ -5,6 +5,7 @@
   inputs,
   conflake,
   moduleArgs,
+  outputs,
   ...
 }:
 
@@ -12,6 +13,7 @@ let
   inherit (builtins) isList isPath;
   inherit (lib) mkOption mkOrder optionalAttrs;
   inherit (lib.types) listOf oneOf str;
+  inherit (config) mkSystemArgs';
   inherit (conflake.types) nullable;
 
   flakePath = config.srcTree."flake.nix" or null;
@@ -35,7 +37,6 @@ in
   config.withOverlays = mkOrder 10 (
     final: prev:
     let
-      inherit (config) mkSystemArgs' outputs;
       inherit (prev.stdenv.hostPlatform) system;
       inherit (config) description license systems;
 

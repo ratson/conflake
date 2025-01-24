@@ -4,9 +4,7 @@
   options,
   conflake,
   conflake',
-  mkSystemArgs',
   moduleArgs,
-  pkgsFor,
   ...
 }:
 
@@ -28,6 +26,7 @@ let
     types
     ;
   inherit (lib.types) functionTo lazyAttrsOf;
+  inherit (config) mkSystemArgs' pkgsFor;
   inherit (conflake') loadDirWithDefault;
 
   cfg = config.loaders;
@@ -39,7 +38,7 @@ let
     let
       f =
         { pkgs, ... }@args:
-        conflake.callWith (moduleArgs // config.moduleArgs.extra) path (
+        conflake.callWith moduleArgs path (
           args
           // (mkSystemArgs' pkgs)
           // {

@@ -2,7 +2,6 @@
   config,
   lib,
   conflake,
-  genSystems,
   ...
 }:
 
@@ -23,6 +22,7 @@ let
     types
     ;
   inherit (lib.types) functionTo lazyAttrsOf;
+  inherit (config) genSystems;
   inherit (conflake.types) nullable optFunctionTo;
 
   mkFormatter =

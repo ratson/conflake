@@ -3,12 +3,15 @@
 let
   inherit (builtins) mapAttrs;
   inherit (lib)
+    filterAttrs
+    isDerivation
     mapAttrs'
     mkEnableOption
     mkIf
     mkMerge
     mkOption
     nameValuePair
+    pipe
     types
     ;
 
@@ -33,9 +36,11 @@ in
     (mkIf (cfg.emacs && config.legacyPackages != null) {
       checks =
         { system, ... }:
-        mapAttrs' (
-          k: nameValuePair "emacsPackages-${k}"
-        ) config.outputs.legacyPackages.${system}.emacsPackages or { };
+        pipe system [
+          (x: config.outputs.legacyPackages.${x}.emacsPackages or { })
+          (filterAttrs (_: isDerivation))
+          (mapAttrs' (k: nameValuePair "emacsPackages-${k}"))
+        ];
     })
   ];
 }

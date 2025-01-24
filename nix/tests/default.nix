@@ -149,7 +149,7 @@ mkTests {
     (conflake' (
       { inputs, ... }:
       {
-        moduleArgs.extra = {
+        _module.args = {
           username = "user";
         };
         outputs =
@@ -198,17 +198,13 @@ mkTests {
       "conflake"
       "conflake'"
       "extendModules"
-      "genSystems"
       "inputs"
       "lib"
-      "mkSystemArgs"
-      "mkSystemArgs'"
       "moduleArgs"
       "moduleType"
       "modulesPath"
       "options"
       "outputs"
-      "pkgsFor"
       "specialArgs"
       "src"
     ]
@@ -216,9 +212,6 @@ mkTests {
 
   moduleArgs-add = test (conflake' {
     _module.args.test-val = true;
-    # moduleArgs.extra = {
-    #   test-val = true;
-    # };
 
     outputs =
       { test-val, ... }:

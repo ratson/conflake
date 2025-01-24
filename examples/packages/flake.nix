@@ -4,7 +4,7 @@
     conflake ./. {
       inherit inputs;
 
-      moduleArgs.extra = {
+      _module.args = {
         extra-arg = true;
       };
 

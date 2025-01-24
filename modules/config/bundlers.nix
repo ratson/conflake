@@ -14,6 +14,7 @@ let
     mkOption
     ;
   inherit (lib.types) lazyAttrsOf;
+  inherit (config) genSystems;
   inherit (conflake.types)
     function
     nullable
@@ -44,7 +45,7 @@ in
     })
 
     (mkIf (config.bundlers != null) {
-      outputs.bundlers = config.genSystems (pkgs: mapAttrs (_: wrapBundler pkgs) (config.bundlers pkgs));
+      outputs.bundlers = genSystems (pkgs: mapAttrs (_: wrapBundler pkgs) (config.bundlers pkgs));
     })
   ];
 }

@@ -2,7 +2,6 @@
   config,
   lib,
   conflake,
-  genSystems,
   src,
   ...
 }:
@@ -11,6 +10,7 @@ let
   inherit (builtins) mapAttrs;
   inherit (lib) mkIf mkOption;
   inherit (lib.types) lazyAttrsOf;
+  inherit (config) genSystems;
   inherit (conflake.types) nullable optFunctionTo;
 in
 {

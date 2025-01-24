@@ -3,8 +3,6 @@
   lib,
   inputs,
   conflake,
-  genSystems,
-  mkSystemArgs,
   moduleArgs,
   ...
 }:
@@ -19,6 +17,7 @@ let
     pipe
     ;
   inherit (lib.types) attrs lazyAttrsOf;
+  inherit (config) genSystems mkSystemArgs;
   inherit (conflake.types) optCallWith;
 
   # Avoid checking if toplevel is a derivation as it causes the nixos modules

@@ -1,3 +1,7 @@
-{ pkgs, extra-arg, ... }:
+{
+  pkgs,
+  # extra-arg,
+  ...
+}:
 
 pkgs.hello

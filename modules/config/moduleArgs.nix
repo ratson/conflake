@@ -10,6 +10,8 @@ let
   inherit (lib)
     genAttrs
     mkEnableOption
+    mkIf
+    mkMerge
     mkOption
     types
     ;
@@ -49,10 +51,6 @@ in
       enable = mkEnableOption "moduleArgs" // {
         default = true;
       };
-      extra = mkOption {
-        type = types.lazyAttrsOf types.raw;
-        default = { };
-      };
     };
 
     pkgsFor = mkOption {
@@ -81,18 +79,14 @@ in
     };
   };
 
-  config = {
-    _module.args = {
-      inherit
-        inputs
-        outputs
-        genSystems
-        mkSystemArgs
-        mkSystemArgs'
-        pkgsFor
-        ;
+  config = mkMerge [
+    (mkIf cfg.enable { })
+    {
+      _module.args = {
+        inherit inputs outputs;
 
-      moduleArgs = args // config._module.args // cfg.extra;
-    };
-  };
+        moduleArgs = args // config._module.args;
+      };
+    }
+  ];
 }

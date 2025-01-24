@@ -26,6 +26,7 @@ let
     pathInStore
     submoduleWith
     ;
+  inherit (config) genSystems;
   inherit (conflake.types)
     nullable
     optFunctionTo
@@ -118,7 +119,7 @@ in
     })
 
     (mkIf (config.apps != null) {
-      outputs.apps = config.genSystems (pkgs: mapAttrs (_: v: v pkgs) (config.apps pkgs));
+      outputs.apps = genSystems (pkgs: mapAttrs (_: v: v pkgs) (config.apps pkgs));
     })
   ];
 }

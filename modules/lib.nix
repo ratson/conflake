@@ -3,9 +3,11 @@
 let
   inherit (builtins)
     attrValues
+    filter
+    groupBy
+    head
     isAttrs
     isPath
-    listToAttrs
     mapAttrs
     ;
   inherit (lib)
@@ -15,7 +17,6 @@ let
     makeExtensible
     nameValuePair
     pipe
-    remove
     removeSuffix
     ;
 in
@@ -61,6 +62,7 @@ makeExtensible (self: {
       mkDirValue ? self.loadDir',
       mkFilePair ? { name, node, ... }: nameValuePair name node,
       mkIgnore ? _: null,
+      mkValue ? { contexts, ... }: (head contexts).content.value,
       # internal state
       depth ? 0,
       dir ? root,
@@ -86,19 +88,25 @@ makeExtensible (self: {
                 "unknown";
           };
           isIgnored = ignore args';
+          content =
+            if isIgnored then
+              mkIgnore args'
+            else if isAttrs node then
+              nameValuePair name (mkDirValue args')
+            else if isPath node && hasSuffix ".nix" name then
+              mkFilePair args'
+            else
+              mkIgnore args';
         in
-        if isIgnored then
-          mkIgnore args'
-        else if isAttrs node then
-          nameValuePair name (mkDirValue args')
-        else if isPath node && hasSuffix ".nix" name then
-          mkFilePair args'
-        else
-          mkIgnore args'
+        args'
+        // {
+          inherit content;
+        }
       ))
       attrValues
-      (remove null)
-      listToAttrs
+      (filter (x: x.content != null))
+      (groupBy (x: x.content.name))
+      (mapAttrs (name: contexts: mkValue { inherit name contexts; }))
     ];
 
   loadDirWithDefault =

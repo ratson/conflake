@@ -3,7 +3,6 @@
   lib,
   conflake,
   conflake',
-  genSystems,
   moduleArgs,
   ...
 }:
@@ -14,14 +13,15 @@ let
     mkIf
     mkMerge
     mkOption
-    types
+    pipe
     ;
-  inherit (lib.types) functionTo lazyAttrsOf;
+  inherit (lib.types) functionTo;
+  inherit (config) genSystems;
   inherit (conflake.types) nullable;
 in
 {
   options.legacyPackages = mkOption {
-    type = nullable (functionTo (lazyAttrsOf types.unspecified));
+    type = nullable (functionTo conflake.types.legacyPackages);
     default = null;
   };
 
@@ -38,6 +38,12 @@ in
           root = path;
           tree = node;
           load = flip pkgs.callPackage moduleArgs;
+          mkValue =
+            { contexts, ... }:
+            pipe contexts [
+              (map (x: x.content.value))
+              mkMerge
+            ];
         };
 
       nixDir.matchers.legacyPackages = conflake.matchers.always;
