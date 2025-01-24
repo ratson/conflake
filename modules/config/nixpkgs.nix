@@ -1,14 +1,27 @@
-{ lib, ... }:
+{
+  config,
+  lib,
+  conflake,
+  ...
+}:
 
 let
   inherit (lib) mkOption;
   inherit (lib.types) lazyAttrsOf raw;
 in
 {
-  options = {
-    nixpkgs.config = mkOption {
+  options.nixpkgs = {
+    config = mkOption {
       type = lazyAttrsOf raw;
       default = { };
     };
+    overlays = mkOption {
+      type = conflake.types.overlays;
+      default = [ ];
+    };
+  };
+
+  config = {
+    nixpkgs.overlays = config.withOverlays ++ [ config.packageOverlay ];
   };
 }

@@ -25,9 +25,7 @@ let
     system:
     import inputs.nixpkgs {
       inherit system;
-      inherit (config.nixpkgs) config;
-
-      overlays = config.withOverlays ++ [ config.packageOverlay ];
+      inherit (config.nixpkgs) config overlays;
     }
   );
 

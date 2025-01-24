@@ -56,7 +56,9 @@ fix (
       function
       matcher
       nullable
+      optListOf
       outputsValue
+      overlay
       path
       pathTree
       stringLike
@@ -235,6 +237,8 @@ fix (
       check = isFunction;
       merge = _: defs: composeManyExtensions (getValues defs);
     };
+
+    overlays = optListOf overlay;
 
     stringLike = mkOptionType {
       name = "stringLike";
