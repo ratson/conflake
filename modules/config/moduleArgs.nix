@@ -33,17 +33,12 @@ let
 
   genSystems = f: genAttrs systems (system: f pkgsFor.${system});
 
-  mkSystemArgs' =
-    pkgs:
-    let
-      inherit (pkgs.stdenv.hostPlatform) system;
-    in
-    {
-      inputs' = mapAttrs (_: selectAttr system) inputs;
-      outputs' = selectAttr system outputs;
-    };
+  mkSystemArgs = system: {
+    inputs' = mapAttrs (_: selectAttr system) inputs;
+    outputs' = selectAttr system outputs;
+  };
 
-  mkSystemArgs = system: mkSystemArgs' pkgsFor.${system};
+  mkSystemArgs' = pkgs: mkSystemArgs pkgs.stdenv.hostPlatform.system;
 in
 {
   options = {
