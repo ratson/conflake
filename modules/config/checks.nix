@@ -9,13 +9,12 @@
 let
   inherit (builtins) mapAttrs;
   inherit (lib) mkIf mkOption;
-  inherit (lib.types) lazyAttrsOf;
   inherit (config) genSystems;
   inherit (conflake.types) nullable optFunctionTo;
 in
 {
   options.checks = mkOption {
-    type = nullable (optFunctionTo (lazyAttrsOf (conflake.types.mkCheck src)));
+    type = nullable (optFunctionTo (conflake.types.checks src));
     default = null;
   };
 

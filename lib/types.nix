@@ -46,11 +46,13 @@ let
     unspecified
     ;
   inherit (lib.options) mergeEqualOption mergeOneOption;
+  inherit (lib') mkCheck;
 in
 fix (
   types':
   let
     inherit (types')
+      check
       coercedTo'
       drv
       function
@@ -65,7 +67,7 @@ fix (
       ;
   in
   {
-    mkCheck =
+    check =
       src:
       mkOptionType {
         name = "check";
@@ -79,7 +81,7 @@ fix (
         merge =
           loc: defs: pkgs:
           let
-            coerceFunc = lib'.mkCheck (last loc) pkgs src;
+            coerceFunc = mkCheck (last loc) pkgs src;
             targetType = coercedTo' stringLike coerceFunc drv;
           in
           pipe defs [
@@ -91,6 +93,8 @@ fix (
             (x: x.mergedValue)
           ];
       };
+
+    checks = src: lazyAttrsOf (check src);
 
     coercedTo' =
       coercedType: coerceFunc: finalType:
