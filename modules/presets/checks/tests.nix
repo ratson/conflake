@@ -9,22 +9,27 @@
 
 let
   inherit (builtins)
+    head
     isAttrs
     isList
+    listToAttrs
     mapAttrs
     toJSON
     ;
   inherit (lib)
     flip
+    imap0
     mapAttrsRecursive
     mkDefault
     mkEnableOption
     mkIf
     mkMerge
     mkOption
+    nameValuePair
     optionalAttrs
     pipe
     runTests
+    singleton
     toFunction
     types
     ;
@@ -38,37 +43,54 @@ let
 
   mkSuite = mapAttrs (_: v: if isList v then conflake.types.testVal v else v);
 
-  testsPlaceholder = optionalAttrs (config.tests != null) {
-    "flake.nix#tests" = null;
+  placeholder = "flake.nix#tests";
+  placeholderTree = optionalAttrs (config.tests != null) {
+    ${placeholder} = toFunction config.tests;
   };
 
   mkCheck =
     tests: pkgs:
     let
-      testsTree = {
-        ${config.src.relTo cfg.src} = tests;
-      } // testsPlaceholder;
-      results = mapAttrsRecursive (
-        path:
-        flip pipe [
-          (x: if x == null then toFunction config.tests else x)
-          (flip pkgs.callPackage moduleArgs)
-          mkSuite
-          runTests
-          (
-            cases:
-            if cases == [ ] then
-              "Unit tests successful"
-            else
-              lib.trace "Unit tests failed: ${toPretty { } cases}\nin ${subpath.join path}" cases
-          )
-        ]
-      ) testsTree;
+      results = pipe placeholderTree [
+        (x: { ${config.src.relTo cfg.src} = tests; } // x)
+        (mapAttrsRecursive (
+          _:
+          flip pipe [
+            (flip pkgs.callPackage moduleArgs)
+            (
+              x:
+              if isList x then
+                pipe x [
+                  (imap0 (i: v: nameValuePair (toString i) [ v ]))
+                  listToAttrs
+                ]
+              else
+                singleton x
+            )
+          ]
+        ))
+        (mapAttrsRecursive (
+          path:
+          flip pipe [
+            head
+            mkSuite
+            runTests
+            (
+              cases:
+              if cases == [ ] then
+                "Unit tests successful"
+              else
+                lib.trace "Unit tests failed: ${toPretty { } cases}\nin ${subpath.join path}" cases
+            )
+          ]
+        ))
+        toJSON
+      ];
     in
     pkgs.runCommandLocal "check-tests"
       {
+        inherit results;
         passAsFile = [ "results" ];
-        results = toJSON results;
       }
       ''
         cp $resultsPath $out
@@ -92,7 +114,7 @@ in
 
   config = mkIf cfg.enable (mkMerge [
     (mkIf (config.tests != null) {
-      checks.${cfg.name} = mkDefault (mkCheck testsPlaceholder);
+      checks.${cfg.name} = mkDefault (mkCheck placeholderTree);
     })
 
     (mkIf (isAttrs tree) {
