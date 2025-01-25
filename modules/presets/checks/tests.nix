@@ -21,6 +21,7 @@ let
     flip
     imap0
     mapAttrsRecursive
+    mergeAttrs
     mkDefault
     mkEnableOption
     mkIf
@@ -69,7 +70,7 @@ let
     tests: pkgs:
     let
       results = pipe placeholderTree [
-        (x: { ${config.src.relTo cfg.src} = tests; } // x)
+        (mergeAttrs { ${config.src.relTo cfg.src} = tests; })
         (mapAttrsRecursive (
           _:
           flip pipe [

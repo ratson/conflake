@@ -20,6 +20,7 @@ let
     findFirst
     flip
     functionArgs
+    mergeAttrs
     mkIf
     mkMerge
     mkOption
@@ -122,14 +123,12 @@ in
         pipe pkgDefs [
           (flip removeAttrs [ "default" ])
           (genPkgs final prev)
-          (
-            x:
-            (optionalAttrs (pkgDefs ? default) {
+          (mergeAttrs (
+            optionalAttrs (pkgDefs ? default) {
               inherit default;
               ${defaultPkgName} = default;
-            })
-            // x
-          )
+            }
+          ))
         ];
 
       outputs = { inherit packages; };
