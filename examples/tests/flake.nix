@@ -10,6 +10,11 @@
           expr = 1 + 1;
           expected = 2;
         };
+
+        test-list-form = [
+          (1 + 1)
+          2
+        ];
       };
     };
   #endregion outputs

@@ -26,6 +26,8 @@ let
     showFiles
     showOption
     singleton
+    sublist
+    throwIf
     types
     ;
   inherit (lib.types)
@@ -273,7 +275,14 @@ fix (
       }
     );
 
-    test = either (lazyAttrsOf raw) (nonEmptyListOf raw);
+    testVal =
+      v:
+      throwIf (length v < 2) "list should have at least 2 elements" {
+        expr = pipe (head v) (sublist 1 ((length v) - 2) v);
+        expected = last v;
+      };
+
+    test = coercedTo (nonEmptyListOf raw) types'.testVal (lazyAttrsOf raw);
 
     tests = lazyAttrsOf test;
   }

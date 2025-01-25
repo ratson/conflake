@@ -11,14 +11,11 @@ let
   inherit (builtins)
     isAttrs
     isList
-    length
     mapAttrs
     toJSON
     ;
   inherit (lib)
     flip
-    head
-    last
     mapAttrsRecursive
     mkDefault
     mkEnableOption
@@ -28,7 +25,6 @@ let
     optionalAttrs
     pipe
     runTests
-    sublist
     toFunction
     types
     ;
@@ -40,19 +36,7 @@ let
 
   tree = config.src.get cfg.src;
 
-  mkSuite = mapAttrs (
-    k: v:
-    if isList v then
-      if length v < 2 then
-        throw "list should have at least 2 elements: ${k}"
-      else
-        {
-          expr = pipe (head v) (sublist 1 ((length v) - 2) v);
-          expected = last v;
-        }
-    else
-      v
-  );
+  mkSuite = mapAttrs (_: v: if isList v then conflake.types.testVal v else v);
 
   testsPlaceholder = optionalAttrs (config.tests != null) {
     "flake.nix#tests" = null;
