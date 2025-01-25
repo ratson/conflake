@@ -64,6 +64,7 @@ fix (
       path
       pathTree
       stringLike
+      test
       ;
   in
   {
@@ -273,5 +274,7 @@ fix (
     );
 
     test = either (lazyAttrsOf raw) (nonEmptyListOf raw);
+
+    tests = lazyAttrsOf test;
   }
 )
