@@ -19,7 +19,9 @@ let
       self: src: module:
       let
         flakePath = src + /flake.nix;
-        conflake' = ((import ./modules/lib.nix) { inherit lib; }).extend (_: _: { inherit flakePath src; });
+        conflake' = ((import ./modules/lib/default.nix) { inherit lib; }).extend (
+          _: _: { inherit flakePath src; }
+        );
       in
       (evalModules {
         class = "conflake";

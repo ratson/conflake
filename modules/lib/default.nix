@@ -21,6 +21,8 @@ let
     ;
 in
 makeExtensible (self: {
+  nameMockedPkgs = import ./nameMockedPkgs.nix;
+
   filterLoadable =
     options:
     pipe options [

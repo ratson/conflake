@@ -1,10 +1,12 @@
-{ lib, inputs, ... }:
+{
+  conflake,
+  conflake',
+  ...
+}:
 
 let
-  inherit (inputs.self.lib) prefixAttrs;
-
-  lib' = import ../../modules/lib.nix { inherit lib; };
-  inherit (lib') loadDir loadDir' loadDirWithDefault;
+  inherit (conflake) prefixAttrs;
+  inherit (conflake') loadDir loadDir' loadDirWithDefault;
 
   fixtures = {
     loadDirArgs = {

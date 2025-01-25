@@ -3,6 +3,7 @@
   lib,
   inputs,
   conflake,
+  conflake',
   moduleArgs,
   ...
 }:
@@ -94,7 +95,7 @@ in
         let
           pkgDefs = getPkgDefs prev;
           getName = pkg: pkg.pname or (parseDrvName pkg.name).name;
-          mockPkgs = import ../_nameMockedPkgs.nix prev;
+          mockPkgs = conflake'.nameMockedPkgs prev;
 
           defaultPkgName =
             findFirst (x: (tryEval x).success)

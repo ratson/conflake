@@ -1,8 +1,9 @@
-{ inputs, ... }:
+{ conflake, inputs, ... }:
 
 let
   inherit (inputs) self;
-  inherit (self.lib) mkVersion prefixAttrs;
+  inherit (self.lib) mkVersion;
+  inherit (conflake) prefixAttrs;
 in
 prefixAttrs "test-" {
   mkVersion = [
