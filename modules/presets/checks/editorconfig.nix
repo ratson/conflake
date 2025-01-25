@@ -35,22 +35,19 @@ in
     };
   };
 
-  # config = mkIf (cfg.enable && isPath (config.src.tree.".editorconfig" or null)) {
   config = mkIf (cfg.enable && has ".editorconfig") {
-    loaders.outputs = [
-      (_: {
-        checks = genSystems (
-          pkgs:
-          mkIf (elem pkgs.stdenv.hostPlatform.system platforms) {
-            editorconfig = conflake.mkCheck "editorconfig" pkgs src (
-              concatStringsSep " " [
-                (getExe pkgs.editorconfig-checker)
-                cfg.args
-              ]
-            );
-          }
-        );
-      })
-    ];
+    loaders.outputs = _: {
+      checks = genSystems (
+        pkgs:
+        mkIf (elem pkgs.stdenv.hostPlatform.system platforms) {
+          editorconfig = conflake.mkCheck "editorconfig" pkgs src (
+            concatStringsSep " " [
+              (getExe pkgs.editorconfig-checker)
+              cfg.args
+            ]
+          );
+        }
+      );
+    };
   };
 }

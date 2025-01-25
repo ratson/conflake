@@ -27,6 +27,7 @@ let
     ;
   inherit (lib.types) functionTo lazyAttrsOf;
   inherit (config) mkSystemArgs' pkgsFor;
+  inherit (conflake.types) optListOf;
   inherit (conflake') loadDirWithDefault;
 
   cfg = config.loaders;
@@ -59,7 +60,7 @@ in
 {
   options = {
     loaders = mkOption {
-      type = lazyAttrsOf (types.listOf conflake.types.loader);
+      type = lazyAttrsOf (optListOf conflake.types.loader);
       default = { };
     };
 
