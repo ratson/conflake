@@ -42,6 +42,7 @@ makeExtensible (self: {
     "nixpkgs"
     "presets"
     "src"
+    "tests"
   ];
 
   loadDir =

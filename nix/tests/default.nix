@@ -42,13 +42,8 @@ let
   conflake' = conflake fixtures.empty;
 
   conflakeExample = s: conflake ../../examples/${s};
-
-  mkTests = flip pipe [
-    (prefixAttrs "test-")
-    (mapAttrs builtins.traceVerbose)
-  ];
 in
-mkTests {
+{
   call-conflake = [
     (conflake' { outputs.test = true; })
     (x: x.test)

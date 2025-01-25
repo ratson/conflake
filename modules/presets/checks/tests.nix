@@ -35,7 +35,7 @@ let
     ;
   inherit (lib.generators) toPretty;
   inherit (lib.path) subpath;
-  inherit (conflake) matchers;
+  inherit (conflake) matchers prefixAttrsCond;
 
   cfg = config.presets.checks.tests;
 
@@ -47,6 +47,13 @@ let
   placeholderTree = optionalAttrs (config.tests != null) {
     ${placeholder} = toFunction config.tests;
   };
+
+  withPrefix =
+    attrs:
+    if cfg.prefix != "" then
+      prefixAttrsCond (_: v: v ? "expr" && v ? "expected") cfg.prefix attrs
+    else
+      attrs;
 
   mkCheck =
     tests: pkgs:
@@ -74,6 +81,7 @@ let
           flip pipe [
             head
             mkSuite
+            withPrefix
             runTests
             (
               cases:
@@ -105,6 +113,10 @@ in
     name = mkOption {
       type = types.str;
       default = "tests";
+    };
+    prefix = mkOption {
+      type = types.str;
+      default = "test-";
     };
     src = mkOption {
       type = types.path;

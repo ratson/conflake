@@ -6,12 +6,12 @@
       inherit inputs;
 
       tests = {
-        test-add = {
+        add = {
           expr = 1 + 1;
           expected = 2;
         };
 
-        test-list-form = [
+        list-form = [
           (1 + 1)
           2
         ];

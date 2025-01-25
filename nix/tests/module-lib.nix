@@ -1,11 +1,6 @@
-{
-  conflake,
-  conflake',
-  ...
-}:
+{ conflake', ... }:
 
 let
-  inherit (conflake) prefixAttrs;
   inherit (conflake') loadDir loadDir' loadDirWithDefault;
 
   fixtures = {
@@ -21,7 +16,7 @@ let
     };
   };
 in
-prefixAttrs "test-" {
+{
   loadDir = [
     fixtures.loadDirArgs
     (x: x // { load = _: true; })

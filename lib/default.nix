@@ -14,7 +14,7 @@ lib.makeExtensible (self: {
     lib' = self;
   };
 
-  inherit (self.attrsets) selectAttr prefixAttrs;
+  inherit (self.attrsets) selectAttr prefixAttrs prefixAttrsCond;
   inherit (self.filesystem) collectPaths;
   inherit (self.flake) mkVersion mkVersion';
 

@@ -1,11 +1,10 @@
-{ conflake, inputs, ... }:
+{ inputs, ... }:
 
 let
   inherit (inputs) self;
   inherit (self.lib) mkVersion;
-  inherit (conflake) prefixAttrs;
 in
-prefixAttrs "test-" {
+{
   mkVersion = [
     (mkVersion null)
     "0.0.0+date=19700101_dirty"

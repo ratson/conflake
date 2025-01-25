@@ -2,9 +2,15 @@
 
 let
   inherit (builtins) mapAttrs;
-  inherit (lib) mapAttrs' nameValuePair;
+  inherit (lib)
+    fix
+    flip
+    mapAttrs'
+    nameValuePair
+    pipe
+    ;
 in
-{
+fix (self: {
   /**
     Add prefix to each name in an attribute set.
 
@@ -31,7 +37,17 @@ in
 
     :::
   */
-  prefixAttrs = prefix: mapAttrs' (k: nameValuePair "${prefix}${k}");
+  prefixAttrs = self.prefixAttrsCond (_: _: true);
+
+  prefixAttrsCond =
+    cond: prefix:
+    mapAttrs' (
+      k: v:
+      pipe k [
+        (_: (if cond k v then "${prefix}${k}" else k))
+        (flip nameValuePair v)
+      ]
+    );
 
   selectAttr = attr: mapAttrs (_: v: v.${attr} or { });
-}
+})
