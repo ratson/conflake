@@ -1,7 +1,7 @@
 { config, lib, ... }:
 
 let
-  inherit (builtins) concatStringsSep;
+  inherit (builtins) concatStringsSep elem;
   inherit (lib)
     escapeShellArg
     escapeShellArgs
@@ -33,11 +33,13 @@ in
   config = mkIf cfg.enable {
     checks.deadnix =
       pkgs:
-      concatStringsSep " " [
-        (getExe pkgs.deadnix)
-        (optionalString (cfg.exclude != null) "--exclude=${escapeShellArg cfg.exclude}")
-        "--fail"
-        (escapeShellArgs cfg.files)
-      ];
+      optionalString (!elem pkgs.stdenv.hostPlatform.system [ "x86_64-freebsd" ]) (
+        concatStringsSep " " [
+          (getExe pkgs.deadnix)
+          (optionalString (cfg.exclude != null) "--exclude=${escapeShellArg cfg.exclude}")
+          "--fail"
+          (escapeShellArgs cfg.files)
+        ]
+      );
   };
 }

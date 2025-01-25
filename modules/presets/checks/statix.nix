@@ -1,7 +1,7 @@
 { config, lib, ... }:
 
 let
-  inherit (builtins) concatStringsSep;
+  inherit (builtins) concatStringsSep elem;
   inherit (lib)
     escapeShellArg
     getExe
@@ -13,6 +13,8 @@ let
     ;
 
   cfg = config.presets.checks.statix;
+
+  hasStatix = pkgs: !elem pkgs.stdenv.hostPlatform.system [ "x86_64-freebsd" ];
 in
 {
   options.presets.checks.statix = {
@@ -29,11 +31,13 @@ in
   config = mkIf cfg.enable {
     checks.statix =
       pkgs:
-      concatStringsSep " " [
-        (getExe pkgs.statix)
-        "check"
-        (optionalString (cfg.ignore != null) "--ignore=${escapeShellArg cfg.ignore}")
-        (optionalString cfg.unrestricted "--unrestricted")
-      ];
+      optionalString (hasStatix pkgs) (
+        concatStringsSep " " [
+          (getExe pkgs.statix)
+          "check"
+          (optionalString (cfg.ignore != null) "--ignore=${escapeShellArg cfg.ignore}")
+          (optionalString cfg.unrestricted "--unrestricted")
+        ]
+      );
   };
 }
