@@ -15,6 +15,7 @@ let
     listToAttrs
     mapAttrs
     toJSON
+    warn
     ;
   inherit (lib)
     flip
@@ -31,6 +32,7 @@ let
     runTests
     singleton
     toFunction
+    traceIf
     types
     ;
   inherit (lib.generators) toPretty;
@@ -54,6 +56,14 @@ let
       prefixAttrsCond (_: v: v ? "expr" && v ? "expected") cfg.prefix attrs
     else
       attrs;
+
+  toResult =
+    path: cases:
+    let
+      msgFail = "Unit tests failed: ${toPretty { } cases}\nin ${subpath.join path}";
+      msgPass = "Unit tests successful";
+    in
+    if cases == [ ] then msgPass else warn msgFail cases;
 
   mkCheck =
     tests: pkgs:
@@ -82,14 +92,9 @@ let
             head
             mkSuite
             withPrefix
+            (mapAttrs (k: traceIf cfg.trace "${subpath.join path}#${k}"))
             runTests
-            (
-              cases:
-              if cases == [ ] then
-                "Unit tests successful"
-              else
-                lib.trace "Unit tests failed: ${toPretty { } cases}\nin ${subpath.join path}" cases
-            )
+            (toResult path)
           ]
         ))
         toJSON
@@ -121,6 +126,10 @@ in
     src = mkOption {
       type = types.path;
       default = config.nixDir.src + /tests;
+    };
+    trace = mkOption {
+      type = types.bool;
+      default = true;
     };
   };
 

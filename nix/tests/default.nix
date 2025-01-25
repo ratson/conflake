@@ -9,18 +9,15 @@ let
     attrNames
     deepSeq
     isList
-    mapAttrs
     tryEval
     ;
   inherit (lib)
     const
     fix
-    flip
     isDerivation
     pipe
     ;
   inherit (inputs) nixpkgs self;
-  inherit (self.lib) prefixAttrs;
 
   fixtures = {
     empty = ./_fixtures/empty;
