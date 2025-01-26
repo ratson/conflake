@@ -1,7 +1,7 @@
 { lib, ... }:
 
 {
-  test-singleton = {
+  singleton = {
     expr = lib.singleton 1;
     expected = [ 1 ];
   };

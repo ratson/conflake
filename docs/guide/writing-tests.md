@@ -6,6 +6,10 @@ Here is a minimal `outputs` to define tests,
 
 <<< @/../examples/tests/flake.nix#outputs{6-11}
 
+Tests attributes are prefixed with `test-` before calling
+[`lib.debug.runTests`][runTests], set `presets.checks.tests.prefix = "";` to
+turn it off.
+
 ## Running Tests
 
 Run `nix flake check` will run the `tests` with
