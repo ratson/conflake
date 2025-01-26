@@ -16,6 +16,7 @@ let
     tryEval
     ;
   inherit (lib)
+    defaultTo
     filterAttrs
     findFirst
     flip
@@ -98,26 +99,25 @@ in
           getName = pkg: pkg.pname or (parseDrvName pkg.name).name;
           mockPkgs = conflake'.nameMockedPkgs prev;
 
-          defaultPkgName =
+          defaultPkgName = flip defaultTo config.pname (
             findFirst (x: (tryEval x).success)
               (throw (
                 "Could not determine the name of the default package; "
                 + "please set the `pname` conflake option to the intended name."
               ))
               [
-                (
-                  assert config.pname != null;
-                  config.pname
-                )
                 (getName (mockPkgs.callPackage pkgDefs.default { }))
                 (getName
                   (import inputs.nixpkgs {
                     inherit (prev.stdenv.hostPlatform) system;
                     inherit (config.nixpkgs) config;
-                    overlays = config.withOverlays ++ [ (final: prev: genPkgs final prev pkgDefs) ];
+                    overlays = [
+                      (final: prev: genPkgs final prev pkgDefs)
+                    ];
                   }).default
                 )
-              ];
+              ]
+          );
           default = genPkg final prev defaultPkgName pkgDefs.default;
         in
         pipe pkgDefs [

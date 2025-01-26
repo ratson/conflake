@@ -14,6 +14,7 @@ let
   inherit (lib)
     const
     fix
+    hasPrefix
     isDerivation
     pipe
     ;
@@ -22,6 +23,7 @@ let
   fixtures = {
     empty = ./_fixtures/empty;
     editorconfig = ./_fixtures/editorconfig;
+    emacsPackages = ./_fixtures/emacsPackages;
   };
 
   test = flake: test: {
@@ -590,7 +592,19 @@ in
     })
     (x: [
       (attrNames x.legacyPackages.x86_64-linux)
-      (lib.hasPrefix "emacs-with-packages-" x.packages.x86_64-linux.default.name)
+      (hasPrefix "emacs-with-packages-" x.packages.x86_64-linux.default.name)
+    ])
+    [
+      [ "emacsPackages" ]
+      true
+    ]
+  ];
+
+  legacyPackages-emacsPackages-loader = [
+    (conflake fixtures.emacsPackages { })
+    (x: [
+      (attrNames x.legacyPackages.x86_64-linux)
+      (hasPrefix "awesome-emacs-with-packages-" x.packages.x86_64-linux.default.name)
     ])
     [
       [ "emacsPackages" ]
