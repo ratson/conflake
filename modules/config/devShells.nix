@@ -9,55 +9,13 @@
 let
   inherit (builtins) mapAttrs;
   inherit (lib)
-    functionArgs
     isFunction
     mkIf
     mkMerge
     mkOption
-    types
-    ;
-  inherit (lib.types)
-    coercedTo
-    lazyAttrsOf
-    package
     ;
   inherit (config) genSystems;
-  inherit (conflake.types)
-    function
-    nullable
-    optCallWith
-    optFunctionTo
-    ;
-
-  devShellModule = {
-    freeformType = lazyAttrsOf (optFunctionTo types.unspecified);
-
-    options = {
-      stdenv = mkOption {
-        type = optFunctionTo package;
-        default = pkgs: pkgs.stdenv;
-      };
-
-      overrideShell = mkOption {
-        type = nullable package;
-        internal = true;
-        default = null;
-      };
-    };
-  };
-
-  wrapFn =
-    fn: pkgs:
-    let
-      val = pkgs.callPackage fn { };
-    in
-    if (functionArgs fn == { }) || !(package.check val) then fn pkgs else val;
-
-  packageOverride = p: { overrideShell = p; };
-
-  devShellType = coercedTo function wrapFn (
-    optFunctionTo (coercedTo package packageOverride (types.submodule devShellModule))
-  );
+  inherit (conflake.types) nullable optCallWith;
 
   genDevShell =
     pkgs: cfg:
@@ -77,12 +35,12 @@ in
 {
   options = {
     devShell = mkOption {
-      type = nullable devShellType;
+      type = nullable conflake.types.devShell;
       default = null;
     };
 
     devShells = mkOption {
-      type = optCallWith moduleArgs (lazyAttrsOf devShellType);
+      type = optCallWith moduleArgs conflake.types.devShells;
       default = { };
     };
   };

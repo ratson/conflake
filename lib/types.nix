@@ -13,6 +13,7 @@ let
     composeManyExtensions
     filter
     fix
+    functionArgs
     getFiles
     getValues
     last
@@ -42,6 +43,7 @@ let
     nonEmptyListOf
     nullOr
     optionDescriptionPhrase
+    package
     raw
     str
     submodule
@@ -56,10 +58,12 @@ fix (
     inherit (types')
       check
       coercedTo'
+      devShell
       drv
       function
       matcher
       nullable
+      optFunctionTo
       optListOf
       outputsValue
       overlay
@@ -110,6 +114,41 @@ fix (
           in
           finalType.merge loc (map (def: def // { value = coerceVal def.value; }) defs);
       };
+
+    devShell =
+      pipe
+        {
+          freeformType = lazyAttrsOf (optFunctionTo types.unspecified);
+
+          options = {
+            stdenv = mkOption {
+              type = optFunctionTo package;
+              default = pkgs: pkgs.stdenv;
+            };
+
+            overrideShell = mkOption {
+              type = nullable package;
+              internal = true;
+              default = null;
+            };
+          };
+        }
+        [
+          submodule
+          (coercedTo package (p: {
+            overrideShell = p;
+          }))
+          optFunctionTo
+          (coercedTo function (
+            fn: pkgs:
+            let
+              val = pkgs.callPackage fn { };
+            in
+            if (functionArgs fn == { }) || !(package.check val) then fn pkgs else val
+          ))
+        ];
+
+    devShells = lazyAttrsOf devShell;
 
     drv = mkOptionType {
       name = "drv";
