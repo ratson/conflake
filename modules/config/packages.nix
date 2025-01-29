@@ -11,6 +11,7 @@
 
 let
   inherit (builtins)
+    isList
     hasAttr
     mapAttrs
     parseDrvName
@@ -30,8 +31,15 @@ let
     optionalAttrs
     optionals
     pipe
+    types
     ;
-  inherit (lib.types) lazyAttrsOf str uniq;
+  inherit (lib.types)
+    lazyAttrsOf
+    listOf
+    oneOf
+    str
+    uniq
+    ;
   inherit (conflake.types)
     nullable
     optFunctionTo
@@ -80,7 +88,38 @@ in
       type = nullable str;
       default = null;
     };
+    description = mkOption {
+      type = nullable str;
+      default = config.src.flake.description or null;
+    };
+    license = mkOption {
+      type = nullable (oneOf [
+        str
+        (listOf str)
+      ]);
+      default = null;
+    };
 
+    defaultMeta = mkOption {
+      internal = true;
+      readOnly = true;
+      type = types.unspecified;
+      default =
+        let
+          inherit (config) description license;
+
+          getLicense = license: lib.licenses.${license} or (lib.meta.getLicenseFromSpdxId license);
+        in
+        {
+          platforms = config.systems;
+        }
+        // optionalAttrs (description != null) {
+          inherit description;
+        }
+        // optionalAttrs (license != null) {
+          license = if isList license then map getLicense license else getLicense license;
+        };
+    };
     packageOverlay = mkOption {
       internal = true;
       type = uniq overlay;
