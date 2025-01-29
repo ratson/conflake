@@ -2,6 +2,7 @@
   config,
   lib,
   conflake,
+  conflake',
   src,
   ...
 }:
@@ -20,7 +21,7 @@ let
     types
     ;
   inherit (lib.path) subpath;
-  inherit (lib.types) functionTo;
+  inherit (lib.types) functionTo nullOr lazyAttrsOf;
 
   cfg = config.src;
 
@@ -45,6 +46,12 @@ in
     ignore = mkOption {
       type = functionTo types.bool;
       default = { name, type, ... }: type == "directory" && hasPrefix "_" name;
+    };
+    flake = mkOption {
+      internal = true;
+      readOnly = true;
+      type = nullOr (lazyAttrsOf types.unspecified);
+      default = if cfg.has "flake.nix" then import conflake'.flakePath else null;
     };
     get = mkOption {
       internal = true;

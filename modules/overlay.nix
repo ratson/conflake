@@ -12,7 +12,6 @@
 let
   inherit (builtins)
     isList
-    isPath
     mapAttrs
     warn
     ;
@@ -20,14 +19,12 @@ let
   inherit (lib.types) listOf oneOf str;
   inherit (config) mkSystemArgs';
   inherit (conflake.types) nullable;
-
-  flakePath = config.srcTree."flake.nix" or null;
 in
 {
   options = {
     description = mkOption {
       type = nullable str;
-      default = if isPath flakePath then (import flakePath).description or null else null;
+      default = config.src.flake.description or null;
     };
 
     license = mkOption {
