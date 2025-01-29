@@ -4,52 +4,27 @@
   lib,
   inputs,
   conflake,
-  flakePath,
   moduleArgs,
+  outputs,
   ...
 }:
 
 let
-  inherit (builtins) isList;
-  inherit (lib) mkOption mkOrder optionalAttrs;
-  inherit (lib.types) listOf oneOf str;
-  inherit (conflake.types) nullable;
-
-  rootConfig = config;
+  inherit (builtins) mapAttrs warn;
+  inherit (lib) mkOrder;
+  inherit (config) mkSystemArgs';
 in
 {
-  options = {
-    description = mkOption {
-      type = nullable str;
-      default =
-        if (config.srcEntries."flake.nix" or "") == "regular" then
-          (import flakePath).description or null
-        else
-          null;
-    };
-
-    license = mkOption {
-      type = nullable (oneOf [
-        str
-        (listOf str)
-      ]);
-      default = null;
-    };
-  };
-
-  config.final =
-    { config, ... }:
-    {
-      config.withOverlays = mkOrder 10 (
-        final: prev:
-        let
-          inherit (config) mkSystemArgs' outputs;
-          inherit (prev.stdenv.hostPlatform) system;
-          inherit (rootConfig) description license systems;
-
-          getLicense =
-            license: final.lib.licenses.${license} or (final.lib.meta.getLicenseFromSpdxId license);
-        in
+  config.withOverlays = mkOrder 10 (
+    _: prev:
+    (mapAttrs (
+      k:
+      warn ''
+        Usage of `pkgs.${k}` will soon be removed, use `{ pkgs, ${k}, ...}` instead.
+        If you have already doing so, ignore this warnning.
+      ''
+    ))
+      (
         (mkSystemArgs' prev)
         // {
           inherit
@@ -58,20 +33,10 @@ in
             moduleArgs
             outputs
             src
-            system
             ;
-
-          defaultMeta =
-            {
-              platforms = systems;
-            }
-            // optionalAttrs (description != null) {
-              inherit description;
-            }
-            // optionalAttrs (license != null) {
-              license = if isList license then map getLicense license else getLicense license;
-            };
+          inherit (config) defaultMeta;
+          inherit (prev.stdenv.hostPlatform) system;
         }
-      );
-    };
+      )
+  );
 }

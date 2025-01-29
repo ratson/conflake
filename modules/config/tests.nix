@@ -2,12 +2,11 @@
 
 let
   inherit (lib) mkOption;
-  inherit (lib.types) lazyAttrsOf;
-  inherit (conflake.types) nullable optFunctionTo;
+  inherit (conflake.types) nullable optFunctionTo optListOf;
 in
 {
   options.tests = mkOption {
-    type = nullable (optFunctionTo (lazyAttrsOf conflake.types.test));
+    type = nullable (optFunctionTo (optListOf conflake.types.tests));
     default = null;
   };
 }

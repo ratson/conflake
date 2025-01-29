@@ -4,7 +4,6 @@
   ./config/checks.nix
   ./config/conflakeModules.nix
   ./config/devShells.nix
-  ./config/final.nix
   ./config/formatters.nix
   ./config/functor.nix
   ./config/inputs.nix
@@ -20,6 +19,7 @@
   ./config/overlays.nix
   ./config/packages.nix
   ./config/perSystem.nix
+  ./config/src.nix
   ./config/systems.nix
   ./config/templates.nix
   ./config/tests.nix

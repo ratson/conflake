@@ -14,36 +14,23 @@ let
     pipe
     types
     ;
-
-  rootConfig = config;
 in
 {
   options.perSystem = mkOption {
-    type = types.unspecified;
+    type = types.functionTo conflake.types.outputs;
     default = _: { };
   };
 
-  config.final =
-    { config, ... }:
-    {
-      options.perSystem = mkOption {
-        type = types.functionTo conflake.types.outputs;
-        default = _: { };
-      };
-
-      config = {
-        inherit (rootConfig) perSystem;
-
-        outputs = pipe rootConfig.systems [
-          (map (
-            system:
-            pipe config.pkgsFor.${system} [
-              config.perSystem
-              (mapAttrs (_: v: { ${system} = v; }))
-            ]
-          ))
-          (foldAttrs mergeAttrs { })
-        ];
-      };
-    };
+  config = {
+    outputs = pipe config.systems [
+      (map (
+        system:
+        pipe config.pkgsFor.${system} [
+          config.perSystem
+          (mapAttrs (_: v: { ${system} = v; }))
+        ]
+      ))
+      (foldAttrs mergeAttrs { })
+    ];
+  };
 }

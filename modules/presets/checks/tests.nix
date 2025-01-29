@@ -1,85 +1,110 @@
 {
   config,
   lib,
+  conflake,
+  conflake',
   moduleArgs,
   ...
 }:
 
 let
   inherit (builtins)
+    head
+    isAttrs
     isList
-    length
+    listToAttrs
     mapAttrs
     toJSON
+    warn
     ;
   inherit (lib)
     flip
-    head
-    last
+    imap0
     mapAttrsRecursive
+    mergeAttrs
     mkDefault
     mkEnableOption
     mkIf
+    mkMerge
     mkOption
+    nameValuePair
     optionalAttrs
     pipe
     runTests
-    sublist
+    singleton
     toFunction
+    traceIf
     types
     ;
   inherit (lib.generators) toPretty;
   inherit (lib.path) subpath;
+  inherit (conflake) matchers prefixAttrsCond;
 
   cfg = config.presets.checks.tests;
 
-  mkSuite = mapAttrs (
-    k: v:
-    if isList v then
-      if length v < 2 then
-        throw "list should have at least 2 elements: ${k}"
-      else
-        {
-          expr = pipe (head v) (sublist 1 ((length v) - 2) v);
-          expected = last v;
-        }
-    else
-      v
-  );
+  tree = config.src.get cfg.src;
 
-  testsPlaceholder = optionalAttrs (config.tests != null) {
-    "flake.nix#tests" = null;
+  mkSuite = mapAttrs (_: v: if isList v then conflake.types.testVal v else v);
+
+  placeholder = "flake.nix#tests";
+  placeholderTree = optionalAttrs (config.tests != null) {
+    ${placeholder} = toFunction config.tests;
   };
 
-  loaderKey = config.mkLoaderKey cfg.src;
+  withPrefix =
+    attrs:
+    if cfg.prefix != "" then
+      prefixAttrsCond (_: v: v ? "expr" && v ? "expected") cfg.prefix attrs
+    else
+      attrs;
+
+  toResult =
+    path: cases:
+    let
+      msgFail = "Unit tests failed: ${toPretty { } cases}\nin ${subpath.join path}";
+      msgPass = "Unit tests successful";
+    in
+    if cases == [ ] then msgPass else warn msgFail cases;
 
   mkCheck =
     tests: pkgs:
     let
-      testsTree = {
-        ${loaderKey} = tests;
-      } // testsPlaceholder;
-      results = mapAttrsRecursive (
-        path:
-        flip pipe [
-          (x: if x == null then toFunction config.tests else x)
-          (flip pkgs.callPackage moduleArgs)
-          mkSuite
-          runTests
-          (
-            cases:
-            if cases == [ ] then
-              "Unit tests successful"
-            else
-              lib.trace "Unit tests failed: ${toPretty { } cases}\nin ${subpath.join path}" cases
-          )
-        ]
-      ) testsTree;
+      results = pipe placeholderTree [
+        (mergeAttrs { ${config.src.relTo cfg.src} = tests; })
+        (mapAttrsRecursive (
+          _:
+          flip pipe [
+            (flip pkgs.callPackage moduleArgs)
+            (
+              x:
+              if isList x then
+                pipe x [
+                  (imap0 (i: v: nameValuePair (toString i) [ v ]))
+                  listToAttrs
+                ]
+              else
+                singleton x
+            )
+          ]
+        ))
+        (mapAttrsRecursive (
+          path:
+          flip pipe [
+            head
+            mkSuite
+            withPrefix
+            (mapAttrs (k: traceIf cfg.trace "${subpath.join path}#${k}"))
+            runTests
+            (toResult path)
+          ]
+        ))
+        toJSON
+      ];
     in
     pkgs.runCommandLocal "check-tests"
       {
+        inherit results;
         passAsFile = [ "results" ];
-        results = toJSON results;
       }
       ''
         cp $resultsPath $out
@@ -95,25 +120,33 @@ in
       type = types.str;
       default = "tests";
     };
+    prefix = mkOption {
+      type = types.str;
+      default = "test-";
+    };
     src = mkOption {
       type = types.path;
       default = config.nixDir.src + /tests;
     };
-  };
-
-  config = {
-    final = {
-      config = mkIf cfg.enable {
-        checks.${cfg.name} = mkDefault (mkCheck testsPlaceholder);
-      };
+    trace = mkOption {
+      type = types.bool;
+      default = true;
     };
-
-    loaders.${loaderKey}.load =
-      { src, ... }:
-      {
-        checks = {
-          ${cfg.name} = mkCheck (config.loadDir src);
-        };
-      };
   };
+
+  config = mkIf cfg.enable (mkMerge [
+    (mkIf (config.tests != null) {
+      checks.${cfg.name} = mkDefault (mkCheck placeholderTree);
+    })
+
+    (mkIf (isAttrs tree) {
+      checks.${cfg.name} = pipe cfg.src [
+        (root: { inherit root tree; })
+        conflake'.loadDir'
+        mkCheck
+      ];
+    })
+
+    { matchers = [ (matchers.mkIn cfg.src) ]; }
+  ]);
 }

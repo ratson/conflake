@@ -1,248 +1,117 @@
 {
   config,
   lib,
+  options,
   conflake,
-  src,
+  conflake',
+  moduleArgs,
   ...
 }:
 
 let
   inherit (builtins)
-    attrValues
-    filter
-    hasAttr
-    head
     isAttrs
-    isPath
-    listToAttrs
+    hasAttr
     mapAttrs
-    readDir
-    tail
     ;
   inherit (lib)
-    attrsToList
-    concatMap
-    filterAttrs
-    flip
-    flatten
+    functionArgs
     hasPrefix
-    hasSuffix
     mkIf
     mkMerge
     mkOption
-    nameValuePair
-    optionalAttrs
-    pathIsDirectory
     pipe
-    remove
-    removePrefix
-    removeSuffix
-    setAttrByPath
+    setDefaultModuleLocation
+    setFunctionArgs
     types
     ;
-  inherit (lib.path) subpath;
   inherit (lib.types) functionTo lazyAttrsOf;
+  inherit (config) mkSystemArgs' pkgsFor;
+  inherit (conflake.types) optListOf;
+  inherit (conflake') loadDirWithDefault;
 
   cfg = config.loaders;
 
-  loadDir' =
-    {
-      root,
-      ignore ? config.loadIgnore,
-      maxDepth ? null,
-      mkPair ? nameValuePair,
-      # internal state
-      depth ? 0,
-      dir ? root,
-    }@args:
+  loadable = conflake'.filterLoadable options;
+
+  mkModule =
+    path:
     let
-      toEntry =
-        name: type:
-        let
-          path = dir + /${name};
-          skip =
-            (type == "directory" && maxDepth != null && depth >= maxDepth)
-            || (ignore (args // { inherit name path type; }));
-        in
-        if skip then
-          null
-        else if type == "directory" then
-          nameValuePair name (
-            loadDir' (
-              args
-              // {
-                depth = depth + 1;
-                dir = path;
-              }
-            )
-          )
-        else if type == "regular" && hasSuffix ".nix" name then
-          mkPair name path
-        else
-          null;
+      f =
+        { pkgs, ... }@args:
+        conflake.callWith moduleArgs path (
+          args
+          // (mkSystemArgs' pkgs)
+          // {
+            pkgs = (pkgsFor.${pkgs.stdenv.hostPlatform.system} or { }) // pkgs;
+          }
+        );
     in
-    pipe dir [
-      readDir
-      (mapAttrs toEntry)
-      attrValues
-      (remove null)
-      listToAttrs
-    ];
-
-  loadDir = root: loadDir' { inherit root; };
-
-  loadDirWithDefault =
-    {
-      load,
-      maxDepth ? null,
-      ...
-    }@args:
-    let
-      entries = loadDir' (
-        {
-          mkPair = k: nameValuePair (removeSuffix ".nix" k);
-        }
-        // (removeAttrs args [ "load" ])
-      );
-      transform =
-        {
-          entries,
-          depth ? 0,
-        }:
-        pipe entries [
-          (mapAttrs (
-            k: v:
-            if maxDepth != null && depth + 1 >= maxDepth then
-              null
-            else if isAttrs v then
-              if v ? default && isPath v.default then
-                nameValuePair k v.default
-              else
-                nameValuePair k (transform {
-                  entries = v;
-                  depth = depth + 1;
-                })
-            else
-              nameValuePair k v
-          ))
-          attrValues
-          (remove null)
-          listToAttrs
-          (filterAttrs (_: v: v != { }))
-        ];
-    in
-    pipe { inherit entries; } [
-      transform
-      (lib.mapAttrsRecursive (_: load))
-    ];
-
-  resolve =
-    src: entries: loaders:
-    pipe entries [
-      (filterAttrs (k: _: hasAttr k loaders))
-      (mapAttrs (
-        name: type: {
-          loader = loaders.${name};
-          args = {
-            inherit entries name type;
-            src = src + /${name};
-          };
-        }
-      ))
-      attrValues
-      (filter (x: x.loader.enable && x.loader.match x.args))
-      (map (x: [
-        (x.loader.load x.args)
-        (mkIf (x.loader.loaders != { }) (
-          pipe x.args.src [
-            readDir
-            (entries: resolve x.args.src entries x.loader.loaders)
-          ]
-        ))
-      ]))
-      flatten
-      mkMerge
-    ];
+    if config.moduleArgs.enable then
+      pipe f [
+        functionArgs
+        (x: x // { pkgs = true; })
+        (setFunctionArgs f)
+        (setDefaultModuleLocation path)
+      ]
+    else
+      path;
 in
 {
   options = {
     loaders = mkOption {
-      type = conflake.types.loaders;
+      type = lazyAttrsOf (optListOf conflake.types.loader);
       default = { };
+    };
+
+    loaderDefault = mkOption {
+      internal = true;
+      readOnly = true;
+      type = conflake.types.loader;
+      default =
+        { node, path, ... }:
+        loadDirWithDefault {
+          ignore = { node, ... }: isAttrs node && !(node ? "default.nix");
+          root = path;
+          tree = node;
+        };
+    };
+
+    loaderForModule = mkOption {
+      internal = true;
+      readOnly = true;
+      type = conflake.types.loader;
+      default =
+        { node, path, ... }:
+        loadDirWithDefault {
+          ignore = { node, ... }: isAttrs node && !(node ? "default.nix");
+          load = mkModule;
+          root = path;
+          tree = node;
+        };
     };
 
     loadIgnore = mkOption {
       type = functionTo types.bool;
-      default = { name, ... }: hasPrefix "." name || hasPrefix "_" name;
+      default = { name, ... }: hasPrefix "_" name;
     };
 
-    finalLoaders = mkOption {
-      internal = true;
-      readOnly = true;
-      type = conflake.types.loaders;
-    };
-
-    loadDir = mkOption {
-      internal = true;
-      readOnly = true;
-      type = functionTo (lazyAttrsOf types.unspecified);
-      default = loadDir;
-    };
-    loadDir' = mkOption {
-      internal = true;
-      readOnly = true;
-      type = functionTo (lazyAttrsOf types.unspecified);
-      default = loadDir';
-    };
-    loadDirWithDefault = mkOption {
-      internal = true;
-      readOnly = true;
-      type = functionTo (lazyAttrsOf types.unspecified);
-      default = loadDirWithDefault;
-    };
-
-    mkLoaderKey = mkOption {
-      internal = true;
-      readOnly = true;
-      type = functionTo types.str;
-      default = flip pipe [
-        (lib.path.removePrefix src)
-        (removePrefix "./")
-      ];
-    };
-
-    srcEntries = mkOption {
-      internal = true;
-      readOnly = true;
-      type = lazyAttrsOf types.str;
-      default = optionalAttrs (pathIsDirectory src) (readDir src);
+    matchers = mkOption {
+      type = conflake.types.matchers;
+      default = [ ];
     };
   };
 
-  config = mkMerge [
-    {
-      finalLoaders = pipe cfg [
-        attrsToList
-        (map (
-          { name, value }:
-          let
-            parts = subpath.components name;
-            loader = pipe parts [
-              tail
-              (concatMap (x: [ "loaders" ] ++ [ x ]))
-              (flip setAttrByPath value)
-            ];
-          in
-          {
-            "${head parts}" = loader;
-          }
-        ))
-        mkMerge
-      ];
-    }
-
-    (mkIf (config.loaders != { } && config.finalLoaders != { } && config.srcEntries != { }) {
-      final = resolve src config.srcEntries config.finalLoaders;
-    })
+  config = pipe loadable [
+    (mapAttrs (
+      attr: _:
+      mkIf (hasAttr attr cfg) (
+        pipe attr [
+          (x: cfg.${x})
+          (map (f: f { inherit attr; }))
+          mkMerge
+        ]
+      )
+    ))
   ];
 }

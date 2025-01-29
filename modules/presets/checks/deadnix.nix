@@ -1,9 +1,8 @@
 { config, lib, ... }:
 
 let
-  inherit (builtins) concatStringsSep;
+  inherit (builtins) concatStringsSep elem;
   inherit (lib)
-    escapeShellArg
     escapeShellArgs
     getExe
     mkEnableOption
@@ -12,6 +11,7 @@ let
     optionalString
     types
     ;
+  inherit (lib.types) listOf;
 
   cfg = config.presets.checks.deadnix;
 in
@@ -21,11 +21,11 @@ in
       default = false;
     };
     exclude = mkOption {
-      type = types.nullOr types.str;
-      default = null;
+      type = listOf types.str;
+      default = [ ];
     };
     files = mkOption {
-      type = types.listOf types.str;
+      type = listOf types.str;
       default = [ ];
     };
   };
@@ -33,11 +33,13 @@ in
   config = mkIf cfg.enable {
     checks.deadnix =
       pkgs:
-      concatStringsSep " " [
-        (getExe pkgs.deadnix)
-        (optionalString (cfg.exclude != null) "--exclude=${escapeShellArg cfg.exclude}")
-        "--fail"
-        (escapeShellArgs cfg.files)
-      ];
+      optionalString (!elem pkgs.stdenv.hostPlatform.system [ "x86_64-freebsd" ]) (
+        concatStringsSep " " [
+          (getExe pkgs.deadnix)
+          (optionalString (cfg.exclude != null) "--exclude ${escapeShellArgs cfg.exclude}")
+          "--fail"
+          (escapeShellArgs cfg.files)
+        ]
+      );
   };
 }

@@ -14,8 +14,6 @@ let
   inherit (lib.types) attrs lazyAttrsOf;
   inherit (conflake.types) optCallWith;
 
-  cfg = config.darwinConfigurations;
-
   isDarwin = x: x ? config.system.builder;
 
   mkDarwin =
@@ -31,37 +29,22 @@ let
           // cfg.specialArgs or { };
       }
     );
+
+  configs = mapAttrs (
+    hostname: cfg: if isDarwin cfg then cfg else mkDarwin hostname cfg
+  ) config.darwinConfigurations;
 in
 {
   options.darwinConfigurations = mkOption {
-    type = types.unspecified;
+    type = optCallWith moduleArgs (lazyAttrsOf (optCallWith moduleArgs attrs));
     default = { };
   };
 
   config = {
-    final =
-      { config, ... }:
-      let
-        configs = mapAttrs (
-          hostname: cfg: if isDarwin cfg then cfg else mkDarwin hostname cfg
-        ) config.darwinConfigurations;
-      in
-      {
-        options.darwinConfigurations = mkOption {
-          type = optCallWith moduleArgs (lazyAttrsOf (optCallWith moduleArgs attrs));
-          default = { };
-        };
-
-        config = {
-          darwinConfigurations = cfg;
-
-          outputs = mkIf (config.darwinConfigurations != { }) {
-            darwinConfigurations = configs;
-          };
-        };
-      };
+    outputs = mkIf (config.darwinConfigurations != { }) {
+      darwinConfigurations = configs;
+    };
 
     nixDir.aliases.darwinConfigurations = [ "darwin" ];
-    loaders = config.nixDir.mkHostLoader "darwinConfigurations";
   };
 }

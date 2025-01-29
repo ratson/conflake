@@ -2,7 +2,6 @@
   config,
   lib,
   conflake,
-  genSystems,
   src,
   ...
 }:
@@ -17,20 +16,12 @@ let
     optionalString
     types
     ;
+  inherit (config) genSystems;
+  inherit (config.src) has;
 
   cfg = config.presets.checks.editorconfig;
 
   platforms = lib.platforms.darwin ++ lib.platforms.linux;
-
-  mkArgs =
-    entries:
-    if (cfg.args != null) then
-      cfg.args
-    else
-      # By default, high false-positive flags are disabled.
-      optionalString (
-        (entries.".ecrc" or "") != "regular"
-      ) "-disable-indent-size -disable-max-line-length";
 in
 {
   options.presets.checks.editorconfig = {
@@ -38,31 +29,25 @@ in
       default = config.presets.checks.enable;
     };
     args = mkOption {
-      type = types.nullOr types.str;
-      default = null;
+      type = types.str;
+      # By default, high false-positive flags are disabled.
+      default = optionalString (!(has ".ecrc")) "-disable-indent-size -disable-max-line-length";
     };
   };
 
-  config = mkIf cfg.enable {
-    loaders.".editorconfig" = {
-      match = conflake.matchers.file;
-      load =
-        { entries, ... }:
-        {
-          outputs = {
-            checks = genSystems (
-              pkgs:
-              mkIf (elem pkgs.stdenv.hostPlatform.system platforms) {
-                editorconfig = conflake.mkCheck "editorconfig" pkgs src (
-                  concatStringsSep " " [
-                    (getExe pkgs.editorconfig-checker)
-                    (mkArgs entries)
-                  ]
-                );
-              }
-            );
-          };
-        };
+  config = mkIf (cfg.enable && has ".editorconfig") {
+    loaders.outputs = _: {
+      checks = genSystems (
+        pkgs:
+        mkIf (elem pkgs.stdenv.hostPlatform.system platforms) {
+          editorconfig = conflake.mkCheck "editorconfig" pkgs src (
+            concatStringsSep " " [
+              (getExe pkgs.editorconfig-checker)
+              cfg.args
+            ]
+          );
+        }
+      );
     };
   };
 }
