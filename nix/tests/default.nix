@@ -601,7 +601,7 @@ in
   ];
 
   legacyPackages-emacsPackages-loader = [
-    (conflake fixtures.emacsPackages { })
+    (conflake fixtures.emacsPackages { pname = "stop-inf-recursion"; })
     (x: [
       (attrNames x.legacyPackages.x86_64-linux)
       (hasPrefix "awesome-emacs-with-packages-" x.packages.x86_64-linux.default.name)

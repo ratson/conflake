@@ -5,6 +5,7 @@
   conflake,
   conflake',
   moduleArgs,
+  src,
   ...
 }:
 
@@ -14,6 +15,7 @@ let
     mapAttrs
     parseDrvName
     tryEval
+    warn
     ;
   inherit (lib)
     defaultTo
@@ -111,9 +113,16 @@ in
                   (import inputs.nixpkgs {
                     inherit (prev.stdenv.hostPlatform) system;
                     inherit (config.nixpkgs) config;
-                    overlays = [
-                      (final: prev: genPkgs final prev pkgDefs)
-                    ];
+                    overlays =
+                      warn ''
+                        Getting default package name with overlays will be removed
+                        due to the performance cost on nixpkgs re-evaluation and
+                        may cause infinite recursion.
+                        Set `pname` explicitly to stop this in ${src}/flake.nix
+                      '' config.withOverlays
+                      ++ [
+                        (final: prev: genPkgs final prev pkgDefs)
+                      ];
                   }).default
                 )
               ]
