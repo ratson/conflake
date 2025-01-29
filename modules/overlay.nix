@@ -10,7 +10,12 @@
 }:
 
 let
-  inherit (builtins) isList isPath;
+  inherit (builtins)
+    isList
+    isPath
+    mapAttrs
+    warn
+    ;
   inherit (lib) mkOption mkOrder optionalAttrs;
   inherit (lib.types) listOf oneOf str;
   inherit (config) mkSystemArgs';
@@ -43,27 +48,36 @@ in
       getLicense =
         license: final.lib.licenses.${license} or (final.lib.meta.getLicenseFromSpdxId license);
     in
-    (mkSystemArgs' prev)
-    // {
-      inherit
-        conflake
-        inputs
-        moduleArgs
-        outputs
-        src
-        system
-        ;
+    (mapAttrs (
+      k:
+      warn ''
+        Usage of `pkgs.${k}` will soon be removed, use `{ pkgs, ${k}, ...}` instead.
+        If you have already doing so, ignore this warnning.
+      ''
+    ))
+      (
+        (mkSystemArgs' prev)
+        // {
+          inherit
+            conflake
+            inputs
+            moduleArgs
+            outputs
+            src
+            system
+            ;
 
-      defaultMeta =
-        {
-          platforms = systems;
+          defaultMeta =
+            {
+              platforms = systems;
+            }
+            // optionalAttrs (description != null) {
+              inherit description;
+            }
+            // optionalAttrs (license != null) {
+              license = if isList license then map getLicense license else getLicense license;
+            };
         }
-        // optionalAttrs (description != null) {
-          inherit description;
-        }
-        // optionalAttrs (license != null) {
-          license = if isList license then map getLicense license else getLicense license;
-        };
-    }
+      )
   );
 }

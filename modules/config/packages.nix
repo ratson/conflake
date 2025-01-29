@@ -135,7 +135,11 @@ in
           (mergeAttrs (
             optionalAttrs (pkgDefs ? default) {
               inherit default;
-              ${defaultPkgName} = default;
+              ${defaultPkgName} = warn ''
+                Auto derive package name from default package will soon be
+                removed.
+                Package `${defaultPkgName}` should be exported explicitly.
+              '' default;
             }
           ))
         ];
