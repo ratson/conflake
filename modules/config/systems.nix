@@ -67,21 +67,15 @@ in
       default =
         fn:
         config.genSystems' (
-          { pkgs, ... }@args:
+          { callWithArgs }:
           pipe fn [
-            (callWith pkgs)
-            (callWith args)
-            (callWith { inherit (config) defaultMeta; })
+            callWithArgs
             (f: f { })
             (mapAttrs (
               name: f:
               pipe f [
-                (callWith pkgs)
-                (callWith args)
-                (callWith {
-                  inherit name;
-                  inherit (config) defaultMeta;
-                })
+                callWithArgs
+                (callWith { inherit name; })
                 (f: f { })
               ]
             ))
@@ -104,9 +98,21 @@ in
           system:
           let
             pkgs = config.pkgsFor.${system};
-            args = moduleArgs // mkSystemArgs system // { inherit pkgs; };
+            callWithArgs = flip pipe [
+              (callWith pkgs)
+              (callWith moduleArgs)
+              (callWith (mkSystemArgs system))
+              (callWith {
+                inherit pkgs;
+                inherit (config) defaultMeta;
+              })
+            ];
           in
-          callWith pkgs f args
+          pipe f [
+            callWithArgs
+            (callWith { inherit callWithArgs; })
+            (f: f { })
+          ]
         );
     };
     mkSystemArgs' = mkOption {
