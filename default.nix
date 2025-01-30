@@ -1,13 +1,10 @@
 inputs:
 
 let
-  inherit (builtins) intersectAttrs;
   inherit (inputs.nixpkgs) lib;
   inherit (lib)
     evalModules
     fix
-    functionArgs
-    isFunction
     mkDefault
     setDefaultModuleLocation
     ;
@@ -61,21 +58,6 @@ let
         mkOutputs;
   };
 
-  callWith =
-    autoArgs: fn: args:
-    let
-      f = if isFunction fn then fn else import fn;
-      fargs = functionArgs f;
-      allArgs = intersectAttrs fargs autoArgs // args;
-    in
-    f allArgs;
-
-  callWith' =
-    mkAutoArgs: fn: args:
-    callWith (mkAutoArgs args) fn args;
-
-  conflake = (import ./lib/default.nix { inherit lib; }).extend (
-    _: _: { inherit callWith callWith' mkOutputs; }
-  );
+  conflake = (import ./lib/default.nix { inherit lib; }).extend (_: _: { inherit mkOutputs; });
 in
 conflake

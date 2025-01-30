@@ -7,6 +7,8 @@ lib.makeExtensible (self: {
 
   flake = import ./flake.nix { inherit lib; };
 
+  function = import ./function.nix { inherit lib; };
+
   matchers = import ./matchers.nix { inherit lib; };
 
   types = import ./types.nix {
@@ -17,6 +19,7 @@ lib.makeExtensible (self: {
   inherit (self.attrsets) selectAttr prefixAttrs prefixAttrsCond;
   inherit (self.filesystem) collectPaths;
   inherit (self.flake) mkVersion mkVersion';
+  inherit (self.function) callWith;
 
   mkCheck =
     name: pkgs: src: cmd:
