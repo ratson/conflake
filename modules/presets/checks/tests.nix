@@ -39,6 +39,7 @@ let
   inherit (lib.generators) toPretty;
   inherit (lib.path) subpath;
   inherit (conflake) matchers prefixAttrsCond;
+  inherit (conflake.debug) isAttrTest;
 
   cfg = config.presets.checks.tests;
 
@@ -52,11 +53,7 @@ let
   };
 
   withPrefix =
-    attrs:
-    if cfg.prefix != "" then
-      prefixAttrsCond (_: v: v ? "expr" && v ? "expected") cfg.prefix attrs
-    else
-      attrs;
+    attrs: if cfg.prefix != "" then prefixAttrsCond (_: isAttrTest) cfg.prefix attrs else attrs;
 
   toResult =
     path: cases:

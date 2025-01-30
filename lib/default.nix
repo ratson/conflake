@@ -3,6 +3,8 @@
 lib.makeExtensible (self: {
   attrsets = import ./attrsets.nix { inherit lib; };
 
+  debug = import ./debug.nix { inherit lib; };
+
   filesystem = import ./filesystem.nix { inherit lib; };
 
   flake = import ./flake.nix { inherit lib; };
