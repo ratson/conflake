@@ -34,17 +34,16 @@ let
     types
     ;
   inherit (lib.types)
-    lazyAttrsOf
     listOf
     oneOf
     str
     uniq
     ;
+  inherit (conflake) callWith;
   inherit (conflake.types)
     nullable
     optFunctionTo
     overlay
-    packageDef
     ;
 
   genPkg =
@@ -69,18 +68,16 @@ let
     mapAttrs (name: genPkg final prev name) pkgs;
 
   getPkgDefs = pkgs: config.packages (moduleArgs // { inherit (pkgs) system; });
-
-  packages = config.genSystems (pkgs: mapAttrs (k: _: pkgs.${k}) (getPkgDefs pkgs));
 in
 {
   options = {
     package = mkOption {
-      type = nullable packageDef;
+      type = nullable conflake.types.package;
       default = null;
     };
 
     packages = mkOption {
-      type = nullable (optFunctionTo (lazyAttrsOf packageDef));
+      type = nullable (optFunctionTo conflake.types.packages);
       default = null;
     };
 
@@ -183,7 +180,26 @@ in
           ))
         ];
 
-      outputs = { inherit packages; };
+      outputs.packages = config.genSystems' (
+        { pkgs, ... }@args:
+        pipe config.packages [
+          (callWith pkgs)
+          (callWith args)
+          (f: f args)
+          (mapAttrs (
+            name: f:
+            pipe f [
+              (callWith pkgs)
+              (callWith args)
+              (callWith {
+                inherit name;
+                inherit (config) defaultMeta;
+              })
+              (f: f { })
+            ]
+          ))
+        ]
+      );
 
       devShell.inputsFrom =
         pkgs:

@@ -256,13 +256,9 @@ fix (
         };
       };
 
-    packageDef = mkOptionType {
-      name = "packageDef";
-      description = "package definition";
-      descriptionClass = "noun";
-      check = isFunction;
-      merge = mergeOneOption;
-    };
+    package = functionTo types.package;
+
+    packages = lazyAttrsOf types'.package;
 
     path = types.path // {
       check = isPath;

@@ -3,6 +3,7 @@
   lib,
   inputs,
   conflake,
+  moduleArgs,
   ...
 }:
 
@@ -23,13 +24,14 @@ let
     package
     uniq
     ;
-  inherit (conflake) selectAttr;
+  inherit (conflake) callWith selectAttr;
 
   cfg = config.systems;
 
   genSystems = f: genAttrs cfg (system: f config.pkgsFor.${system});
 
   mkSystemArgs = system: {
+    inherit system;
     inputs' = mapAttrs (_: selectAttr system) inputs;
     outputs' = selectAttr system config.outputs;
   };
@@ -62,6 +64,21 @@ in
       readOnly = true;
       type = types.unspecified;
       default = genSystems;
+    };
+    genSystems' = mkOption {
+      internal = true;
+      readOnly = true;
+      type = types.unspecified;
+      default =
+        f:
+        genAttrs cfg (
+          system:
+          let
+            pkgs = config.pkgsFor.${system};
+            args = moduleArgs // mkSystemArgs system // { inherit pkgs; };
+          in
+          callWith pkgs f args
+        );
     };
     mkSystemArgs' = mkOption {
       internal = true;
