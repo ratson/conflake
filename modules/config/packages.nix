@@ -39,7 +39,6 @@ let
     str
     uniq
     ;
-  inherit (conflake) callWith;
   inherit (conflake.types)
     nullable
     optFunctionTo
@@ -180,26 +179,7 @@ in
           ))
         ];
 
-      outputs.packages = config.genSystems' (
-        { pkgs, ... }@args:
-        pipe config.packages [
-          (callWith pkgs)
-          (callWith args)
-          (f: f args)
-          (mapAttrs (
-            name: f:
-            pipe f [
-              (callWith pkgs)
-              (callWith args)
-              (callWith {
-                inherit name;
-                inherit (config) defaultMeta;
-              })
-              (f: f { })
-            ]
-          ))
-        ]
-      );
+      outputs.packages = config.callSystemsWithAttrs config.packages;
 
       devShell.inputsFrom =
         pkgs:

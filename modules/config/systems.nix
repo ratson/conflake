@@ -13,6 +13,7 @@ let
     flip
     genAttrs
     mkOption
+    pipe
     types
     ;
   inherit (lib.types)
@@ -58,6 +59,34 @@ in
           inherit (config.nixpkgs) config overlays;
         }
       );
+    };
+    callSystemsWithAttrs = mkOption {
+      internal = true;
+      readOnly = true;
+      type = types.unspecified;
+      default =
+        fn:
+        config.genSystems' (
+          { pkgs, ... }@args:
+          pipe fn [
+            (callWith pkgs)
+            (callWith args)
+            (callWith { inherit (config) defaultMeta; })
+            (f: f { })
+            (mapAttrs (
+              name: f:
+              pipe f [
+                (callWith pkgs)
+                (callWith args)
+                (callWith {
+                  inherit name;
+                  inherit (config) defaultMeta;
+                })
+                (f: f { })
+              ]
+            ))
+          ]
+        );
     };
     genSystems = mkOption {
       internal = true;
