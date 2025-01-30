@@ -13,30 +13,34 @@ let
     composeManyExtensions
     filter
     fix
+    flip
     functionArgs
     getFiles
     getValues
-    last
+    id
     isDerivation
     isFunction
     isStringLike
+    last
+    mergeAttrs
     mergeDefinitions
     mkOption
     mkOptionType
     pipe
+    setFunctionArgs
     showFiles
     showOption
     singleton
     sublist
     throwIf
     types
+    zipAttrsWith
     ;
   inherit (lib.types)
     bool
     coercedTo
     defaultFunctor
     either
-    functionTo
     lazyAttrsOf
     lines
     listOf
@@ -61,6 +65,7 @@ fix (
       devShell
       drv
       function
+      functionTo
       matcher
       nullable
       optFunctionTo
@@ -105,8 +110,7 @@ fix (
 
     coercedTo' =
       coercedType: coerceFunc: finalType:
-      (coercedTo coercedType coerceFunc finalType)
-      // {
+      mergeAttrs (coercedTo coercedType coerceFunc finalType) {
         merge =
           loc: defs:
           let
@@ -173,6 +177,29 @@ fix (
       merge = mergeOneOption;
     };
 
+    /**
+      Like `lib.types.functionTo`, but keep `functionArgs`.
+    */
+    functionTo = flip pipe [
+      types.functionTo
+      (
+        super:
+        mergeAttrs super {
+          merge =
+            loc: defs:
+            let
+              fargs = pipe defs [
+                (map (def: def.value))
+                (map functionArgs)
+                (zipAttrsWith (_: all id))
+              ];
+              f = super.merge loc defs;
+            in
+            if fargs == { } then f else setFunctionArgs f fargs;
+        }
+      )
+    ];
+
     legacyPackages = lazyAttrsOf (either (lazyAttrsOf raw) raw);
 
     loader = functionTo unspecified;
@@ -211,8 +238,7 @@ fix (
     # This adds a type with that merge semantics.
     nullable =
       elemType:
-      (nullOr elemType)
-      // {
+      mergeAttrs (nullOr elemType) {
         name = "nullable";
         description = "nullable ${
           optionDescriptionPhrase (class: class == "noun" || class == "composite") elemType
@@ -258,6 +284,7 @@ fix (
         };
       in
       elemType: coercedTo nonFunction (x: _: x) (functionTo elemType);
+
     optListOf = elemType: coercedTo elemType singleton (listOf elemType);
 
     outputs = lazyAttrsOf outputsValue;
