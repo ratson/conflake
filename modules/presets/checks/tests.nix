@@ -39,13 +39,13 @@ let
   inherit (lib.generators) toPretty;
   inherit (lib.path) subpath;
   inherit (conflake) matchers prefixAttrsCond;
-  inherit (conflake.debug) isAttrTest;
+  inherit (conflake.debug) isAttrTest mkTestFromList;
 
   cfg = config.presets.checks.tests;
 
   tree = config.src.get cfg.src;
 
-  mkSuite = mapAttrs (_: v: if isList v then conflake.types.testVal v else v);
+  mkSuite = mapAttrs (_: v: if isList v then mkTestFromList v else v);
 
   placeholder = "flake.nix#tests";
   placeholderTree = optionalAttrs (config.tests != null) {

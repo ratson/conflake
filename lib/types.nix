@@ -31,8 +31,6 @@ let
     showFiles
     showOption
     singleton
-    sublist
-    throwIf
     types
     zipAttrsWith
     ;
@@ -55,6 +53,7 @@ let
     ;
   inherit (lib.options) mergeEqualOption mergeOneOption;
   inherit (lib') mkCheck;
+  inherit (lib'.debug) mkTestFromList;
 in
 fix (
   types':
@@ -341,14 +340,7 @@ fix (
       }
     );
 
-    testVal =
-      v:
-      throwIf (length v < 2) "list should have at least 2 elements" {
-        expr = pipe (head v) (sublist 1 ((length v) - 2) v);
-        expected = last v;
-      };
-
-    test = coercedTo (nonEmptyListOf raw) types'.testVal (lazyAttrsOf raw);
+    test = coercedTo (nonEmptyListOf raw) mkTestFromList (lazyAttrsOf raw);
 
     tests = lazyAttrsOf test;
   }
