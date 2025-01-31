@@ -17,7 +17,6 @@ let
     mkOption
     pipe
     ;
-  inherit (conflake) callWith;
   inherit (conflake.types) nullable optCallWith;
 
   cfg = config.devShells;
@@ -42,20 +41,20 @@ in
 
     (mkIf (config.devShells != { }) {
       outputs.devShells = config.genSystems' (
-        { pkgs }:
+        { mkShell, callWithArgs }:
         pipe cfg [
           (mapAttrs (
             _:
             flip pipe [
-              (callWith pkgs)
+              callWithArgs
               (f: f { })
               (
                 cfg:
                 defaultTo (pipe cfg [
-                  (mapAttrs (_: v: if isFunction v then callWith pkgs v { } else v))
+                  (mapAttrs (_: v: if isFunction v then callWithArgs v { } else v))
                   (
                     cfg':
-                    pkgs.mkShell.override { inherit (cfg') stdenv; } (
+                    mkShell.override { inherit (cfg') stdenv; } (
                       removeAttrs cfg' [
                         "overrideShell"
                         "stdenv"

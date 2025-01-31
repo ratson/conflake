@@ -68,7 +68,7 @@ in
   config = mkMerge [
     (mkIf cfg.nix {
       devShell.packages =
-        pkgs:
+        { pkgs }:
         optionals (hasNixfmt pkgs) [
           pkgs.nixfmt-rfc-style
         ];
@@ -80,7 +80,7 @@ in
     })
     (mkIf (cfg.json || cfg.markdown || cfg.yaml) {
       devShell.packages =
-        pkgs:
+        { pkgs }:
         optionals (hasNodejs pkgs) [
           pkgs.nodePackages.prettier
         ];
