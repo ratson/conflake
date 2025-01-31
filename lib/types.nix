@@ -52,7 +52,7 @@ let
     unspecified
     ;
   inherit (lib.options) mergeEqualOption mergeOneOption;
-  inherit (lib') mkCheck;
+  inherit (lib') callWith mkCheck;
   inherit (lib'.debug) mkTestFromList;
 in
 fix (
@@ -78,6 +78,10 @@ fix (
       ;
   in
   {
+    bundler = functionTo unspecified;
+
+    bundlers = optFunctionTo (lazyAttrsOf types'.bundler);
+
     check =
       src:
       mkOptionType {
@@ -90,7 +94,8 @@ fix (
         descriptionClass = "composite";
         check = x: isFunction x || drv.check x || stringLike.check x;
         merge =
-          loc: defs: pkgs:
+          loc: defs:
+          { pkgs }:
           let
             coerceFunc = mkCheck (last loc) pkgs src;
             targetType = coercedTo' stringLike coerceFunc drv;
@@ -98,14 +103,14 @@ fix (
           pipe defs [
             (map (fn: {
               inherit (fn) file;
-              value = if isFunction fn.value then fn.value pkgs else fn.value;
+              value = if isFunction fn.value then callWith pkgs fn.value { } else fn.value;
             }))
             (mergeDefinitions loc targetType)
             (x: x.mergedValue)
           ];
       };
 
-    checks = src: lazyAttrsOf (check src);
+    checks = src: optFunctionTo (lazyAttrsOf (check src));
 
     coercedTo' =
       coercedType: coerceFunc: finalType:

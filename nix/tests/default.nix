@@ -355,7 +355,7 @@ in
   }) (f: import f.packages.x86_64-linux.default);
 
   package-no-named-args = test (conflake' {
-    package = pkgs: pkgs.hello;
+    package = { pkgs }: pkgs.hello;
   }) (f: f.packages.aarch64-linux.default.pname == "hello");
 
   package-prevent-recursion = test (conflake' {
@@ -547,7 +547,7 @@ in
       inputs = {
         inherit nixpkgs;
       };
-      legacyPackages = pkgs: pkgs;
+      legacyPackages = { pkgs }: pkgs;
     })
     (x: x.legacyPackages.x86_64-linux.hello)
     nixpkgs.legacyPackages.x86_64-linux.hello
@@ -558,7 +558,7 @@ in
       inputs = {
         inherit nixpkgs;
       };
-      legacyPackages = pkgs: nixpkgs.legacyPackages.${pkgs.system};
+      legacyPackages = { pkgs }: nixpkgs.legacyPackages.${pkgs.system};
     })
     (x: x.legacyPackages.x86_64-linux.hello)
     nixpkgs.legacyPackages.x86_64-linux.hello
@@ -569,7 +569,7 @@ in
       inputs = {
         inherit nixpkgs;
       };
-      legacyPackages = pkgs: { };
+      legacyPackages = _: { };
     })
     (x: x.legacyPackages.x86_64-linux)
     { }
@@ -577,7 +577,7 @@ in
 
   legacyPackages-emacsPackages-empty = [
     (conflake' {
-      legacyPackages = pkgs: {
+      legacyPackages = _: {
         emacsPackages = { };
       };
       package =
@@ -618,7 +618,7 @@ in
 
   devShell = test (conflake' {
     devShell = {
-      inputsFrom = pkgs: [ pkgs.emacs ];
+      inputsFrom = { pkgs }: [ pkgs.emacs ];
       packages = pkgs: [ pkgs.coreutils ];
       shellHook = ''
         echo Welcome to example shell!
@@ -866,7 +866,7 @@ in
       inputs = {
         inherit nixpkgs;
       };
-      app = pkgs: "${pkgs.hello}/bin/hello";
+      app = { pkgs }: "${pkgs.hello}/bin/hello";
     })
     (x: x.apps.x86_64-linux.default)
     {
@@ -881,11 +881,13 @@ in
         inherit nixpkgs;
       };
       apps = {
-        emacs = pkgs: "${pkgs.emacs}/bin/emacs";
-        bash = pkgs: {
-          type = "app";
-          program = "${pkgs.bash}/bin/bash";
-        };
+        emacs = { pkgs }: "${pkgs.emacs}/bin/emacs";
+        bash =
+          { pkgs }:
+          {
+            type = "app";
+            program = "${pkgs.bash}/bin/bash";
+          };
       };
     })
     (x: x.apps.x86_64-linux)
@@ -991,7 +993,7 @@ in
 
   formatter = [
     (conflake' {
-      formatter = pkgs: pkgs.hello;
+      formatter = { pkgs }: pkgs.hello;
     })
     (x: isDerivation x.formatter.x86_64-linux)
     true
@@ -999,7 +1001,7 @@ in
 
   formatters = [
     (conflake' {
-      devShell.packages = pkgs: [ pkgs.rustfmt ];
+      devShell.packages = { pkgs }: [ pkgs.rustfmt ];
       formatters = {
         "*.rs" = "rustfmt";
       };

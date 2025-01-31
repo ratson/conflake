@@ -43,6 +43,8 @@ let
     overlay
     ;
 
+  cfg = config.packages;
+
   genPkg =
     final: prev: name: pkg:
     let
@@ -64,7 +66,7 @@ let
     final: prev: pkgs:
     mapAttrs (name: genPkg final prev name) pkgs;
 
-  getPkgDefs = pkgs: config.packages (moduleArgs // { inherit (pkgs) system; });
+  getPkgDefs = pkgs: cfg (moduleArgs // { inherit (pkgs) system; });
 in
 {
   options = {
@@ -118,7 +120,7 @@ in
       internal = true;
       readOnly = true;
       type = lazyAttrsOf (lazyAttrsOf types.package);
-      default = config.callSystemsWithAttrs config.packages;
+      default = config.callSystemsWithAttrs cfg;
     };
     packageOverlay = mkOption {
       internal = true;
@@ -132,7 +134,7 @@ in
       packages.default = config.package;
     })
 
-    (mkIf (config.packages != null) {
+    (mkIf (cfg != null) {
       packageOverlay =
         final: prev:
         let

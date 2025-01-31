@@ -8,13 +8,13 @@
 
 let
   inherit (lib) mkIf mkOption;
-  inherit (conflake.types) nullable optFunctionTo;
+  inherit (conflake.types) nullable;
 
   cfg = config.checks;
 in
 {
   options.checks = mkOption {
-    type = nullable (optFunctionTo (conflake.types.checks src));
+    type = nullable (conflake.types.checks src);
     default = null;
   };
 

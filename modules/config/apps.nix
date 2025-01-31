@@ -80,14 +80,15 @@ let
         descriptionClass = "composite";
         check = x: isFunction x || app.check x || stringLike.check x;
         merge =
-          loc: defs: pkgs:
+          loc: defs:
+          { pkgs }:
           let
             targetType = coercedTo stringLike (mkApp (last loc) pkgs) app;
           in
           (mergeDefinitions loc targetType (
             map (fn: {
               inherit (fn) file;
-              value = if isFunction fn.value then fn.value pkgs else fn.value;
+              value = if isFunction fn.value then conflake.callWith pkgs fn.value { } else fn.value;
             }) defs
           )).mergedValue;
         inherit (app) getSubOptions getSubModules;
