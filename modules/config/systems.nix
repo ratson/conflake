@@ -29,8 +29,6 @@ let
 
   cfg = config.systems;
 
-  genSystems = f: genAttrs cfg (system: f config.pkgsFor.${system});
-
   mkSystemArgs = system: {
     inherit system;
     inputs' = mapAttrs (_: selectAttr system) inputs;
@@ -81,12 +79,6 @@ in
             ))
           ]
         );
-    };
-    genSystems = mkOption {
-      internal = true;
-      readOnly = true;
-      type = types.unspecified;
-      default = genSystems;
     };
     genSystems' = mkOption {
       internal = true;

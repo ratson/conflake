@@ -15,25 +15,25 @@ let
     mkOption
     pipe
     ;
-  inherit (lib.types) functionTo;
-  inherit (config) genSystems;
   inherit (conflake.types) nullable;
+
+  cfg = config.legacyPackages;
 in
 {
   options.legacyPackages = mkOption {
-    type = nullable (functionTo conflake.types.legacyPackages);
+    type = nullable conflake.types.legacyPackages;
     default = null;
   };
 
   config = mkMerge [
-    (mkIf (config.legacyPackages != null) {
-      outputs.legacyPackages = genSystems config.legacyPackages;
+    (mkIf (cfg != null) {
+      outputs.legacyPackages = config.genSystems' cfg;
     })
 
     {
       nixDir.loaders.legacyPackages =
         { node, path, ... }:
-        pkgs:
+        { pkgs }:
         conflake'.loadDirWithDefault {
           root = path;
           tree = node;

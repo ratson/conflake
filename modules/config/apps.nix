@@ -6,7 +6,7 @@
 }:
 
 let
-  inherit (builtins) mapAttrs match storeDir;
+  inherit (builtins) match storeDir;
   inherit (lib)
     defaultFunctor
     fix
@@ -26,12 +26,13 @@ let
     pathInStore
     submoduleWith
     ;
-  inherit (config) genSystems;
   inherit (conflake.types)
     nullable
     optFunctionTo
     stringLike
     ;
+
+  cfg = config.apps;
 
   isStorePath = s: match "${storeDir}/[^.][^ \n]*" s != null;
 
@@ -118,8 +119,8 @@ in
       apps.default = config.app;
     })
 
-    (mkIf (config.apps != null) {
-      outputs.apps = genSystems (pkgs: mapAttrs (_: v: v pkgs) (config.apps pkgs));
+    (mkIf (cfg != null) {
+      outputs.apps = config.callSystemsWithAttrs cfg;
     })
   ];
 }

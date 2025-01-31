@@ -80,7 +80,7 @@ in
   };
 
   config = mkMerge [
-    (mkIf (config.formatter != null) {
+    (mkIf (cfg != null) {
       outputs.formatter = genSystems' cfg;
     })
 

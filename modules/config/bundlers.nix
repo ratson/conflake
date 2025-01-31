@@ -14,12 +14,13 @@ let
     mkOption
     ;
   inherit (lib.types) lazyAttrsOf;
-  inherit (config) genSystems;
   inherit (conflake.types)
     function
     nullable
     optFunctionTo
     ;
+
+  cfg = config.bundlers;
 
   wrapBundler =
     pkgs: bundler: drv:
@@ -44,8 +45,8 @@ in
       bundlers.default = config.bundler;
     })
 
-    (mkIf (config.bundlers != null) {
-      outputs.bundlers = genSystems (pkgs: mapAttrs (_: wrapBundler pkgs) (config.bundlers pkgs));
+    (mkIf (cfg != null) {
+      outputs.bundlers = config.genSystems' ({ pkgs }: mapAttrs (_: wrapBundler pkgs) (cfg pkgs));
     })
   ];
 }

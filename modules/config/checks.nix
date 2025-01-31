@@ -9,6 +9,8 @@
 let
   inherit (lib) mkIf mkOption;
   inherit (conflake.types) nullable optFunctionTo;
+
+  cfg = config.checks;
 in
 {
   options.checks = mkOption {
@@ -16,7 +18,7 @@ in
     default = null;
   };
 
-  config = mkIf (config.checks != null) {
-    outputs.checks = config.callSystemsWithAttrs config.checks;
+  config = mkIf (cfg != null) {
+    outputs.checks = config.callSystemsWithAttrs cfg;
   };
 }
