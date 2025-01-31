@@ -10,29 +10,17 @@ let
   inherit (builtins) mapAttrs;
   inherit (lib)
     defaultTo
+    flip
     isFunction
     mkIf
     mkMerge
     mkOption
     pipe
     ;
-  inherit (config) genSystems;
+  inherit (conflake) callWith;
   inherit (conflake.types) nullable optCallWith;
 
-  genDevShell =
-    pkgs: cfg:
-    defaultTo (pipe cfg [
-      (mapAttrs (_: v: if isFunction v then v pkgs else v))
-      (
-        cfg':
-        pkgs.mkShell.override { inherit (cfg') stdenv; } (
-          removeAttrs cfg' [
-            "overrideShell"
-            "stdenv"
-          ]
-        )
-      )
-    ]) cfg.overrideShell;
+  cfg = config.devShells;
 in
 {
   options = {
@@ -53,7 +41,33 @@ in
     })
 
     (mkIf (config.devShells != { }) {
-      outputs.devShells = genSystems (pkgs: mapAttrs (_: v: genDevShell pkgs (v pkgs)) config.devShells);
+      outputs.devShells = config.genSystems' (
+        { pkgs }:
+        pipe cfg [
+          (mapAttrs (
+            _:
+            flip pipe [
+              (callWith pkgs)
+              (f: f { })
+              (
+                cfg:
+                defaultTo (pipe cfg [
+                  (mapAttrs (_: v: if isFunction v then v pkgs else v))
+                  (
+                    cfg':
+                    pkgs.mkShell.override { inherit (cfg') stdenv; } (
+                      removeAttrs cfg' [
+                        "overrideShell"
+                        "stdenv"
+                      ]
+                    )
+                  )
+                ]) cfg.overrideShell
+              )
+            ]
+          ))
+        ]
+      );
     })
   ];
 }
