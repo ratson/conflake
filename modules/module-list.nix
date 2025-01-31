@@ -4,7 +4,7 @@
   ./config/checks.nix
   ./config/conflakeModules.nix
   ./config/devShells.nix
-  ./config/formatters.nix
+  ./config/formatter.nix
   ./config/functor.nix
   ./config/inputs.nix
   ./config/legacyPackages.nix

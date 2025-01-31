@@ -26,6 +26,8 @@ let
   inherit (config) genSystems';
   inherit (conflake.types) nullable optFunctionTo;
 
+  cfg = config.formatter;
+
   mkFormatter =
     { pkgs, callWithArgs }:
     let
@@ -73,7 +75,7 @@ in
 
   config = mkMerge [
     (mkIf (config.formatter != null) {
-      outputs.formatter = genSystems' config.formatter;
+      outputs.formatter = genSystems' cfg;
     })
 
     (mkIf (config.formatters != null) {
