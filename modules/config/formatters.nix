@@ -22,15 +22,15 @@ let
     pipe
     types
     ;
-  inherit (lib.types) functionTo lazyAttrsOf;
-  inherit (config) genSystems;
+  inherit (lib.types) lazyAttrsOf;
+  inherit (config) genSystems';
   inherit (conflake.types) nullable optFunctionTo;
 
   mkFormatter =
-    pkgs:
+    { pkgs, callWithArgs }:
     let
       inherit (pkgs.stdenv.hostPlatform) system;
-      formatters = config.formatters pkgs;
+      formatters = callWithArgs config.formatters { };
       fullContext = all hasContext (attrValues formatters);
       packages = optionals (config.devShell != null) (config.devShell pkgs).packages pkgs;
       caseArms = pipe formatters [
@@ -62,7 +62,7 @@ in
 {
   options = {
     formatter = mkOption {
-      type = nullable (functionTo types.package);
+      type = nullable conflake.types.package;
       default = null;
     };
     formatters = mkOption {
@@ -73,12 +73,12 @@ in
 
   config = mkMerge [
     (mkIf (config.formatter != null) {
-      outputs.formatter = genSystems config.formatter;
+      outputs.formatter = genSystems' config.formatter;
     })
 
     (mkIf (config.formatters != null) {
       outputs.formatter = pipe mkFormatter [
-        genSystems
+        genSystems'
         mkDefault
       ];
     })

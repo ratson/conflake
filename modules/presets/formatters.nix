@@ -36,7 +36,7 @@ let
     enable: exts:
     mkIf enable {
       formatters =
-        pkgs:
+        { pkgs }:
         optionalAttrs (hasNodejs pkgs) (
           pipe exts [
             (x: if isList x then x else [ x ])
@@ -73,7 +73,7 @@ in
           pkgs.nixfmt-rfc-style
         ];
       formatters =
-        pkgs:
+        { pkgs }:
         optionalAttrs (hasNixfmt pkgs) {
           "*.nix" = mkDefault (getExe pkgs.nixfmt-rfc-style);
         };
