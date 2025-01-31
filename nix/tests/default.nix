@@ -374,6 +374,7 @@ in
         };
     })
     (f: [
+      (attrNames f.packages.x86_64-linux)
       (import f.packages.x86_64-linux.default)
       (f ? packages.aarch64-linux.default)
       ((nixpkgs.legacyPackages.x86_64-linux.extend f.overlays.default) ? pkg1)
@@ -381,9 +382,10 @@ in
       (f ? checks.aarch64-linux.packages-default)
     ])
     [
+      [ "default" ]
       true
       true
-      true
+      false
       true
       true
     ]
@@ -391,6 +393,7 @@ in
 
   packages = [
     (conflake' {
+      pname = "pkg1";
       packages = {
         default =
           { stdenv }:
@@ -488,6 +491,7 @@ in
 
   packages-refer-default-as-name = [
     (conflake' {
+      pname = "pkg1";
       packages = {
         default =
           { stdenv }:
