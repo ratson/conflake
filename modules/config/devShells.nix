@@ -52,7 +52,7 @@ in
               (
                 cfg:
                 defaultTo (pipe cfg [
-                  (mapAttrs (_: v: if isFunction v then v pkgs else v))
+                  (mapAttrs (_: v: if isFunction v then callWith pkgs v { } else v))
                   (
                     cfg':
                     pkgs.mkShell.override { inherit (cfg') stdenv; } (

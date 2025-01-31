@@ -182,12 +182,7 @@ in
       outputs.packages = config.callSystemsWithAttrs config.packages;
 
       devShell.inputsFrom =
-        pkgs:
-        pipe pkgs [
-          getPkgDefs
-          (hasAttr "default")
-          (flip optionals [ pkgs.default ])
-        ];
+        { outputs' }: optionals (outputs' ? packages.default) [ outputs'.packages.default ];
     })
   ];
 }

@@ -30,18 +30,17 @@ let
 
   mkFormatter =
     {
-      pkgs,
       coreutils,
       fd,
       stdenv,
       writeShellApplication,
+      outputs',
       callWithArgs,
     }:
     let
       inherit (stdenv.hostPlatform) system;
       formatters = callWithArgs config.formatters { };
       fullContext = all hasContext (attrValues formatters);
-      packages = optionals (config.devShell != null) (config.devShell pkgs).packages pkgs;
       caseArms = pipe formatters [
         (mapAttrsToList (k: v: "\n      ${k}) ${v} \"$f\" & ;;"))
         toString
@@ -53,7 +52,7 @@ let
       runtimeInputs =
         [ coreutils ]
         ++ (optionals (!elem system [ "x86_64-freebsd" ]) [ fd ])
-        ++ (optionals (!fullContext) packages);
+        ++ (optionals (!fullContext) outputs'.devShells.default.nativeBuildInputs or [ ]);
 
       text = ''
         for f in "$@"; do
