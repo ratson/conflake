@@ -34,6 +34,7 @@ let
     types
     ;
   inherit (lib.types)
+    lazyAttrsOf
     listOf
     oneOf
     str
@@ -116,6 +117,12 @@ in
           license = if isList license then map getLicense license else getLicense license;
         };
     };
+    finalPackages = mkOption {
+      internal = true;
+      readOnly = true;
+      type = lazyAttrsOf (lazyAttrsOf types.package);
+      default = config.callSystemsWithAttrs config.packages;
+    };
     packageOverlay = mkOption {
       internal = true;
       type = uniq overlay;
@@ -179,7 +186,7 @@ in
           ))
         ];
 
-      outputs.packages = config.callSystemsWithAttrs config.packages;
+      outputs.packages = config.finalPackages;
 
       devShell.inputsFrom =
         { outputs' }: optionals (outputs' ? packages.default) [ outputs'.packages.default ];
