@@ -29,9 +29,16 @@ let
   cfg = config.formatter;
 
   mkFormatter =
-    { pkgs, callWithArgs }:
+    {
+      pkgs,
+      coreutils,
+      fd,
+      stdenv,
+      writeShellApplication,
+      callWithArgs,
+    }:
     let
-      inherit (pkgs.stdenv.hostPlatform) system;
+      inherit (stdenv.hostPlatform) system;
       formatters = callWithArgs config.formatters { };
       fullContext = all hasContext (attrValues formatters);
       packages = optionals (config.devShell != null) (config.devShell pkgs).packages pkgs;
@@ -40,12 +47,12 @@ let
         toString
       ];
     in
-    pkgs.writeShellApplication {
+    writeShellApplication {
       name = "formatter";
 
       runtimeInputs =
-        [ pkgs.coreutils ]
-        ++ (optionals (!elem system [ "x86_64-freebsd" ]) [ pkgs.fd ])
+        [ coreutils ]
+        ++ (optionals (!elem system [ "x86_64-freebsd" ]) [ fd ])
         ++ (optionals (!fullContext) packages);
 
       text = ''
