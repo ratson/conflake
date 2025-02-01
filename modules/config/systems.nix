@@ -28,14 +28,6 @@ let
   inherit (conflake) callWith selectAttr;
 
   cfg = config.systems;
-
-  mkSystemArgs = system: {
-    inherit system;
-    inputs' = mapAttrs (_: selectAttr system) inputs;
-    outputs' = selectAttr system config.outputs;
-  };
-
-  mkSystemArgs' = pkgs: mkSystemArgs pkgs.stdenv.hostPlatform.system;
 in
 {
   options = {
@@ -93,7 +85,7 @@ in
             callWithArgs = flip pipe [
               (callWith pkgs)
               (callWith moduleArgs)
-              (callWith (mkSystemArgs system))
+              (callWith (config.mkSystemArgs system))
               (callWith {
                 inherit pkgs;
                 inherit (config) defaultMeta;
@@ -111,13 +103,17 @@ in
       internal = true;
       readOnly = true;
       type = types.unspecified;
-      default = mkSystemArgs';
+      default = pkgs: config.mkSystemArgs pkgs.stdenv.hostPlatform.system;
     };
     mkSystemArgs = mkOption {
       internal = true;
       readOnly = true;
-      type = types.unspecified;
-      default = mkSystemArgs;
+      type = types.functionTo (lazyAttrsOf types.unspecified);
+      default = system: {
+        inherit system;
+        inputs' = mapAttrs (_: selectAttr system) inputs;
+        outputs' = selectAttr system config.outputs;
+      };
     };
   };
 }

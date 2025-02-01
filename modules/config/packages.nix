@@ -28,6 +28,7 @@ let
     optionalAttrs
     optionals
     pipe
+    removeAttrs
     types
     ;
   inherit (lib.types)
@@ -37,11 +38,8 @@ let
     str
     uniq
     ;
-  inherit (conflake.types)
-    nullable
-    optFunctionTo
-    overlay
-    ;
+  inherit (conflake) callWith;
+  inherit (conflake.types) nullable overlay;
 
   cfg = config.packages;
 
@@ -76,7 +74,7 @@ in
     };
 
     packages = mkOption {
-      type = nullable (optFunctionTo conflake.types.packages);
+      type = nullable conflake.types.packages;
       default = null;
     };
 
@@ -120,7 +118,26 @@ in
       internal = true;
       readOnly = true;
       type = lazyAttrsOf (lazyAttrsOf types.package);
-      default = config.callSystemsWithAttrs cfg;
+      default = config.genSystems' (
+        { callWithArgs }:
+        let
+          packages = pipe cfg [
+            callWithArgs
+            (f: f { })
+          ];
+          packages' = mapAttrs (
+            name: f:
+            pipe f [
+              callWithArgs
+              (callWith (removeAttrs packages' [ name ]))
+              (callWith { inherit name; })
+              (f: f { })
+            ]
+          ) packages;
+        in
+        packages'
+      );
+
     };
     packageOverlay = mkOption {
       internal = true;

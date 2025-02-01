@@ -2,6 +2,8 @@
   config,
   lib,
   conflake,
+  inputs,
+  outputs,
   ...
 }:
 
@@ -12,12 +14,12 @@ let
     mergeAttrs
     mkOption
     pipe
-    types
     ;
+  inherit (conflake) callWith;
 in
 {
   options.perSystem = mkOption {
-    type = types.functionTo conflake.types.outputs;
+    type = conflake.types.perSystem;
     default = _: { };
   };
 
@@ -25,8 +27,14 @@ in
     outputs = pipe config.systems [
       (map (
         system:
-        pipe config.pkgsFor.${system} [
-          config.perSystem
+        pipe config.perSystem [
+          (callWith config.pkgsFor.${system})
+          (callWith {
+            inherit system;
+            inherit inputs outputs;
+            pkgs = config.pkgsFor.${system};
+          })
+          (f: f { })
           (mapAttrs (_: v: { ${system} = v; }))
         ]
       ))

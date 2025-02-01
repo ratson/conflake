@@ -66,6 +66,7 @@ fix (
       function
       functionTo
       matcher
+      nonFunction
       nullable
       optFunctionTo
       optListOf
@@ -232,14 +233,24 @@ fix (
       merge = _: defs: { imports = getValues defs; };
     };
 
-    # `lib.types.nullOr`'s merge function requires definitions
-    # to all be null or all be non-null.
-    #
-    # It was being used where the intent was that null be used as a
-    # value representing unset, and as such the merge should return null
-    # if all definitions are null and ignore nulls otherwise.
-    #
-    # This adds a type with that merge semantics.
+    nonFunction = mkOptionType {
+      name = "nonFunction";
+      description = "non-function";
+      descriptionClass = "noun";
+      check = x: !isFunction x;
+      merge = mergeOneOption;
+    };
+
+    /**
+      `lib.types.nullOr`'s merge function requires definitions
+      to all be null or all be non-null.
+
+      It was being used where the intent was that null be used as a
+      value representing unset, and as such the merge should return null
+      if all definitions are null and ignore nulls otherwise.
+
+      This adds a type with that merge semantics.
+    */
     nullable =
       elemType:
       mergeAttrs (nullOr elemType) {
@@ -261,9 +272,9 @@ fix (
         };
       };
 
-    package = functionTo types.package;
+    package = optFunctionTo types.package;
 
-    packages = lazyAttrsOf types'.package;
+    packages = optFunctionTo (lazyAttrsOf types'.package);
 
     path = types.path // {
       check = isPath;
@@ -271,19 +282,11 @@ fix (
 
     pathTree = lazyAttrsOf (either path pathTree);
 
+    perSystem = functionTo types'.outputs;
+
     optCallWith = args: elemType: coercedTo function (x: x args) elemType;
 
-    optFunctionTo =
-      let
-        nonFunction = mkOptionType {
-          name = "nonFunction";
-          description = "non-function";
-          descriptionClass = "noun";
-          check = x: !isFunction x;
-          merge = mergeOneOption;
-        };
-      in
-      elemType: coercedTo nonFunction (x: _: x) (functionTo elemType);
+    optFunctionTo = elemType: coercedTo nonFunction (x: _: x) (functionTo elemType);
 
     optListOf = elemType: coercedTo elemType singleton (listOf elemType);
 
