@@ -43,12 +43,14 @@ let
     lines
     listOf
     nonEmptyListOf
+    nonEmptyStr
     nullOr
     optionDescriptionPhrase
     package
     raw
     str
     submodule
+    uniq
     unspecified
     ;
   inherit (lib.options) mergeEqualOption mergeOneOption;
@@ -323,6 +325,10 @@ fix (
       check = isStringLike;
       merge = mergeEqualOption;
     };
+
+    systems = pipe (uniq (listOf nonEmptyStr)) [
+      (coercedTo types.package import)
+    ];
 
     template = submodule (
       { name, ... }:

@@ -2,8 +2,6 @@
   config,
   lib,
   conflake,
-  inputs,
-  outputs,
   ...
 }:
 
@@ -16,6 +14,8 @@ let
     pipe
     ;
   inherit (conflake) callWith;
+
+  cfg = config.perSystem;
 in
 {
   options.perSystem = mkOption {
@@ -27,11 +27,10 @@ in
     outputs = pipe config.systems [
       (map (
         system:
-        pipe config.perSystem [
+        pipe cfg [
           (callWith config.pkgsFor.${system})
           (callWith {
             inherit system;
-            inherit inputs outputs;
             pkgs = config.pkgsFor.${system};
           })
           (f: f { })

@@ -4,6 +4,7 @@
   inputs,
   conflake,
   moduleArgs,
+  outputs,
   ...
 }:
 
@@ -16,23 +17,16 @@ let
     pipe
     types
     ;
-  inherit (lib.types)
-    coercedTo
-    functionTo
-    lazyAttrsOf
-    listOf
-    nonEmptyStr
-    package
-    uniq
-    ;
+  inherit (lib.types) coercedTo lazyAttrsOf;
   inherit (conflake) callWith selectAttr;
+  inherit (conflake.types) functionTo;
 
   cfg = config.systems;
 in
 {
   options = {
     systems = mkOption {
-      type = coercedTo package import (uniq (listOf nonEmptyStr));
+      type = conflake.types.systems;
       default = inputs.systems or lib.systems.flakeExposed;
     };
 
@@ -85,11 +79,8 @@ in
             callWithArgs = flip pipe [
               (callWith pkgs)
               (callWith moduleArgs)
-              (callWith (config.mkSystemArgs system))
-              (callWith {
-                inherit pkgs;
-                inherit (config) defaultMeta;
-              })
+              (callWith config.systemArgsFor.${system})
+              (callWith { inherit pkgs; })
             ];
           in
           pipe f [
@@ -102,18 +93,25 @@ in
     mkSystemArgs' = mkOption {
       internal = true;
       readOnly = true;
-      type = types.unspecified;
+      type = functionTo (lazyAttrsOf types.unspecified);
       default = pkgs: config.mkSystemArgs pkgs.stdenv.hostPlatform.system;
     };
     mkSystemArgs = mkOption {
       internal = true;
       readOnly = true;
-      type = types.functionTo (lazyAttrsOf types.unspecified);
+      type = functionTo (lazyAttrsOf types.unspecified);
       default = system: {
-        inherit system;
+        inherit inputs outputs system;
+        inherit (config) defaultMeta;
         inputs' = mapAttrs (_: selectAttr system) inputs;
-        outputs' = selectAttr system config.outputs;
+        outputs' = selectAttr system outputs;
       };
+    };
+    systemArgsFor = mkOption {
+      internal = true;
+      readOnly = true;
+      type = lazyAttrsOf (lazyAttrsOf types.unspecified);
+      default = genAttrs cfg config.mkSystemArgs;
     };
   };
 }

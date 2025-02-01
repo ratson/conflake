@@ -12,11 +12,9 @@ let
     tryEval
     ;
   inherit (lib)
-    const
     fix
     hasPrefix
     isDerivation
-    pipe
     ;
   inherit (inputs) nixpkgs self;
 
@@ -309,19 +307,17 @@ in
     outputs.overlays.test = final: prev: { testVal = true; };
   }) (f: (nixpkgs.legacyPackages.x86_64-linux.extend f.overlays.test).testVal);
 
-  perSystem = {
-    expr = pipe null [
-      (const (conflake' {
-        perSystem =
-          { src, ... }:
-          {
-            test.a.b.c = true;
-          };
-      }))
-      (x: x.test)
-      attrNames
-    ];
-    expected = [
+  perSystem = [
+    (conflake' {
+      perSystem =
+        { src, ... }:
+        {
+          test.a.b.c = true;
+        };
+    })
+    (x: x.test)
+    attrNames
+    [
       "aarch64-darwin"
       "aarch64-linux"
       "armv6l-linux"
@@ -332,8 +328,8 @@ in
       "x86_64-darwin"
       "x86_64-freebsd"
       "x86_64-linux"
-    ];
-  };
+    ]
+  ];
 
   withOverlays = test (conflake' {
     withOverlays = final: prev: { testValue = "true"; };
