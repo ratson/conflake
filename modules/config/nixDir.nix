@@ -65,7 +65,7 @@ in
       default = { };
     };
     loaders = mkOption {
-      type = types.lazyAttrsOf conflake.types.loader;
+      type = lazyAttrsOf conflake.types.loader;
       default = { };
     };
     matchers = mkOption {
