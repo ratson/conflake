@@ -21,7 +21,7 @@ lib.makeExtensible (self: {
   inherit (self.attrsets) selectAttr prefixAttrs prefixAttrsCond;
   inherit (self.filesystem) collectPaths;
   inherit (self.flake) mkVersion mkVersion';
-  inherit (self.function) callWith;
+  inherit (self.function) callMustWith callWith;
 
   mkCheck =
     name: pkgs: src: cmd:

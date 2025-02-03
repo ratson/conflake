@@ -88,7 +88,7 @@ let
           (mergeDefinitions loc targetType (
             map (fn: {
               inherit (fn) file;
-              value = if isFunction fn.value then conflake.callWith pkgs fn.value { } else fn.value;
+              value = if isFunction fn.value then conflake.callMustWith pkgs fn.value { } else fn.value;
             }) defs
           )).mergedValue;
         inherit (app) getSubOptions getSubModules;

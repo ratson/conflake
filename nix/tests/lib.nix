@@ -4,9 +4,32 @@ let
   inherit (builtins) attrNames;
   inherit (lib) functionArgs;
   inherit (inputs) self;
-  inherit (self.lib) callWith mkVersion;
+  inherit (self.lib) callMustWith callWith mkVersion;
 in
 {
+  callMustWith-no-args = [
+    (args: args)
+    (callMustWith {
+      a = 2;
+      b = 1;
+    })
+    (f: [
+      (f {
+        a = 1;
+        a1 = 1;
+      })
+      (functionArgs f)
+    ])
+    [
+      {
+        a = 1;
+        a1 = 1;
+        b = 1;
+      }
+      { }
+    ]
+  ];
+
   callWith-fill-missing =
     let
       f =
@@ -56,7 +79,6 @@ in
       {
         a = 1;
         a1 = 1;
-        b = 1;
       }
       { }
     ]

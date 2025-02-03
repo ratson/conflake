@@ -38,7 +38,7 @@ let
     str
     uniq
     ;
-  inherit (conflake) callWith;
+  inherit (conflake) callMustWith;
   inherit (conflake.types) nullable overlay;
 
   cfg = config.packages;
@@ -129,8 +129,8 @@ in
             name: f:
             pipe f [
               callWithArgs
-              (callWith (removeAttrs packages' [ name ]))
-              (callWith { inherit name; })
+              (callMustWith (removeAttrs packages' [ name ]))
+              (callMustWith { inherit name; })
               (f: f { })
             ]
           ) packages;

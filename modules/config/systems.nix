@@ -18,7 +18,7 @@ let
     types
     ;
   inherit (lib.types) coercedTo lazyAttrsOf;
-  inherit (conflake) callWith selectAttr;
+  inherit (conflake) callMustWith selectAttr;
   inherit (conflake.types) functionTo;
 
   cfg = config.systems;
@@ -59,7 +59,7 @@ in
               name: f:
               pipe f [
                 callWithArgs
-                (callWith { inherit name; })
+                (callMustWith { inherit name; })
                 (f: f { })
               ]
             ))
@@ -77,15 +77,15 @@ in
           let
             pkgs = config.pkgsFor.${system};
             callWithArgs = flip pipe [
-              (callWith pkgs)
-              (callWith moduleArgs)
-              (callWith config.systemArgsFor.${system})
-              (callWith { inherit pkgs; })
+              (callMustWith pkgs)
+              (callMustWith moduleArgs)
+              (callMustWith config.systemArgsFor.${system})
+              (callMustWith { inherit pkgs; })
             ];
           in
           pipe f [
             callWithArgs
-            (callWith { inherit callWithArgs; })
+            (callMustWith { inherit callWithArgs; })
             (f: f { })
           ]
         );

@@ -13,7 +13,7 @@ let
     mkOption
     pipe
     ;
-  inherit (conflake) callWith;
+  inherit (conflake) callMustWith;
 
   cfg = config.perSystem;
 in
@@ -28,8 +28,8 @@ in
       (map (
         system:
         pipe cfg [
-          (callWith config.pkgsFor.${system})
-          (callWith {
+          (callMustWith config.pkgsFor.${system})
+          (callMustWith {
             inherit system;
             pkgs = config.pkgsFor.${system};
           })

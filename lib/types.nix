@@ -54,7 +54,7 @@ let
     unspecified
     ;
   inherit (lib.options) mergeOneOption;
-  inherit (lib') callWith mkCheck;
+  inherit (lib') callMustWith mkCheck;
   inherit (lib'.debug) mkTestFromList;
 in
 fix (
@@ -106,7 +106,7 @@ fix (
           pipe defs [
             (map (fn: {
               inherit (fn) file;
-              value = if isFunction fn.value then callWith pkgs fn.value { } else fn.value;
+              value = if isFunction fn.value then callMustWith pkgs fn.value { } else fn.value;
             }))
             (mergeDefinitions loc targetType)
             (x: x.mergedValue)

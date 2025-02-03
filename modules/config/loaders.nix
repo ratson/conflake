@@ -39,7 +39,7 @@ let
     let
       f =
         { pkgs, ... }@args:
-        conflake.callWith moduleArgs path (
+        conflake.callMustWith moduleArgs path (
           args
           // (mkSystemArgs' pkgs)
           // {
