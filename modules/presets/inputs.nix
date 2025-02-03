@@ -1,7 +1,6 @@
 {
   config,
   lib,
-  options,
   conflake,
   src,
   ...
@@ -28,11 +27,11 @@ in
     };
     priority = mkOption {
       type = types.int;
-      default = 950;
+      default = 1250;
     };
   };
 
-  config = mkIf (cfg.enable && !options.inputs.isDefined && config.src.has "flake.lock") {
+  config = mkIf (cfg.enable && config.inputs != null && config.src.has "flake.lock") {
     finalInputs = pipe (src + /flake.lock) [
       lock2inputs
       (mapAttrs (_: mkOverride cfg.priority))
