@@ -16,10 +16,6 @@ let
   inherit (conflake.types) nullable;
 
   cfg = config.bundlers;
-
-  wrapBundler =
-    { pkgs }:
-    bundler: drv: if isFunction (bundler (pkgs // drv)) then bundler pkgs drv else bundler drv;
 in
 {
   options = {
@@ -41,7 +37,15 @@ in
 
     (mkIf (cfg != null) {
       outputs.bundlers = config.genSystems' (
-        { callWithArgs }: mapAttrs (_: callWithArgs wrapBundler { }) (callWithArgs cfg { })
+        { callWithArgs }:
+        mapAttrs (
+          _: bundler: drv:
+          let
+            value = callWithArgs bundler drv;
+            bundler' = if isFunction value then value else bundler;
+          in
+          callWithArgs bundler' drv
+        ) (callWithArgs cfg { })
       );
     })
   ];

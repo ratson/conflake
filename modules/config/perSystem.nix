@@ -1,6 +1,7 @@
 {
   config,
   lib,
+  options,
   conflake,
   ...
 }:
@@ -8,12 +9,15 @@
 let
   inherit (builtins) mapAttrs;
   inherit (lib)
-    foldAttrs
+    flip
     mergeAttrs
+    mkIf
     mkOption
     pipe
+    types
     ;
-  inherit (conflake) callMustWith;
+  inherit (lib.attrsets) foldlAttrs;
+  inherit (lib.types) lazyAttrsOf;
 
   cfg = config.perSystem;
 in
@@ -23,21 +27,23 @@ in
     default = _: { };
   };
 
-  config = {
-    outputs = pipe config.systems [
-      (map (
-        system:
-        pipe cfg [
-          (callMustWith config.pkgsFor.${system})
-          (callMustWith {
-            inherit system;
-            pkgs = config.pkgsFor.${system};
-          })
-          (f: f { })
+  options.perSystemOutputs = mkOption {
+    internal = true;
+    readOnly = true;
+    type = lazyAttrsOf (lazyAttrsOf types.unspecified);
+    default = pipe cfg [
+      (f: config.genSystems' ({ callWithArgs' }: callWithArgs' f { }))
+      (foldlAttrs (
+        acc: system:
+        flip pipe [
           (mapAttrs (_: v: { ${system} = v; }))
+          (mergeAttrs acc)
         ]
-      ))
-      (foldAttrs mergeAttrs { })
+      ) { })
     ];
+  };
+
+  config = mkIf (options.perSystem.isDefined) {
+    outputs = config.perSystemOutputs;
   };
 }

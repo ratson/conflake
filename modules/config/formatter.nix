@@ -74,7 +74,7 @@ in
       default = null;
     };
     formatters = mkOption {
-      type = nullable (optFunctionTo (lazyAttrsOf types.str));
+      type = nullable conflake.types.formatters;
       default = null;
     };
   };

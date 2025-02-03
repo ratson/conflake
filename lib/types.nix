@@ -54,7 +54,7 @@ let
     unspecified
     ;
   inherit (lib.options) mergeOneOption;
-  inherit (lib') callMustWith mkCheck;
+  inherit (lib') callMustWith callWith mkCheck;
   inherit (lib'.debug) mkTestFromList;
 in
 fix (
@@ -98,7 +98,7 @@ fix (
         check = x: isFunction x || drv.check x || stringLike.check x;
         merge =
           loc: defs:
-          { pkgs }:
+          { pkgs, config }:
           let
             coerceFunc = mkCheck (last loc) pkgs src;
             targetType = coercedTo' stringLike coerceFunc drv;
@@ -106,7 +106,16 @@ fix (
           pipe defs [
             (map (fn: {
               inherit (fn) file;
-              value = if isFunction fn.value then callMustWith pkgs fn.value { } else fn.value;
+              value =
+                if isFunction fn.value then
+                  pipe fn.value [
+                    (callMustWith pkgs)
+                    (callWith config.systemArgsFor.${pkgs.stdenv.hostPlatform.system})
+                    (callWith { inherit pkgs; })
+                    (f: f { })
+                  ]
+                else
+                  fn.value;
             }))
             (mergeDefinitions loc targetType)
             (x: x.mergedValue)
@@ -126,14 +135,14 @@ fix (
           finalType.merge loc (map (def: def // { value = coerceVal def.value; }) defs);
       };
 
-    devShell = pipe (lazyAttrsOf (optFunctionTo types.unspecified)) [
+    devShell = pipe (lazyAttrsOf (optFunctionTo unspecified)) [
       (freeformType: {
         inherit freeformType;
 
         options = {
           stdenv = mkOption {
             type = optFunctionTo package;
-            default = pkgs: pkgs.stdenv;
+            default = { pkgs }: pkgs.stdenv;
           };
 
           overrideShell = mkOption {
@@ -148,7 +157,7 @@ fix (
         overrideShell = p;
       }))
       optFunctionTo
-      (coercedTo function (
+      (coercedTo (functionTo unspecified) (
         fn: pkgs:
         let
           val = pkgs.callPackage fn { };
@@ -173,6 +182,8 @@ fix (
       descriptionClass = "noun";
       check = x: isPath x || x._type or null == "fileset";
     };
+
+    formatters = optFunctionTo (lazyAttrsOf str);
 
     function = mkOptionType {
       name = "function";
