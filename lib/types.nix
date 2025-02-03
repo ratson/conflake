@@ -53,7 +53,7 @@ let
     uniq
     unspecified
     ;
-  inherit (lib.options) mergeEqualOption mergeOneOption;
+  inherit (lib.options) mergeOneOption;
   inherit (lib') callWith mkCheck;
   inherit (lib'.debug) mkTestFromList;
 in
@@ -126,38 +126,36 @@ fix (
           finalType.merge loc (map (def: def // { value = coerceVal def.value; }) defs);
       };
 
-    devShell =
-      pipe
-        {
-          freeformType = lazyAttrsOf (optFunctionTo types.unspecified);
+    devShell = pipe (lazyAttrsOf (optFunctionTo types.unspecified)) [
+      (freeformType: {
+        inherit freeformType;
 
-          options = {
-            stdenv = mkOption {
-              type = optFunctionTo package;
-              default = pkgs: pkgs.stdenv;
-            };
-
-            overrideShell = mkOption {
-              type = nullable package;
-              internal = true;
-              default = null;
-            };
+        options = {
+          stdenv = mkOption {
+            type = optFunctionTo package;
+            default = pkgs: pkgs.stdenv;
           };
-        }
-        [
-          submodule
-          (coercedTo package (p: {
-            overrideShell = p;
-          }))
-          optFunctionTo
-          (coercedTo function (
-            fn: pkgs:
-            let
-              val = pkgs.callPackage fn { };
-            in
-            if (functionArgs fn == { }) || !(package.check val) then fn pkgs else val
-          ))
-        ];
+
+          overrideShell = mkOption {
+            internal = true;
+            type = nullable package;
+            default = null;
+          };
+        };
+      })
+      submodule
+      (coercedTo package (p: {
+        overrideShell = p;
+      }))
+      optFunctionTo
+      (coercedTo function (
+        fn: pkgs:
+        let
+          val = pkgs.callPackage fn { };
+        in
+        if (functionArgs fn == { }) || !(package.check val) then fn pkgs else val
+      ))
+    ];
 
     devShells = lazyAttrsOf devShell;
 
@@ -185,7 +183,8 @@ fix (
     };
 
     /**
-      Like `lib.types.functionTo`, but keep `functionArgs`.
+      Like `lib.types.functionTo`, but keep `functionArgs`
+      instead of turn it to be `{}`.
     */
     functionTo = flip pipe [
       types.functionTo
@@ -213,19 +212,21 @@ fix (
 
     loader = functionTo unspecified;
 
-    matcher = coercedTo (either path str) (
-      value:
-      {
-        dir,
-        path,
-        root,
-        ...
-      }:
-      pipe value [
-        (x: if isString x then root + /${x} else x)
-        (x: x == dir || x == path)
-      ]
-    ) (functionTo bool);
+    matcher = pipe (functionTo bool) [
+      (coercedTo (either path str) (
+        value:
+        {
+          dir,
+          path,
+          root,
+          ...
+        }:
+        pipe value [
+          (x: if isString x then root + /${x} else x)
+          (x: x == dir || x == path)
+        ]
+      ))
+    ];
 
     matchers = listOf matcher;
 
@@ -320,12 +321,10 @@ fix (
 
     overlays = optListOf overlay;
 
-    stringLike = mkOptionType {
+    stringLike = str // {
       name = "stringLike";
       description = "string-convertible value";
-      descriptionClass = "noun";
       check = isStringLike;
-      merge = mergeEqualOption;
     };
 
     systems = pipe (uniq (listOf nonEmptyStr)) [
@@ -352,7 +351,9 @@ fix (
       }
     );
 
-    test = coercedTo (nonEmptyListOf raw) mkTestFromList (lazyAttrsOf raw);
+    test = pipe (lazyAttrsOf raw) [
+      (coercedTo (nonEmptyListOf raw) mkTestFromList)
+    ];
 
     tests = lazyAttrsOf test;
   }
