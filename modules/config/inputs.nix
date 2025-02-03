@@ -1,6 +1,7 @@
 {
   config,
   lib,
+  conflake,
   conflake',
   ...
 }:
@@ -11,22 +12,21 @@ let
     mkMerge
     mkOption
     mkOptionDefault
-    types
     ;
-  inherit (lib.types) lazyAttrsOf nullOr;
+  inherit (lib.types) nullOr;
 
   cfg = config.inputs;
 in
 {
   options = {
     inputs = mkOption {
-      type = nullOr (lazyAttrsOf types.raw);
+      type = nullOr conflake.types.inputs;
       default = null;
     };
 
     finalInputs = mkOption {
       internal = true;
-      type = lazyAttrsOf types.raw;
+      type = conflake.types.inputs;
     };
   };
 
