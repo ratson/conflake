@@ -16,18 +16,19 @@ let
     mkOption
     pipe
     ;
-  inherit (lib.types) lazyAttrsOf;
-  inherit (conflake.types) nullable optCallWith template;
+  inherit (conflake.types) nullable;
+
+  cfg = config.templates;
 in
 {
   options = {
     template = mkOption {
-      type = nullable (optCallWith moduleArgs template);
+      type = nullable (conflake.types.template moduleArgs);
       default = null;
     };
 
     templates = mkOption {
-      type = optCallWith moduleArgs (lazyAttrsOf (optCallWith moduleArgs template));
+      type = conflake.types.templates moduleArgs;
       default = { };
       apply = mapAttrs (_: filterAttrs (_: v: v != null));
     };
@@ -38,10 +39,8 @@ in
       templates.default = config.template;
     })
 
-    (mkIf (config.templates != { }) {
-      outputs = {
-        inherit (config) templates;
-      };
+    (mkIf (cfg != { }) {
+      outputs.templates = cfg;
     })
 
     {

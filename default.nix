@@ -5,7 +5,6 @@ let
   inherit (lib)
     evalModules
     fix
-    mkDefault
     setDefaultModuleLocation
     ;
 

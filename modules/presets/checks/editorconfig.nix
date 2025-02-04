@@ -2,7 +2,6 @@
   config,
   lib,
   conflake,
-  src,
   ...
 }:
 
@@ -38,12 +37,12 @@ in
     loaders.outputs = _: {
       checks = config.genSystems' (
         {
-          pkgs,
           editorconfig-checker,
           stdenv,
+          callWithArgs,
         }:
         mkIf (elem stdenv.hostPlatform.system platforms) {
-          editorconfig = conflake.mkCheck "editorconfig" pkgs src (
+          editorconfig = callWithArgs conflake.mkCheck { name = "editorconfig"; } (
             concatStringsSep " " [
               (getExe editorconfig-checker)
               cfg.args

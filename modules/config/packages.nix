@@ -38,7 +38,7 @@ let
     str
     uniq
     ;
-  inherit (conflake) callMustWith;
+  inherit (conflake) callWith;
   inherit (conflake.types) nullable overlay;
 
   cfg = config.packages;
@@ -64,7 +64,13 @@ let
     final: prev: pkgs:
     mapAttrs (name: genPkg final prev name) pkgs;
 
-  getPkgDefs = pkgs: cfg (moduleArgs // { inherit (pkgs) system; });
+  getPkgDefs =
+    pkgs:
+    pipe cfg [
+      (callWith moduleArgs)
+      (callWith config.systemArgsFor.${pkgs.stdenv.hostPlatform.system})
+      (f: f { })
+    ];
 in
 {
   options = {
@@ -129,15 +135,14 @@ in
             name: f:
             pipe f [
               callWithArgs
-              (callMustWith (removeAttrs packages' [ name ]))
-              (callMustWith { inherit name; })
+              (callWith (removeAttrs packages' [ name ]))
+              (callWith { inherit name; })
               (f: f { })
             ]
           ) packages;
         in
         packages'
       );
-
     };
     packageOverlay = mkOption {
       internal = true;

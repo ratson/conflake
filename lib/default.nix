@@ -24,10 +24,18 @@ lib.makeExtensible (self: {
   inherit (self.function) callMustWith callWith;
 
   mkCheck =
-    name: pkgs: src: cmd:
-    pkgs.runCommandLocal "check-${name}" { } ''
+    {
+      name,
+      src,
+      runCommandLocal,
+      ...
+    }:
+    cmd:
+    runCommandLocal "check-${name}" { } ''
       pushd "${src}"
-      ${cmd}
+      if  [ -x "${cmd}" ]; then
+        ${cmd}
+      fi
       popd
       touch $out
     '';

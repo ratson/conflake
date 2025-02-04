@@ -512,7 +512,7 @@ in
   packages-fn-has-system = [
     (conflake' {
       packages =
-        { system, ... }:
+        { system }:
         (
           if system == "x86_64-linux" then
             {
@@ -615,12 +615,12 @@ in
   devShell = test (conflake' {
     devShell = {
       inputsFrom = { pkgs }: [ pkgs.emacs ];
-      packages = pkgs: [ pkgs.coreutils ];
+      packages = { pkgs }: [ pkgs.coreutils ];
       shellHook = ''
         echo Welcome to example shell!
       '';
       env.TEST_VAR = "test value";
-      stdenv = pkgs: pkgs.clangStdenv;
+      stdenv = { pkgs }: pkgs.clangStdenv;
       hardeningDisable = [ "all" ];
     };
   }) (f: isDerivation f.devShells.x86_64-linux.default);
@@ -640,15 +640,17 @@ in
   }) (f: isDerivation f.devShells.x86_64-linux.default);
 
   devShell-pkgs-arg = test (conflake' {
-    devShell = pkgs: {
-      inputsFrom = [ pkgs.emacs ];
-      packages = [ pkgs.coreutils ];
-      shellHook = ''
-        echo Welcome to example shell!
-      '';
-      env.TEST_VAR = "test value";
-      stdenv = pkgs.clangStdenv;
-    };
+    devShell =
+      { pkgs }:
+      {
+        inputsFrom = [ pkgs.emacs ];
+        packages = [ pkgs.coreutils ];
+        shellHook = ''
+          echo Welcome to example shell!
+        '';
+        env.TEST_VAR = "test value";
+        stdenv = pkgs.clangStdenv;
+      };
   }) (f: isDerivation f.devShells.x86_64-linux.default);
 
   devShell-pkgs-arg-set = test (conflake' {
@@ -657,7 +659,6 @@ in
         emacs,
         coreutils,
         clangStdenv,
-        ...
       }:
       {
         inputsFrom = [ emacs ];
@@ -679,22 +680,26 @@ in
   )) (f: isDerivation f.devShells.x86_64-linux.default);
 
   devShell-pkg-fn = test (conflake' {
-    devShell = pkgs: pkgs.hello;
+    devShell = { pkgs }: pkgs.hello;
   }) (f: isDerivation f.devShells.x86_64-linux.default);
 
   devShell-buildInputs = test (conflake' {
-    devShell.buildInputs = pkgs: [ pkgs.hello ];
+    devShell.buildInputs = { pkgs }: [ pkgs.hello ];
   }) (f: isDerivation f.devShells.x86_64-linux.default);
 
   devShells = [
     (conflake' {
-      devShell.inputsFrom = pkgs: [ pkgs.emacs ];
+      devShell.inputsFrom = { pkgs }: [ pkgs.emacs ];
       devShells = {
         shell1 = { mkShell }: mkShell { };
         shell2 = {
-          packages = pkgs: [ pkgs.emacs ];
+          packages = { pkgs }: [ pkgs.emacs ];
         };
-        shell3 = pkgs: { packages = [ pkgs.emacs ]; };
+        shell3 =
+          { pkgs }:
+          {
+            packages = [ pkgs.emacs ];
+          };
         shell4 =
           { emacs, ... }:
           {
@@ -801,8 +806,8 @@ in
   checks = [
     (conflake' {
       checks = {
-        test-fail = pkgs: "exit 1";
-        test-success = pkgs: pkgs.hello;
+        test-fail = { pkgs }: "exit 1";
+        test-success = { pkgs }: pkgs.hello;
       };
     })
     (x: [
@@ -831,10 +836,12 @@ in
 
   app-fn = [
     (conflake' {
-      app = pkgs: {
-        type = "app";
-        program = "${pkgs.hello}/bin/hello";
-      };
+      app =
+        { pkgs }:
+        {
+          type = "app";
+          program = "${pkgs.hello}/bin/hello";
+        };
     })
     (x: x.apps.x86_64-linux.default)
     {
@@ -1086,7 +1093,7 @@ in
 
   bundler-fn = [
     (conflake' {
-      bundler = pkgs: x: pkgs.hello;
+      bundler = pkgs: _: pkgs.hello;
     })
     (x: x.bundlers.x86_64-linux.default nixpkgs.legacyPackages.x86_64-linux.emacs)
     nixpkgs.legacyPackages.x86_64-linux.hello
@@ -1107,7 +1114,7 @@ in
       bundlers =
         { hello, ... }:
         {
-          hello = x: hello;
+          hello = _: hello;
         };
     })
     (x: x.bundlers.x86_64-linux.hello nixpkgs.legacyPackages.x86_64-linux.emacs)

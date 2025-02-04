@@ -35,5 +35,5 @@ fix (self: {
 
       f' = args: f (fallbackArgs' // args);
     in
-    setFunctionArgs f' fargs';
+    if noArgs then f' else setFunctionArgs f' fargs';
 })

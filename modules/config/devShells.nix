@@ -2,7 +2,6 @@
   config,
   lib,
   conflake,
-  moduleArgs,
   ...
 }:
 
@@ -17,7 +16,7 @@ let
     mkOption
     pipe
     ;
-  inherit (conflake.types) nullable optCallWith;
+  inherit (conflake.types) nullable;
 
   cfg = config.devShells;
 in
@@ -29,7 +28,7 @@ in
     };
 
     devShells = mkOption {
-      type = optCallWith moduleArgs conflake.types.devShells;
+      type = conflake.types.devShells;
       default = { };
     };
   };
@@ -39,7 +38,7 @@ in
       devShells.default = config.devShell;
     })
 
-    (mkIf (config.devShells != { }) {
+    (mkIf (cfg != { }) {
       outputs.devShells = config.genSystems' (
         { mkShell, callWithArgs }:
         pipe cfg [

@@ -2,7 +2,6 @@
   config,
   lib,
   conflake,
-  src,
   ...
 }:
 
@@ -14,7 +13,7 @@ let
 in
 {
   options.checks = mkOption {
-    type = nullable (conflake.types.checks src);
+    type = nullable conflake.types.checks;
     default = null;
   };
 

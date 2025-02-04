@@ -16,6 +16,8 @@ in
   };
 
   config = mkIf (cfg && config.packages != null) {
+    nixpkgs.overlays = [ config.packageOverlay ];
+
     overlay =
       final:
       flip pipe [

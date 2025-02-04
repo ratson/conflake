@@ -20,11 +20,9 @@ let
     mapAttrsToList
     optionals
     pipe
-    types
     ;
-  inherit (lib.types) lazyAttrsOf;
   inherit (config) genSystems';
-  inherit (conflake.types) nullable optFunctionTo;
+  inherit (conflake.types) nullable;
 
   cfg = config.formatter;
 

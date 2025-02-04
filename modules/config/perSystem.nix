@@ -9,14 +9,13 @@
 let
   inherit (builtins) mapAttrs;
   inherit (lib)
-    flip
+    foldAttrs
     mergeAttrs
     mkIf
     mkOption
     pipe
     types
     ;
-  inherit (lib.attrsets) foldlAttrs;
   inherit (lib.types) lazyAttrsOf;
 
   cfg = config.perSystem;
@@ -31,19 +30,21 @@ in
     internal = true;
     readOnly = true;
     type = lazyAttrsOf (lazyAttrsOf types.unspecified);
-    default = pipe cfg [
-      (f: config.genSystems' ({ callWithArgs' }: callWithArgs' f { }))
-      (foldlAttrs (
-        acc: system:
-        flip pipe [
+    default = pipe config.systems [
+      (map (system: config.systemArgsFor'.${system}))
+      (map (
+        { system, callWithArgs, ... }:
+        pipe cfg [
+          callWithArgs
+          (f: f { })
           (mapAttrs (_: v: { ${system} = v; }))
-          (mergeAttrs acc)
         ]
-      ) { })
+      ))
+      (foldAttrs mergeAttrs { })
     ];
   };
 
-  config = mkIf (options.perSystem.isDefined) {
+  config = mkIf options.perSystem.isDefined {
     outputs = config.perSystemOutputs;
   };
 }

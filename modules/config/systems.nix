@@ -18,7 +18,7 @@ let
     types
     ;
   inherit (lib.types) coercedTo lazyAttrsOf;
-  inherit (conflake) callMustWith callWith selectAttr;
+  inherit (conflake) callWith selectAttr;
   inherit (conflake.types) functionTo;
 
   cfg = config.systems;
@@ -36,13 +36,17 @@ in
       type = coercedTo (functionTo types.pkgs) (v: genAttrs cfg (flip getAttr v)) (
         lazyAttrsOf types.pkgs
       );
-      default = genAttrs cfg (
-        system:
-        import inputs.nixpkgs {
-          inherit system;
-          inherit (config.nixpkgs) config overlays;
-        }
-      );
+      default =
+        if config.nixpkgs.config == { } && config.nixpkgs.overlays == [ ] then
+          inputs.nixpkgs.legacyPackages
+        else
+          genAttrs cfg (
+            system:
+            import inputs.nixpkgs {
+              inherit system;
+              inherit (config.nixpkgs) config overlays;
+            }
+          );
     };
     callSystemsWithAttrs = mkOption {
       internal = true;
@@ -59,7 +63,7 @@ in
               name: f:
               pipe f [
                 callWithArgs
-                (callMustWith { inherit name; })
+                (callWith { inherit name; })
                 (f: f { })
               ]
             ))
@@ -72,40 +76,25 @@ in
       type = types.unspecified;
       default =
         f:
-        genAttrs cfg (
-          system:
-          let
-            pkgs = config.pkgsFor.${system};
-            callWithArgs = flip pipe [
-              (callMustWith pkgs)
-              (callMustWith moduleArgs)
-              (callMustWith config.systemArgsFor.${system})
-              (callMustWith { inherit pkgs; })
-            ];
-            callWithArgs' = flip pipe [
-              (callWith pkgs)
-              (callWith moduleArgs)
-              (callWith config.systemArgsFor.${system})
-              (callWith { inherit pkgs; })
-            ];
-          in
+        mapAttrs (
+          _:
+          { callWithArgs, ... }:
           pipe f [
             callWithArgs
-            (callMustWith { inherit callWithArgs callWithArgs'; })
             (f: f { })
           ]
-        );
+        ) config.systemArgsFor';
     };
     mkSystemArgs' = mkOption {
       internal = true;
       readOnly = true;
-      type = functionTo (lazyAttrsOf types.unspecified);
+      type = types.unspecified;
       default = pkgs: config.mkSystemArgs pkgs.stdenv.hostPlatform.system;
     };
     mkSystemArgs = mkOption {
       internal = true;
       readOnly = true;
-      type = functionTo (lazyAttrsOf types.unspecified);
+      type = types.unspecified;
       default = system: {
         inherit inputs outputs system;
         inherit (config) defaultMeta;
@@ -117,7 +106,32 @@ in
       internal = true;
       readOnly = true;
       type = lazyAttrsOf (lazyAttrsOf types.unspecified);
-      default = genAttrs cfg config.mkSystemArgs;
+      default = genAttrs cfg (system: {
+        inherit system;
+        inherit (config) defaultMeta;
+        inputs' = mapAttrs (_: selectAttr system) inputs;
+        outputs' = selectAttr system outputs;
+      });
+    };
+    systemArgsFor' = mkOption {
+      internal = true;
+      readOnly = true;
+      type = lazyAttrsOf (lazyAttrsOf types.unspecified);
+      default = mapAttrs (
+        system: v:
+        let
+          v' = v // {
+            inherit callWithArgs pkgs;
+          };
+          pkgs = config.pkgsFor.${system};
+          callWithArgs = flip pipe [
+            (callWith pkgs)
+            (callWith moduleArgs)
+            (callWith v')
+          ];
+        in
+        v'
+      ) config.systemArgsFor;
     };
   };
 }

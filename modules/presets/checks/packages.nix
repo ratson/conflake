@@ -35,9 +35,9 @@ in
 
     (mkIf (cfg.emacs && config.legacyPackages != null) {
       checks =
-        { system, ... }:
+        { outputs, system }:
         pipe system [
-          (x: config.outputs.legacyPackages.${x}.emacsPackages or { })
+          (x: outputs.legacyPackages.${x}.emacsPackages or { })
           (filterAttrs (_: isDerivation))
           (mapAttrs' (k: nameValuePair "emacsPackages-${k}"))
         ];
