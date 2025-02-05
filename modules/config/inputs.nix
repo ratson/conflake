@@ -1,25 +1,44 @@
-{ config, lib, ... }:
+{
+  config,
+  lib,
+  conflake,
+  conflake',
+  ...
+}:
 
 let
-  inherit (lib) mkIf mkOption types;
-  inherit (lib.types) lazyAttrsOf nullOr;
+  inherit (lib)
+    mkIf
+    mkMerge
+    mkOption
+    mkOptionDefault
+    ;
+  inherit (lib.types) nullOr;
 
   cfg = config.inputs;
 in
 {
   options = {
     inputs = mkOption {
-      type = nullOr (lazyAttrsOf types.raw);
+      type = nullOr conflake.types.inputs;
       default = null;
     };
 
     finalInputs = mkOption {
       internal = true;
-      type = lazyAttrsOf types.raw;
+      type = conflake.types.inputs;
     };
   };
 
-  config = mkIf (cfg != null) {
-    finalInputs = cfg;
-  };
+  config = mkMerge [
+    {
+      finalInputs = {
+        nixpkgs = mkOptionDefault conflake'.inputs.nixpkgs;
+        conflake = mkOptionDefault conflake'.inputs.self;
+      };
+    }
+    (mkIf (cfg != null) {
+      finalInputs = cfg;
+    })
+  ];
 }

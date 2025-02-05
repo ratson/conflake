@@ -3,7 +3,6 @@
   lib,
   conflake,
   conflake',
-  moduleArgs,
   ...
 }:
 
@@ -64,14 +63,16 @@ let
     if cases == [ ] then msgPass else warn msgFail cases;
 
   mkCheck =
-    tests: pkgs:
+    tests:
+    { callWithArgs, runCommandLocal }:
     let
       results = pipe placeholderTree [
         (mergeAttrs { ${config.src.relTo cfg.src} = tests; })
         (mapAttrsRecursive (
           _:
           flip pipe [
-            (flip pkgs.callPackage moduleArgs)
+            callWithArgs
+            (f: f { })
             (
               x:
               if isList x then
@@ -98,7 +99,7 @@ let
         toJSON
       ];
     in
-    pkgs.runCommandLocal "check-tests"
+    runCommandLocal "check-tests"
       {
         inherit results;
         passAsFile = [ "results" ];

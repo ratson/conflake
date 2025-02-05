@@ -25,7 +25,7 @@ let
   inherit (conflake.types) optCallWith;
 
   isHome = x: x ? activationPackage;
-  inherit (config) genSystems mkSystemArgs';
+  inherit (config) mkSystemArgs';
   mkHome =
     name: cfg:
     pipe cfg [
@@ -68,7 +68,7 @@ in
   config = {
     outputs = mkIf (config.homeConfigurations != { }) {
       homeConfigurations = configs;
-      checks = genSystems (
+      checks = config.genSystems' (
         { system, ... }:
         pipe configs [
           (filterAttrs (_: v: v.pkgs.system == system))

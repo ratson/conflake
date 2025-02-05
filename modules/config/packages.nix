@@ -1,11 +1,9 @@
 {
   config,
   lib,
-  inputs,
   conflake,
   conflake',
   moduleArgs,
-  src,
   ...
 }:
 
@@ -16,7 +14,6 @@ let
     mapAttrs
     parseDrvName
     tryEval
-    warn
     ;
   inherit (lib)
     defaultTo
@@ -31,6 +28,7 @@ let
     optionalAttrs
     optionals
     pipe
+    removeAttrs
     types
     ;
   inherit (lib.types)
@@ -40,12 +38,10 @@ let
     str
     uniq
     ;
-  inherit (conflake.types)
-    nullable
-    optFunctionTo
-    overlay
-    packageDef
-    ;
+  inherit (conflake) callWith;
+  inherit (conflake.types) nullable overlay;
+
+  cfg = config.packages;
 
   genPkg =
     final: prev: name: pkg:
@@ -68,19 +64,23 @@ let
     final: prev: pkgs:
     mapAttrs (name: genPkg final prev name) pkgs;
 
-  getPkgDefs = pkgs: config.packages (moduleArgs // { inherit (pkgs) system; });
-
-  packages = config.genSystems (pkgs: mapAttrs (k: _: pkgs.${k}) (getPkgDefs pkgs));
+  getPkgDefs =
+    pkgs:
+    pipe cfg [
+      (callWith moduleArgs)
+      (callWith config.systemArgsFor.${pkgs.stdenv.hostPlatform.system})
+      (f: f { })
+    ];
 in
 {
   options = {
     package = mkOption {
-      type = nullable packageDef;
+      type = nullable conflake.types.package;
       default = null;
     };
 
     packages = mkOption {
-      type = nullable (optFunctionTo (lazyAttrsOf packageDef));
+      type = nullable conflake.types.packages;
       default = null;
     };
 
@@ -120,6 +120,30 @@ in
           license = if isList license then map getLicense license else getLicense license;
         };
     };
+    finalPackages = mkOption {
+      internal = true;
+      readOnly = true;
+      type = lazyAttrsOf (lazyAttrsOf types.package);
+      default = config.genSystems' (
+        { callWithArgs }:
+        let
+          packages = pipe cfg [
+            callWithArgs
+            (f: f { })
+          ];
+          packages' = mapAttrs (
+            name: f:
+            pipe f [
+              callWithArgs
+              (callWith (removeAttrs packages' [ name ]))
+              (callWith { inherit name; })
+              (f: f { })
+            ]
+          ) packages;
+        in
+        packages'
+      );
+    };
     packageOverlay = mkOption {
       internal = true;
       type = uniq overlay;
@@ -132,7 +156,7 @@ in
       packages.default = config.package;
     })
 
-    (mkIf (config.packages != null) {
+    (mkIf (cfg != null) {
       packageOverlay =
         final: prev:
         let
@@ -141,57 +165,26 @@ in
           mockPkgs = conflake'.nameMockedPkgs prev;
 
           defaultPkgName = flip defaultTo config.pname (
-            findFirst (x: (tryEval x).success)
-              (throw (
-                "Could not determine the name of the default package; "
-                + "please set the `pname` conflake option to the intended name."
-              ))
-              [
-                (getName (mockPkgs.callPackage pkgDefs.default { }))
-                (getName
-                  (import inputs.nixpkgs {
-                    inherit (prev.stdenv.hostPlatform) system;
-                    inherit (config.nixpkgs) config;
-                    overlays =
-                      warn ''
-                        Getting default package name with overlays will be removed
-                        due to the performance cost on nixpkgs re-evaluation and
-                        may cause infinite recursion.
-                        Set `pname` explicitly to stop this in ${src}/flake.nix
-                      '' config.withOverlays
-                      ++ [
-                        (final: prev: genPkgs final prev pkgDefs)
-                      ];
-                  }).default
-                )
-              ]
+            findFirst (x: (tryEval x).success) null [
+              (getName (mockPkgs.callPackage pkgDefs.default { }))
+            ]
           );
           default = genPkg final prev defaultPkgName pkgDefs.default;
         in
         pipe pkgDefs [
-          (flip removeAttrs [ "default" ])
           (genPkgs final prev)
           (mergeAttrs (
-            optionalAttrs (pkgDefs ? default) {
+            optionalAttrs (pkgDefs ? default && defaultPkgName != null) {
               inherit default;
-              ${defaultPkgName} = warn ''
-                Auto derive package name from default package will soon be
-                removed.
-                Package `${defaultPkgName}` should be exported explicitly.
-              '' default;
+              ${defaultPkgName} = default;
             }
           ))
         ];
 
-      outputs = { inherit packages; };
+      outputs.packages = config.finalPackages;
 
       devShell.inputsFrom =
-        pkgs:
-        pipe pkgs [
-          getPkgDefs
-          (hasAttr "default")
-          (flip optionals [ pkgs.default ])
-        ];
+        { outputs' }: optionals (outputs' ? packages.default) [ outputs'.packages.default ];
     })
   ];
 }

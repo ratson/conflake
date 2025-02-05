@@ -2,7 +2,6 @@
   config,
   lib,
   conflake,
-  src,
   ...
 }:
 
@@ -16,7 +15,6 @@ let
     optionalString
     types
     ;
-  inherit (config) genSystems;
   inherit (config.src) has;
 
   cfg = config.presets.checks.editorconfig;
@@ -37,12 +35,16 @@ in
 
   config = mkIf (cfg.enable && has ".editorconfig") {
     loaders.outputs = _: {
-      checks = genSystems (
-        pkgs:
-        mkIf (elem pkgs.stdenv.hostPlatform.system platforms) {
-          editorconfig = conflake.mkCheck "editorconfig" pkgs src (
+      checks = config.genSystems' (
+        {
+          editorconfig-checker,
+          stdenv,
+          callWithArgs,
+        }:
+        mkIf (elem stdenv.hostPlatform.system platforms) {
+          editorconfig = callWithArgs conflake.mkCheck { name = "editorconfig"; } (
             concatStringsSep " " [
-              (getExe pkgs.editorconfig-checker)
+              (getExe editorconfig-checker)
               cfg.args
             ]
           );

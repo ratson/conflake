@@ -2,35 +2,23 @@
   config,
   lib,
   conflake,
-  moduleArgs,
   ...
 }:
 
 let
   inherit (builtins) mapAttrs;
   inherit (lib)
+    defaultTo
+    flip
     isFunction
     mkIf
     mkMerge
     mkOption
+    pipe
     ;
-  inherit (config) genSystems;
-  inherit (conflake.types) nullable optCallWith;
+  inherit (conflake.types) nullable;
 
-  genDevShell =
-    pkgs: cfg:
-    if cfg.overrideShell != null then
-      cfg.overrideShell
-    else
-      let
-        cfg' = mapAttrs (_: v: if isFunction v then v pkgs else v) cfg;
-      in
-      pkgs.mkShell.override { inherit (cfg') stdenv; } (
-        removeAttrs cfg' [
-          "overrideShell"
-          "stdenv"
-        ]
-      );
+  cfg = config.devShells;
 in
 {
   options = {
@@ -40,7 +28,7 @@ in
     };
 
     devShells = mkOption {
-      type = optCallWith moduleArgs conflake.types.devShells;
+      type = conflake.types.devShells;
       default = { };
     };
   };
@@ -50,8 +38,34 @@ in
       devShells.default = config.devShell;
     })
 
-    (mkIf (config.devShells != { }) {
-      outputs.devShells = genSystems (pkgs: mapAttrs (_: v: genDevShell pkgs (v pkgs)) config.devShells);
+    (mkIf (cfg != { }) {
+      outputs.devShells = config.genSystems' (
+        { mkShell, callWithArgs }:
+        pipe cfg [
+          (mapAttrs (
+            _:
+            flip pipe [
+              callWithArgs
+              (f: f { })
+              (
+                cfg:
+                defaultTo (pipe cfg [
+                  (mapAttrs (_: v: if isFunction v then callWithArgs v { } else v))
+                  (
+                    cfg':
+                    mkShell.override { inherit (cfg') stdenv; } (
+                      removeAttrs cfg' [
+                        "overrideShell"
+                        "stdenv"
+                      ]
+                    )
+                  )
+                ]) cfg.overrideShell
+              )
+            ]
+          ))
+        ]
+      );
     })
   ];
 }

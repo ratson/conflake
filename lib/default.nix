@@ -21,13 +21,21 @@ lib.makeExtensible (self: {
   inherit (self.attrsets) selectAttr prefixAttrs prefixAttrsCond;
   inherit (self.filesystem) collectPaths;
   inherit (self.flake) mkVersion mkVersion';
-  inherit (self.function) callWith;
+  inherit (self.function) callMustWith callWith;
 
   mkCheck =
-    name: pkgs: src: cmd:
-    pkgs.runCommandLocal "check-${name}" { } ''
+    {
+      name,
+      src,
+      runCommandLocal,
+      ...
+    }:
+    cmd:
+    runCommandLocal "check-${name}" { } ''
       pushd "${src}"
-      ${cmd}
+      if  [ -x "${cmd}" ]; then
+        ${cmd}
+      fi
       popd
       touch $out
     '';

@@ -36,7 +36,7 @@ let
     enable: exts:
     mkIf enable {
       formatters =
-        pkgs:
+        { pkgs }:
         optionalAttrs (hasNodejs pkgs) (
           pipe exts [
             (x: if isList x then x else [ x ])
@@ -68,19 +68,19 @@ in
   config = mkMerge [
     (mkIf cfg.nix {
       devShell.packages =
-        pkgs:
+        { pkgs }:
         optionals (hasNixfmt pkgs) [
           pkgs.nixfmt-rfc-style
         ];
       formatters =
-        pkgs:
+        { pkgs }:
         optionalAttrs (hasNixfmt pkgs) {
           "*.nix" = mkDefault (getExe pkgs.nixfmt-rfc-style);
         };
     })
     (mkIf (cfg.json || cfg.markdown || cfg.yaml) {
       devShell.packages =
-        pkgs:
+        { pkgs }:
         optionals (hasNodejs pkgs) [
           pkgs.nodePackages.prettier
         ];

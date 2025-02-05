@@ -15,7 +15,6 @@ let
 
   cfg = config.presets.checks.formatting;
 in
-
 {
   options.presets.checks.formatting = {
     enable = mkEnableOption "formatting check" // {

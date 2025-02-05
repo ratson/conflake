@@ -17,7 +17,7 @@ let
     pipe
     ;
   inherit (lib.types) attrs lazyAttrsOf;
-  inherit (config) genSystems mkSystemArgs;
+  inherit (config) mkSystemArgs;
   inherit (conflake.types) optCallWith;
 
   # Avoid checking if toplevel is a derivation as it causes the nixos modules
@@ -56,7 +56,7 @@ in
   config = {
     outputs = mkIf (true && config.nixosConfigurations != { }) {
       nixosConfigurations = configs;
-      checks = genSystems (
+      checks = config.genSystems' (
         { system, ... }:
         pipe configs [
           (filterAttrs (_: v: v.pkgs.system == system))

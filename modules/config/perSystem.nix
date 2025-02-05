@@ -1,6 +1,7 @@
 {
   config,
   lib,
+  options,
   conflake,
   ...
 }:
@@ -10,27 +11,40 @@ let
   inherit (lib)
     foldAttrs
     mergeAttrs
+    mkIf
     mkOption
     pipe
     types
     ;
+  inherit (lib.types) lazyAttrsOf;
+
+  cfg = config.perSystem;
 in
 {
   options.perSystem = mkOption {
-    type = types.functionTo conflake.types.outputs;
+    type = conflake.types.perSystem;
     default = _: { };
   };
 
-  config = {
-    outputs = pipe config.systems [
+  options.perSystemOutputs = mkOption {
+    internal = true;
+    readOnly = true;
+    type = lazyAttrsOf (lazyAttrsOf types.unspecified);
+    default = pipe config.systems [
+      (map (system: config.systemArgsFor'.${system}))
       (map (
-        system:
-        pipe config.pkgsFor.${system} [
-          config.perSystem
+        { system, callWithArgs, ... }:
+        pipe cfg [
+          callWithArgs
+          (f: f { })
           (mapAttrs (_: v: { ${system} = v; }))
         ]
       ))
       (foldAttrs mergeAttrs { })
     ];
+  };
+
+  config = mkIf options.perSystem.isDefined {
+    outputs = config.perSystemOutputs;
   };
 }

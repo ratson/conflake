@@ -10,7 +10,7 @@
 
 let
   inherit (builtins) mapAttrs;
-  inherit (lib) mkIf mkOption types;
+  inherit (lib) mkIf mkOption;
   inherit (lib.types) attrs lazyAttrsOf;
   inherit (conflake.types) optCallWith;
 

@@ -7,13 +7,21 @@ let
     mapAttrs
     ;
   inherit (lib)
+    fix
     functionArgs
     isFunction
     setFunctionArgs
     ;
 in
-{
-  callWith =
+fix (self: {
+  callMustWith = self.callWith' { merge = true; };
+
+  callWith = self.callWith' { };
+
+  callWith' =
+    {
+      merge ? false,
+    }:
     autoArgs: fn:
     let
       f = if isFunction fn then fn else import fn;
@@ -23,9 +31,9 @@ in
       fargs' = mapAttrs (k: v: v || hasAttr k fallbackArgs) fargs;
 
       noArgs = fargs == { };
-      fallbackArgs' = if noArgs then autoArgs else fallbackArgs;
+      fallbackArgs' = if merge && noArgs then autoArgs else fallbackArgs;
 
       f' = args: f (fallbackArgs' // args);
     in
-    setFunctionArgs f' fargs';
-}
+    if noArgs then f' else setFunctionArgs f' fargs';
+})

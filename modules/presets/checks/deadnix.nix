@@ -32,10 +32,10 @@ in
 
   config = mkIf cfg.enable {
     checks.deadnix =
-      pkgs:
-      optionalString (!elem pkgs.stdenv.hostPlatform.system [ "x86_64-freebsd" ]) (
+      { deadnix, stdenv }:
+      optionalString (!elem stdenv.hostPlatform.system [ "x86_64-freebsd" ]) (
         concatStringsSep " " [
-          (getExe pkgs.deadnix)
+          (getExe deadnix)
           (optionalString (cfg.exclude != null) "--exclude ${escapeShellArgs cfg.exclude}")
           "--fail"
           (escapeShellArgs cfg.files)

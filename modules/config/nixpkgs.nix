@@ -21,7 +21,5 @@ in
     };
   };
 
-  config = {
-    nixpkgs.overlays = config.withOverlays ++ [ config.packageOverlay ];
-  };
+  config.nixpkgs.overlays = config.withOverlays;
 }
