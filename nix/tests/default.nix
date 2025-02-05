@@ -15,8 +15,10 @@ let
     fix
     hasPrefix
     isDerivation
+    mkDefault
     ;
-  inherit (inputs) nixpkgs self;
+  inherit (inputs) nixpkgs;
+  inherit (inputs.self.lib) mkOutputs;
 
   fixtures = {
     empty = ./_fixtures/empty;
@@ -31,9 +33,9 @@ let
 
   conflake =
     src: m:
-    self src {
+    inputs.self src {
       imports = [ m ];
-      inputs = lib.mkDefault inputs;
+      inputs = mkDefault inputs;
     };
 
   conflake' = conflake fixtures.empty;
@@ -48,7 +50,7 @@ in
   ];
 
   explicit-mkOutputs = [
-    (self.lib.mkOutputs fixtures.empty {
+    (mkOutputs fixtures.empty {
       inherit inputs;
       outputs.test = true;
     })
@@ -350,14 +352,6 @@ in
       writeText "test" "${testValue}${testValue2}";
   }) (f: import f.packages.x86_64-linux.default);
 
-  package-no-named-args = test (conflake' {
-    package = { pkgs }: pkgs.hello;
-  }) (f: f.packages.aarch64-linux.default.pname == "hello");
-
-  package-prevent-recursion = test (conflake' {
-    package = { hello }: hello;
-  }) (f: f.packages.aarch64-linux.default.pname == "hello");
-
   package = [
     (conflake' {
       package =
@@ -385,6 +379,33 @@ in
       true
       true
     ]
+  ];
+
+  package-no-named-args = test (conflake' {
+    package = { pkgs }: pkgs.hello;
+  }) (f: f.packages.aarch64-linux.default.pname == "hello");
+
+  package-overlay-no-default = [
+    (conflake' {
+      package =
+        { stdenv }:
+        stdenv.mkDerivation {
+          name = "pkg1";
+          src = fixtures.empty;
+          installPhase = "echo true > $out";
+        };
+    })
+    (x: nixpkgs.legacyPackages.x86_64-linux.extend x.overlays.default)
+    (x: x ? default)
+    false
+  ];
+
+  package-prevent-recursion = [
+    (conflake' {
+      package = { hello }: hello;
+    })
+    (f: f.packages.aarch64-linux.default.pname)
+    "hello"
   ];
 
   packages = [
@@ -447,19 +468,21 @@ in
     ]
   ];
 
-  package-overlay-no-default = [
+  packages-can-override = [
     (conflake' {
-      package =
-        { stdenv }:
-        stdenv.mkDerivation {
-          name = "pkg1";
-          src = fixtures.empty;
-          installPhase = "echo true > $out";
-        };
+      packages = {
+        default =
+          { outputs' }:
+          (outputs'.packages.pkg1.override {
+          }).overrideAttrs
+            (_: {
+              pname = "new-name";
+            });
+        pkg1 = { pkgs }: pkgs.hello;
+      };
     })
-    (x: nixpkgs.legacyPackages.x86_64-linux.extend x.overlays.default)
-    (x: x ? default)
-    false
+    (x: x.packages.aarch64-linux.default.pname)
+    "new-name"
   ];
 
   packages-refer-default-as-default = [
@@ -1376,7 +1399,7 @@ in
   ];
 
   extend-mkOutputs = [
-    (self.lib.mkOutputs.extend [
+    (mkOutputs.extend [
       {
         inherit inputs;
         outputs.test = true;
@@ -1388,7 +1411,7 @@ in
   ];
 
   extend-mkOutputs-nested = [
-    (self.lib.mkOutputs.extend [
+    (mkOutputs.extend [
       {
         inherit inputs;
         outputs.test = true;
