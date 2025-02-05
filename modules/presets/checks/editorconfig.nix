@@ -13,6 +13,7 @@ let
     mkIf
     mkOption
     optionalString
+    pipe
     types
     ;
   inherit (config.src) has;
@@ -39,15 +40,22 @@ in
         {
           editorconfig-checker,
           stdenv,
-          callWithArgs,
+          pkgsCall,
         }:
         mkIf (elem stdenv.hostPlatform.system platforms) {
-          editorconfig = callWithArgs conflake.mkCheck { name = "editorconfig"; } (
-            concatStringsSep " " [
-              (getExe editorconfig-checker)
-              cfg.args
-            ]
-          );
+          editorconfig = pipe conflake.mkCheck [
+            (conflake.callWith { name = "editorconfig"; })
+            pkgsCall
+            (
+              f:
+              f (
+                concatStringsSep " " [
+                  (getExe editorconfig-checker)
+                  cfg.args
+                ]
+              )
+            )
+          ];
         }
       );
     };

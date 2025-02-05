@@ -125,19 +125,15 @@ in
       readOnly = true;
       type = lazyAttrsOf (lazyAttrsOf types.package);
       default = config.genSystems' (
-        { callWithArgs }:
+        { pkgsCall }:
         let
-          packages = pipe cfg [
-            callWithArgs
-            (f: f { })
-          ];
+          packages = pkgsCall cfg;
           packages' = mapAttrs (
             name: f:
             pipe f [
-              callWithArgs
               (callWith (removeAttrs packages' [ name ]))
               (callWith { inherit name; })
-              (f: f { })
+              pkgsCall
             ]
           ) packages;
         in

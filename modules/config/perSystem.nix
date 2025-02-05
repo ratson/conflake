@@ -33,10 +33,9 @@ in
     default = pipe config.systems [
       (map (system: config.systemArgsFor'.${system}))
       (map (
-        { system, callWithArgs, ... }:
+        { system, pkgsCall, ... }:
         pipe cfg [
-          callWithArgs
-          (f: f { })
+          pkgsCall
           (mapAttrs (_: v: { ${system} = v; }))
         ]
       ))

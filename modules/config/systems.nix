@@ -12,7 +12,9 @@ let
   inherit (builtins) getAttr mapAttrs;
   inherit (lib)
     flip
+    functionArgs
     genAttrs
+    isFunction
     mkOption
     pipe
     types
@@ -55,16 +57,14 @@ in
       default =
         fn:
         config.genSystems' (
-          { callWithArgs }:
+          { pkgsCall }:
           pipe fn [
-            callWithArgs
-            (f: f { })
+            pkgsCall
             (mapAttrs (
               name: f:
               pipe f [
-                callWithArgs
                 (callWith { inherit name; })
-                (f: f { })
+                pkgsCall
               ]
             ))
           ]
@@ -74,16 +74,7 @@ in
       internal = true;
       readOnly = true;
       type = types.unspecified;
-      default =
-        f:
-        mapAttrs (
-          _:
-          { callWithArgs, ... }:
-          pipe f [
-            callWithArgs
-            (f: f { })
-          ]
-        ) config.systemArgsFor';
+      default = f: mapAttrs (_: { pkgsCall, ... }: pkgsCall f) config.systemArgsFor';
     };
     mkSystemArgs' = mkOption {
       internal = true;
@@ -120,15 +111,25 @@ in
       default = mapAttrs (
         system: v:
         let
-          v' = v // {
-            inherit callWithArgs pkgs;
-          };
           pkgs = config.pkgsFor.${system};
-          callWithArgs = flip pipe [
-            (callWith pkgs)
-            (callWith moduleArgs)
-            (callWith v')
-          ];
+          pkgsCall =
+            f:
+            let
+              f' = if isFunction f then f else import f;
+              noArgs = functionArgs f' == { };
+            in
+            if noArgs then
+              f' pkgs
+            else
+              pipe f' [
+                (callWith pkgs)
+                (callWith moduleArgs)
+                (callWith v')
+                (f: f { })
+              ];
+          v' = v // {
+            inherit pkgs pkgsCall;
+          };
         in
         v'
       ) config.systemArgsFor;

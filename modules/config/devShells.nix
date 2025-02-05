@@ -40,17 +40,16 @@ in
 
     (mkIf (cfg != { }) {
       outputs.devShells = config.genSystems' (
-        { mkShell, callWithArgs }:
+        { mkShell, pkgsCall }:
         pipe cfg [
           (mapAttrs (
             _:
             flip pipe [
-              callWithArgs
-              (f: f { })
+              pkgsCall
               (
                 cfg:
                 defaultTo (pipe cfg [
-                  (mapAttrs (_: v: if isFunction v then callWithArgs v { } else v))
+                  (mapAttrs (_: v: if isFunction v then pkgsCall v else v))
                   (
                     cfg':
                     mkShell.override { inherit (cfg') stdenv; } (

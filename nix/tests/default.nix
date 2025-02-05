@@ -381,9 +381,13 @@ in
     ]
   ];
 
-  package-no-named-args = test (conflake' {
-    package = { pkgs }: pkgs.hello;
-  }) (f: f.packages.aarch64-linux.default.pname == "hello");
+  package-no-named-args = [
+    (conflake' {
+      package = pkgs: pkgs.hello;
+    })
+    (f: f.packages.aarch64-linux.default.pname)
+    "hello"
+  ];
 
   package-overlay-no-default = [
     (conflake' {
@@ -635,18 +639,22 @@ in
     ]
   ];
 
-  devShell = test (conflake' {
-    devShell = {
-      inputsFrom = { pkgs }: [ pkgs.emacs ];
-      packages = { pkgs }: [ pkgs.coreutils ];
-      shellHook = ''
-        echo Welcome to example shell!
-      '';
-      env.TEST_VAR = "test value";
-      stdenv = { pkgs }: pkgs.clangStdenv;
-      hardeningDisable = [ "all" ];
-    };
-  }) (f: isDerivation f.devShells.x86_64-linux.default);
+  devShell = [
+    (conflake' {
+      devShell = {
+        inputsFrom = pkgs: [ pkgs.emacs ];
+        packages = { pkgs }: [ pkgs.coreutils ];
+        shellHook = ''
+          echo Welcome to example shell!
+        '';
+        env.TEST_VAR = "test value";
+        stdenv = { pkgs }: pkgs.clangStdenv;
+        hardeningDisable = [ "all" ];
+      };
+    })
+    (f: isDerivation f.devShells.x86_64-linux.default)
+    true
+  ];
 
   devShell-empty = test (conflake' {
     disabledModules = [ "presets/formatters.nix" ];
@@ -702,9 +710,13 @@ in
     }
   )) (f: isDerivation f.devShells.x86_64-linux.default);
 
-  devShell-pkg-fn = test (conflake' {
-    devShell = { pkgs }: pkgs.hello;
-  }) (f: isDerivation f.devShells.x86_64-linux.default);
+  devShell-pkg-fn = [
+    (conflake' {
+      devShell = pkgs: pkgs.hello;
+    })
+    (f: isDerivation f.devShells.x86_64-linux.default)
+    true
+  ];
 
   devShell-buildInputs = test (conflake' {
     devShell.buildInputs = { pkgs }: [ pkgs.hello ];
@@ -830,7 +842,7 @@ in
     (conflake' {
       checks = {
         test-fail = { pkgs }: "exit 1";
-        test-success = { pkgs }: pkgs.hello;
+        test-success = pkgs: pkgs.hello;
       };
     })
     (x: [
@@ -1019,7 +1031,7 @@ in
 
   formatter = [
     (conflake' {
-      formatter = { pkgs }: pkgs.hello;
+      formatter = pkgs: pkgs.hello;
     })
     (x: isDerivation x.formatter.x86_64-linux)
     true

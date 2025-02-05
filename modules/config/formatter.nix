@@ -33,11 +33,11 @@ let
       stdenv,
       writeShellApplication,
       outputs',
-      callWithArgs,
+      pkgsCall,
     }:
     let
       inherit (stdenv.hostPlatform) system;
-      formatters = callWithArgs config.formatters { };
+      formatters = pkgsCall config.formatters;
       fullContext = all hasContext (attrValues formatters);
       caseArms = pipe formatters [
         (mapAttrsToList (k: v: "\n      ${k}) ${v} \"$f\" & ;;"))
@@ -79,7 +79,7 @@ in
 
   config = mkMerge [
     (mkIf (cfg != null) {
-      outputs.formatter = genSystems' cfg;
+      outputs.formatter = genSystems' ({ pkgsCall }: pkgsCall cfg);
     })
 
     (mkIf (config.formatters != null) {

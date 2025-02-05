@@ -64,15 +64,14 @@ let
 
   mkCheck =
     tests:
-    { callWithArgs, runCommandLocal }:
+    { pkgsCall, runCommandLocal }:
     let
       results = pipe placeholderTree [
         (mergeAttrs { ${config.src.relTo cfg.src} = tests; })
         (mapAttrsRecursive (
           _:
           flip pipe [
-            callWithArgs
-            (f: f { })
+            pkgsCall
             (
               x:
               if isList x then

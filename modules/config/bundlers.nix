@@ -37,14 +37,14 @@ in
 
     (mkIf (cfg != null) {
       outputs.bundlers = config.genSystems' (
-        { pkgs, callWithArgs }:
+        { pkgs, pkgsCall }:
         mapAttrs (
           _: bundler: drv:
           let
             bundler' = if isFunction (bundler (pkgs // drv)) then bundler pkgs else bundler;
           in
           bundler' drv
-        ) (callWithArgs cfg { })
+        ) (pkgsCall cfg)
       );
     })
   ];

@@ -139,11 +139,10 @@ fix (
             pkgs,
             runCommandLocal,
             src,
-            callWithArgs,
+            pkgsCall,
           }:
           pipe value [
-            callWithArgs
-            (f: f { })
+            pkgsCall
             (mkCheck { inherit name src runCommandLocal; })
           ]
       ))
@@ -173,14 +172,6 @@ fix (
         overrideShell = p;
       }))
       optFunctionTo
-      (coercedTo (functionTo unspecified) (
-        fn:
-        { pkgs }:
-        let
-          val = pkgs.callPackage fn { };
-        in
-        if (functionArgs fn == { }) || !(package.check val) then callWith pkgs fn { } else val
-      ))
     ];
 
     devShells = lazyAttrsOf devShell;
