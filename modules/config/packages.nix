@@ -64,13 +64,10 @@ let
     final: prev: pkgs:
     mapAttrs (name: genPkg final prev name) pkgs;
 
-  getPkgDefs =
-    pkgs:
-    pipe cfg [
-      (callWith moduleArgs)
-      (callWith config.systemArgsFor.${pkgs.stdenv.hostPlatform.system})
-      (f: f { })
-    ];
+  getPkgDefs = flip pipe [
+    config.mkSystemArgs'
+    ({ pkgsCall, ... }: pkgsCall cfg)
+  ];
 in
 {
   options = {

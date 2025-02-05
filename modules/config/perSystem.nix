@@ -32,7 +32,8 @@ in
       readOnly = true;
       type = lazyAttrsOf (lazyAttrsOf types.unspecified);
       default = pipe config.systems [
-        (map (system: config.systemArgsFor'.${system}))
+        (map (system: config.pkgsFor.${system}))
+        (map config.mkSystemArgs')
         (map (
           { system, pkgsCall, ... }:
           pipe cfg [

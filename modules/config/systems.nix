@@ -19,7 +19,7 @@ let
     pipe
     types
     ;
-  inherit (lib.types) coercedTo lazyAttrsOf;
+  inherit (lib.types) lazyAttrsOf;
   inherit (conflake) callWith selectAttr;
   inherit (conflake.types) functionTo;
 
@@ -72,13 +72,16 @@ in
       internal = true;
       readOnly = true;
       type = types.unspecified;
-      default = f: mapAttrs (_: { pkgsCall, ... }: pkgsCall f) config.systemArgsFor';
-    };
-    mkSystemArgs' = mkOption {
-      internal = true;
-      readOnly = true;
-      type = types.unspecified;
-      default = pkgs: config.mkSystemArgs pkgs.stdenv.hostPlatform.system;
+      default =
+        f:
+        genAttrs cfg (
+          system:
+          pipe system [
+            (flip getAttr config.pkgsFor)
+            config.mkSystemArgs'
+            ({ pkgsCall, ... }: pkgsCall f)
+          ]
+        );
     };
     mkSystemArgs = mkOption {
       internal = true;
@@ -91,25 +94,14 @@ in
         outputs' = selectAttr system outputs;
       };
     };
-    systemArgsFor = mkOption {
+    mkSystemArgs' = mkOption {
       internal = true;
       readOnly = true;
-      type = lazyAttrsOf (lazyAttrsOf types.unspecified);
-      default = genAttrs cfg (system: {
-        inherit system;
-        inherit (config) defaultMeta;
-        inputs' = mapAttrs (_: selectAttr system) inputs;
-        outputs' = selectAttr system outputs;
-      });
-    };
-    systemArgsFor' = mkOption {
-      internal = true;
-      readOnly = true;
-      type = lazyAttrsOf (lazyAttrsOf types.unspecified);
-      default = mapAttrs (
-        system: v:
+      type = functionTo (lazyAttrsOf types.unspecified);
+      default =
+        pkgs:
         let
-          pkgs = config.pkgsFor.${system};
+          inherit (pkgs.stdenv.hostPlatform) system;
           pkgsCall =
             f:
             let
@@ -122,15 +114,14 @@ in
               pipe f' [
                 (callWith pkgs)
                 (callWith moduleArgs)
-                (callWith v')
+                (callWith final)
                 (f: f { })
               ];
-          v' = v // {
-            inherit pkgs pkgsCall;
+          final = (config.mkSystemArgs system) // {
+            inherit pkgsCall;
           };
         in
-        v'
-      ) config.systemArgsFor;
+        final;
     };
   };
 }
