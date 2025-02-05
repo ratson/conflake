@@ -1,8 +1,7 @@
 {
-  config,
-  lib,
   pkgs,
   inputs',
+  outputs',
   ...
 }:
 
@@ -10,6 +9,6 @@
   home.packages = [
     pkgs.hello
     inputs'.greet.packages.greet
-    pkgs.bonjour
+    outputs'.packages.bonjour
   ];
 }

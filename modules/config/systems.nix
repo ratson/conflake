@@ -35,9 +35,7 @@ in
     pkgsFor = mkOption {
       internal = true;
       readOnly = true;
-      type = coercedTo (functionTo types.pkgs) (v: genAttrs cfg (flip getAttr v)) (
-        lazyAttrsOf types.pkgs
-      );
+      type = lazyAttrsOf types.pkgs;
       default =
         if config.nixpkgs.config == { } && config.nixpkgs.overlays == [ ] then
           inputs.nixpkgs.legacyPackages
@@ -85,9 +83,9 @@ in
     mkSystemArgs = mkOption {
       internal = true;
       readOnly = true;
-      type = types.unspecified;
+      type = functionTo (lazyAttrsOf types.unspecified);
       default = system: {
-        inherit inputs outputs system;
+        inherit system;
         inherit (config) defaultMeta;
         inputs' = mapAttrs (_: selectAttr system) inputs;
         outputs' = selectAttr system outputs;

@@ -75,6 +75,7 @@ fix (
       devShell
       function
       functionTo
+      loader
       matcher
       nonFunction
       nullable
@@ -230,6 +231,8 @@ fix (
     legacyPackages = functionTo (lazyAttrsOf (either (lazyAttrsOf raw) raw));
 
     loader = functionTo unspecified;
+
+    loaders = lazyAttrsOf (optListOf loader);
 
     matcher = pipe (functionTo bool) [
       (coercedTo (either path str) (

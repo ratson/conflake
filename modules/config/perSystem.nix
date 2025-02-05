@@ -21,26 +21,28 @@ let
   cfg = config.perSystem;
 in
 {
-  options.perSystem = mkOption {
-    type = conflake.types.perSystem;
-    default = _: { };
-  };
+  options = {
+    perSystem = mkOption {
+      type = conflake.types.perSystem;
+      default = _: { };
+    };
 
-  options.perSystemOutputs = mkOption {
-    internal = true;
-    readOnly = true;
-    type = lazyAttrsOf (lazyAttrsOf types.unspecified);
-    default = pipe config.systems [
-      (map (system: config.systemArgsFor'.${system}))
-      (map (
-        { system, pkgsCall, ... }:
-        pipe cfg [
-          pkgsCall
-          (mapAttrs (_: v: { ${system} = v; }))
-        ]
-      ))
-      (foldAttrs mergeAttrs { })
-    ];
+    perSystemOutputs = mkOption {
+      internal = true;
+      readOnly = true;
+      type = lazyAttrsOf (lazyAttrsOf types.unspecified);
+      default = pipe config.systems [
+        (map (system: config.systemArgsFor'.${system}))
+        (map (
+          { system, pkgsCall, ... }:
+          pipe cfg [
+            pkgsCall
+            (mapAttrs (_: v: { ${system} = v; }))
+          ]
+        ))
+        (foldAttrs mergeAttrs { })
+      ];
+    };
   };
 
   config = mkIf options.perSystem.isDefined {

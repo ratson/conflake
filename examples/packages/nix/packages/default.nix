@@ -1,7 +1,7 @@
 {
-  pkgs,
+  outputs',
   # extra-arg,
   ...
 }:
 
-pkgs.hello
+outputs'.packages.hei

@@ -15,8 +15,10 @@ let
     mapAttrs
     ;
   inherit (lib)
+    flip
     functionArgs
     hasPrefix
+    mergeAttrs
     mkIf
     mkMerge
     mkOption
@@ -25,9 +27,8 @@ let
     setFunctionArgs
     types
     ;
-  inherit (lib.types) functionTo lazyAttrsOf;
-  inherit (config) mkSystemArgs' pkgsFor;
-  inherit (conflake.types) optListOf;
+  inherit (lib.types) functionTo;
+  inherit (config) mkSystemArgs;
   inherit (conflake') loadDirWithDefault;
 
   cfg = config.loaders;
@@ -39,28 +40,26 @@ let
     let
       f =
         { pkgs, ... }@args:
-        conflake.callMustWith moduleArgs path (
-          args
-          // (mkSystemArgs' pkgs)
-          // {
-            pkgs = (pkgsFor.${pkgs.stdenv.hostPlatform.system} or { }) // pkgs;
-          }
-        );
+        let
+          inherit (pkgs.stdenv.hostPlatform) system;
+        in
+        pipe { inherit pkgs; } [
+          (mergeAttrs (mkSystemArgs system))
+          (mergeAttrs args)
+          (conflake.callWith moduleArgs path)
+        ];
     in
-    if config.moduleArgs.enable then
-      pipe f [
-        functionArgs
-        (x: x // { pkgs = true; })
-        (setFunctionArgs f)
-        (setDefaultModuleLocation path)
-      ]
-    else
-      path;
+    pipe f [
+      functionArgs
+      (flip mergeAttrs { pkgs = true; })
+      (setFunctionArgs f)
+      (setDefaultModuleLocation path)
+    ];
 in
 {
   options = {
     loaders = mkOption {
-      type = lazyAttrsOf (optListOf conflake.types.loader);
+      type = conflake.types.loaders;
       default = { };
     };
 
