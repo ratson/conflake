@@ -54,6 +54,7 @@ let
       (flip mergeAttrs { pkgs = true; })
       (setFunctionArgs f)
       (setDefaultModuleLocation path)
+      (mergeAttrs { key = path; })
     ];
 in
 {
