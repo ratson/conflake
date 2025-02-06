@@ -33,7 +33,10 @@ let
       // {
         modules = [
           {
-            config.nixpkgs.hostPlatform = mkDefault "x86_64-linux";
+            config.nixpkgs = mapAttrs (_: mkDefault) {
+              inherit (config.nixpkgs) config overlays;
+              hostPlatform = "x86_64-linux";
+            };
           }
         ] ++ cfg.modules or [ ];
         specialArgs =

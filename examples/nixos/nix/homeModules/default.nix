@@ -3,7 +3,6 @@
   pkgs,
   inputs,
   inputs',
-  outputs,
   outputs',
   ...
 }:
@@ -14,6 +13,7 @@
   config = {
     home.packages = [
       pkgs.hello
+      pkgs.bonjour
       inputs'.greet.packages.greet
       outputs'.packages.bonjour
       config.greet.finalPackage

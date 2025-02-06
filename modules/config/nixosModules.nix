@@ -14,6 +14,8 @@ let
     ;
   inherit (lib.types) lazyAttrsOf deferredModule;
   inherit (conflake.types) nullable optCallWith;
+
+  cfg = config.nixosModules;
 in
 {
   options = {
@@ -32,13 +34,9 @@ in
     (mkIf (config.nixosModule != null) {
       nixosModules.default = config.nixosModule;
     })
-
-    (mkIf (config.nixosModules != { }) {
-      outputs = {
-        inherit (config) nixosModules;
-      };
+    (mkIf (cfg != { }) {
+      outputs.nixosModules = cfg;
     })
-
     {
       nixDir.loaders.nixosModules = config.loaderForModule;
     }

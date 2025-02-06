@@ -17,6 +17,7 @@ let
     flip
     functionArgs
     hasPrefix
+    isFunction
     mergeAttrs
     mkIf
     mkMerge
@@ -28,6 +29,7 @@ let
     ;
   inherit (lib.types) functionTo;
   inherit (config) mkSystemArgs;
+  inherit (conflake) callWith;
   inherit (conflake.loaders) filterLoadable loadDirWithDefault;
 
   cfg = config.loaders;
@@ -37,24 +39,28 @@ let
   mkModule =
     path:
     let
+      module = import path;
       f =
         { pkgs, ... }@args:
         let
           inherit (pkgs.stdenv.hostPlatform) system;
         in
-        pipe { inherit pkgs; } [
+        pipe { pkgs = pkgs.appendOverlays config.nixpkgs.overlays; } [
           (mergeAttrs (mkSystemArgs system))
           (mergeAttrs args)
-          (conflake.callWith moduleArgs path)
+          (callWith moduleArgs module)
         ];
     in
-    pipe f [
-      functionArgs
-      (flip mergeAttrs { pkgs = true; })
-      (setFunctionArgs f)
-      (setDefaultModuleLocation path)
-      (mergeAttrs { key = path; })
-    ];
+    if isFunction module then
+      pipe f [
+        functionArgs
+        (flip mergeAttrs { pkgs = true; })
+        (setFunctionArgs f)
+        (setDefaultModuleLocation path)
+        (mergeAttrs { key = path; })
+      ]
+    else
+      path;
 in
 {
   options = {

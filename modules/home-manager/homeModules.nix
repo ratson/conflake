@@ -14,6 +14,8 @@ let
     ;
   inherit (lib.types) lazyAttrsOf deferredModule;
   inherit (conflake.types) nullable optCallWith;
+
+  cfg = config.homeModules;
 in
 {
   options = {
@@ -32,10 +34,8 @@ in
     (mkIf (config.homeModule != null) {
       homeModules.default = config.homeModule;
     })
-    (mkIf (config.homeModules != { }) {
-      outputs = {
-        inherit (config) homeModules;
-      };
+    (mkIf (cfg != { }) {
+      outputs.homeModules = cfg;
     })
     {
       nixDir.loaders.homeModules = config.loaderForModule;
