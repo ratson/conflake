@@ -36,7 +36,7 @@ in
     })
 
     (mkIf (cfg != null) {
-      outputs.bundlers = config.genSystems' (
+      outputs.bundlers = config.genSystems (
         { pkgs, pkgsCall }:
         mapAttrs (
           _: bundler: drv:

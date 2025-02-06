@@ -54,7 +54,7 @@ in
       type = types.unspecified;
       default =
         fn:
-        config.genSystems' (
+        config.genSystems (
           { pkgsCall }:
           pipe fn [
             pkgsCall
@@ -68,7 +68,7 @@ in
           ]
         );
     };
-    genSystems' = mkOption {
+    genSystems = mkOption {
       internal = true;
       readOnly = true;
       type = types.unspecified;

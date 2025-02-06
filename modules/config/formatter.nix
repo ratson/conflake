@@ -21,7 +21,7 @@ let
     optionals
     pipe
     ;
-  inherit (config) genSystems';
+  inherit (config) genSystems;
   inherit (conflake.types) nullable;
 
   cfg = config.formatter;
@@ -79,12 +79,12 @@ in
 
   config = mkMerge [
     (mkIf (cfg != null) {
-      outputs.formatter = genSystems' ({ pkgsCall }: pkgsCall cfg);
+      outputs.formatter = genSystems ({ pkgsCall }: pkgsCall cfg);
     })
 
     (mkIf (config.formatters != null) {
       outputs.formatter = pipe mkFormatter [
-        genSystems'
+        genSystems
         mkDefault
       ];
     })

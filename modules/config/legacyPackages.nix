@@ -27,7 +27,7 @@ in
 
   config = mkMerge [
     (mkIf (cfg != null) {
-      outputs.legacyPackages = config.genSystems' cfg;
+      outputs.legacyPackages = config.genSystems cfg;
     })
 
     {

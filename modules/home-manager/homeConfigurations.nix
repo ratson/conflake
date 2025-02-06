@@ -24,6 +24,8 @@ let
   inherit (lib.types) attrs lazyAttrsOf;
   inherit (conflake.types) optCallWith;
 
+  cfg = config.homeConfigurations;
+
   isHome = x: x ? activationPackage;
   inherit (config) mkSystemArgs';
   mkHome =
@@ -55,9 +57,7 @@ let
       inputs.home-manager.lib.homeManagerConfiguration
     ];
 
-  configs = mapAttrs (
-    name: cfg: if isHome cfg then cfg else mkHome name cfg
-  ) config.homeConfigurations;
+  configs = mapAttrs (name: cfg: if isHome cfg then cfg else mkHome name cfg) cfg;
 in
 {
   options.homeConfigurations = mkOption {
@@ -66,9 +66,9 @@ in
   };
 
   config = {
-    outputs = mkIf (config.homeConfigurations != { }) {
+    outputs = mkIf (cfg != { }) {
       homeConfigurations = configs;
-      checks = config.genSystems' (
+      checks = config.genSystems (
         { system, ... }:
         pipe configs [
           (filterAttrs (_: v: v.pkgs.system == system))

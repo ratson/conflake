@@ -121,7 +121,7 @@ in
       internal = true;
       readOnly = true;
       type = lazyAttrsOf (lazyAttrsOf types.package);
-      default = config.genSystems' (
+      default = config.genSystems (
         { pkgsCall }:
         let
           packages = pkgsCall cfg;

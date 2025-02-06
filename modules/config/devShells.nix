@@ -39,7 +39,7 @@ in
     })
 
     (mkIf (cfg != { }) {
-      outputs.devShells = config.genSystems' (
+      outputs.devShells = config.genSystems (
         { mkShell, pkgsCall }:
         pipe cfg [
           (mapAttrs (

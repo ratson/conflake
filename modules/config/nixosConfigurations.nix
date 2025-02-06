@@ -20,6 +20,8 @@ let
   inherit (config) mkSystemArgs;
   inherit (conflake.types) optCallWith;
 
+  cfg = config.nixosConfigurations;
+
   # Avoid checking if toplevel is a derivation as it causes the nixos modules
   # to be evaluated.
   isNixos = x: x ? config.system.build.toplevel;
@@ -43,9 +45,7 @@ let
       }
     );
 
-  configs = mapAttrs (
-    hostname: cfg: if isNixos cfg then cfg else mkNixos hostname cfg
-  ) config.nixosConfigurations;
+  configs = mapAttrs (hostname: cfg: if isNixos cfg then cfg else mkNixos hostname cfg) cfg;
 in
 {
   options.nixosConfigurations = mkOption {
@@ -54,9 +54,9 @@ in
   };
 
   config = {
-    outputs = mkIf (true && config.nixosConfigurations != { }) {
+    outputs = mkIf (cfg != { }) {
       nixosConfigurations = configs;
-      checks = config.genSystems' (
+      checks = config.genSystems (
         { system, ... }:
         pipe configs [
           (filterAttrs (_: v: v.pkgs.system == system))

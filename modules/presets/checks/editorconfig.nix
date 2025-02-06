@@ -36,7 +36,7 @@ in
 
   config = mkIf (cfg.enable && has ".editorconfig") {
     loaders.outputs = _: {
-      checks = config.genSystems' (
+      checks = config.genSystems (
         {
           editorconfig-checker,
           stdenv,
