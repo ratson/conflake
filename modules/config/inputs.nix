@@ -1,21 +1,26 @@
-{ config, lib, ... }:
+{
+  config,
+  lib,
+  conflake,
+  ...
+}:
 
 let
-  inherit (lib) mkIf mkOption types;
-  inherit (lib.types) lazyAttrsOf nullOr;
+  inherit (lib) mkIf mkOption;
+  inherit (lib.types) nullOr;
 
   cfg = config.inputs;
 in
 {
   options = {
     inputs = mkOption {
-      type = nullOr (lazyAttrsOf types.raw);
+      type = nullOr conflake.types.inputs;
       default = null;
     };
 
     finalInputs = mkOption {
       internal = true;
-      type = lazyAttrsOf types.raw;
+      type = conflake.types.inputs;
     };
   };
 

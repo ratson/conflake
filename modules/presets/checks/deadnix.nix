@@ -32,7 +32,7 @@ in
 
   config = mkIf cfg.enable {
     checks.deadnix =
-      pkgs:
+      { pkgs }:
       optionalString (!elem pkgs.stdenv.hostPlatform.system [ "x86_64-freebsd" ]) (
         concatStringsSep " " [
           (getExe pkgs.deadnix)

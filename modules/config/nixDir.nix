@@ -3,7 +3,6 @@
   lib,
   options,
   conflake,
-  conflake',
   src,
   ...
 }:
@@ -40,10 +39,11 @@ let
     nullOr
     str
     ;
+  inherit (conflake.loaders) filterLoadable;
 
   cfg = config.nixDir;
 
-  loadable = conflake'.filterLoadable options;
+  loadable = filterLoadable options;
 
   loadableNames = pipe loadable [
     attrNames
@@ -65,7 +65,7 @@ in
       default = { };
     };
     loaders = mkOption {
-      type = types.lazyAttrsOf conflake.types.loader;
+      type = lazyAttrsOf conflake.types.loader;
       default = { };
     };
     matchers = mkOption {

@@ -14,6 +14,8 @@ let
     ;
   inherit (lib.types) lazyAttrsOf;
   inherit (conflake.types) nullable optCallWith overlay;
+
+  cfg = config.overlays;
 in
 {
   options = {
@@ -33,10 +35,8 @@ in
       overlays.default = config.overlay;
     })
 
-    (mkIf (config.overlays != { }) {
-      outputs = {
-        inherit (config) overlays;
-      };
+    (mkIf (cfg != { }) {
+      outputs.overlays = cfg;
     })
   ];
 }

@@ -3,7 +3,6 @@
   lib,
   options,
   conflake,
-  conflake',
   moduleArgs,
   ...
 }:
@@ -15,8 +14,11 @@ let
     mapAttrs
     ;
   inherit (lib)
+    flip
     functionArgs
     hasPrefix
+    isFunction
+    mergeAttrs
     mkIf
     mkMerge
     mkOption
@@ -25,34 +27,37 @@ let
     setFunctionArgs
     types
     ;
-  inherit (lib.types) functionTo lazyAttrsOf;
-  inherit (config) mkSystemArgs' pkgsFor;
-  inherit (conflake.types) optListOf;
-  inherit (conflake') loadDirWithDefault;
+  inherit (lib.types) functionTo;
+  inherit (config) mkSystemArgs;
+  inherit (conflake) callWith;
+  inherit (conflake.loaders) filterLoadable loadDirWithDefault;
 
   cfg = config.loaders;
 
-  loadable = conflake'.filterLoadable options;
+  loadable = filterLoadable options;
 
   mkModule =
     path:
     let
+      module = import path;
       f =
         { pkgs, ... }@args:
-        conflake.callWith moduleArgs path (
-          args
-          // (mkSystemArgs' pkgs)
-          // {
-            pkgs = (pkgsFor.${pkgs.stdenv.hostPlatform.system} or { }) // pkgs;
-          }
-        );
+        let
+          inherit (pkgs.stdenv.hostPlatform) system;
+        in
+        pipe { pkgs = pkgs.appendOverlays config.nixpkgs.overlays; } [
+          (mergeAttrs (mkSystemArgs system))
+          (mergeAttrs args)
+          (callWith moduleArgs module)
+        ];
     in
-    if config.moduleArgs.enable then
+    if isFunction module then
       pipe f [
         functionArgs
-        (x: x // { pkgs = true; })
+        (flip mergeAttrs { pkgs = true; })
         (setFunctionArgs f)
         (setDefaultModuleLocation path)
+        (mergeAttrs { key = path; })
       ]
     else
       path;
@@ -60,7 +65,7 @@ in
 {
   options = {
     loaders = mkOption {
-      type = lazyAttrsOf (optListOf conflake.types.loader);
+      type = conflake.types.loaders;
       default = { };
     };
 

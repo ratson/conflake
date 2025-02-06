@@ -13,16 +13,14 @@ let
   inherit (lib)
     filterAttrs
     flip
+    fix
     hasSuffix
-    makeExtensible
     nameValuePair
     pipe
     removeSuffix
     ;
 in
-makeExtensible (self: {
-  nameMockedPkgs = import ./nameMockedPkgs.nix;
-
+fix (self: {
   filterLoadable =
     options:
     pipe options [

@@ -20,19 +20,22 @@ let
     mapAttrsToList
     optionals
     pipe
-    types
     ;
-  inherit (lib.types) functionTo lazyAttrsOf;
   inherit (config) genSystems;
-  inherit (conflake.types) nullable optFunctionTo;
+  inherit (conflake.types) nullable;
+
+  cfg = config.formatter;
 
   mkFormatter =
-    pkgs:
+    {
+      outputs',
+      pkgs,
+      pkgsCall,
+    }:
     let
       inherit (pkgs.stdenv.hostPlatform) system;
-      formatters = config.formatters pkgs;
+      formatters = pkgsCall config.formatters;
       fullContext = all hasContext (attrValues formatters);
-      packages = optionals (config.devShell != null) (config.devShell pkgs).packages pkgs;
       caseArms = pipe formatters [
         (mapAttrsToList (k: v: "\n      ${k}) ${v} \"$f\" & ;;"))
         toString
@@ -44,7 +47,7 @@ let
       runtimeInputs =
         [ pkgs.coreutils ]
         ++ (optionals (!elem system [ "x86_64-freebsd" ]) [ pkgs.fd ])
-        ++ (optionals (!fullContext) packages);
+        ++ (optionals (!fullContext) outputs'.devShells.default.nativeBuildInputs or [ ]);
 
       text = ''
         for f in "$@"; do
@@ -62,18 +65,18 @@ in
 {
   options = {
     formatter = mkOption {
-      type = nullable (functionTo types.package);
+      type = nullable conflake.types.package;
       default = null;
     };
     formatters = mkOption {
-      type = nullable (optFunctionTo (lazyAttrsOf types.str));
+      type = nullable conflake.types.formatters;
       default = null;
     };
   };
 
   config = mkMerge [
-    (mkIf (config.formatter != null) {
-      outputs.formatter = genSystems config.formatter;
+    (mkIf (cfg != null) {
+      outputs.formatter = genSystems ({ pkgsCall }: pkgsCall cfg);
     })
 
     (mkIf (config.formatters != null) {

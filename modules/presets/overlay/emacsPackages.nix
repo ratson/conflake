@@ -30,6 +30,6 @@ in
   config = mkIf (cfg && config.legacyPackages != null) {
     inherit overlay;
 
-    withOverlays = overlay;
+    nixpkgs.overlays = [ overlay ];
   };
 }

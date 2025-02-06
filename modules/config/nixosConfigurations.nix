@@ -17,8 +17,10 @@ let
     pipe
     ;
   inherit (lib.types) attrs lazyAttrsOf;
-  inherit (config) genSystems mkSystemArgs;
+  inherit (config) mkSystemArgs;
   inherit (conflake.types) optCallWith;
+
+  cfg = config.nixosConfigurations;
 
   # Avoid checking if toplevel is a derivation as it causes the nixos modules
   # to be evaluated.
@@ -31,7 +33,10 @@ let
       // {
         modules = [
           {
-            config.nixpkgs.hostPlatform = mkDefault "x86_64-linux";
+            config.nixpkgs = mapAttrs (_: mkDefault) {
+              inherit (config.nixpkgs) config overlays;
+              hostPlatform = "x86_64-linux";
+            };
           }
         ] ++ cfg.modules or [ ];
         specialArgs =
@@ -43,9 +48,7 @@ let
       }
     );
 
-  configs = mapAttrs (
-    hostname: cfg: if isNixos cfg then cfg else mkNixos hostname cfg
-  ) config.nixosConfigurations;
+  configs = mapAttrs (hostname: cfg: if isNixos cfg then cfg else mkNixos hostname cfg) cfg;
 in
 {
   options.nixosConfigurations = mkOption {
@@ -54,9 +57,9 @@ in
   };
 
   config = {
-    outputs = mkIf (true && config.nixosConfigurations != { }) {
+    outputs = mkIf (cfg != { }) {
       nixosConfigurations = configs;
-      checks = genSystems (
+      checks = config.genSystems (
         { system, ... }:
         pipe configs [
           (filterAttrs (_: v: v.pkgs.system == system))

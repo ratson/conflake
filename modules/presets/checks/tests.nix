@@ -2,8 +2,6 @@
   config,
   lib,
   conflake,
-  conflake',
-  moduleArgs,
   ...
 }:
 
@@ -39,12 +37,14 @@ let
   inherit (lib.generators) toPretty;
   inherit (lib.path) subpath;
   inherit (conflake) matchers prefixAttrsCond;
+  inherit (conflake.loaders) loadDir';
+  inherit (conflake.debug) isAttrTest mkTestFromList;
 
   cfg = config.presets.checks.tests;
 
   tree = config.src.get cfg.src;
 
-  mkSuite = mapAttrs (_: v: if isList v then conflake.types.testVal v else v);
+  mkSuite = mapAttrs (_: v: if isList v then mkTestFromList v else v);
 
   placeholder = "flake.nix#tests";
   placeholderTree = optionalAttrs (config.tests != null) {
@@ -52,11 +52,7 @@ let
   };
 
   withPrefix =
-    attrs:
-    if cfg.prefix != "" then
-      prefixAttrsCond (_: v: v ? "expr" && v ? "expected") cfg.prefix attrs
-    else
-      attrs;
+    attrs: if cfg.prefix != "" then prefixAttrsCond (_: isAttrTest) cfg.prefix attrs else attrs;
 
   toResult =
     path: cases:
@@ -67,14 +63,15 @@ let
     if cases == [ ] then msgPass else warn msgFail cases;
 
   mkCheck =
-    tests: pkgs:
+    tests:
+    { pkgs, pkgsCall }:
     let
       results = pipe placeholderTree [
         (mergeAttrs { ${config.src.relTo cfg.src} = tests; })
         (mapAttrsRecursive (
           _:
           flip pipe [
-            (flip pkgs.callPackage moduleArgs)
+            pkgsCall
             (
               x:
               if isList x then
@@ -101,7 +98,7 @@ let
         toJSON
       ];
     in
-    pkgs.runCommandLocal "check-tests"
+    pkgs.runCommand "check-tests"
       {
         inherit results;
         passAsFile = [ "results" ];
@@ -114,7 +111,7 @@ in
 {
   options.presets.checks.tests = {
     enable = mkEnableOption "tests" // {
-      default = config.presets.enable;
+      default = config.presets.checks.enable;
     };
     name = mkOption {
       type = types.str;
@@ -142,7 +139,7 @@ in
     (mkIf (isAttrs tree) {
       checks.${cfg.name} = pipe cfg.src [
         (root: { inherit root tree; })
-        conflake'.loadDir'
+        loadDir'
         mkCheck
       ];
     })

@@ -8,61 +8,78 @@ let
     isPath
     isString
     length
+    match
+    storeDir
     ;
   inherit (lib)
     composeManyExtensions
     filter
     fix
+    flip
     functionArgs
     getFiles
     getValues
-    last
+    id
     isDerivation
     isFunction
     isStringLike
-    mergeDefinitions
+    mergeAttrs
     mkOption
     mkOptionType
     pipe
+    setFunctionArgs
     showFiles
     showOption
     singleton
-    sublist
-    throwIf
     types
+    zipAttrsWith
     ;
   inherit (lib.types)
     bool
     coercedTo
     defaultFunctor
     either
-    functionTo
+    enum
     lazyAttrsOf
     lines
     listOf
     nonEmptyListOf
+    nonEmptyStr
     nullOr
     optionDescriptionPhrase
     package
     raw
     str
     submodule
+    uniq
     unspecified
     ;
-  inherit (lib.options) mergeEqualOption mergeOneOption;
-  inherit (lib') mkCheck;
+  inherit (lib.options) mergeOneOption;
+  inherit (lib') callWith mkCheck;
+  inherit (lib'.debug) mkTestFromList;
+
+  isStorePath = s: match "${storeDir}/[^.][^ \n]*" s != null;
+
+  mkApp =
+    s:
+    { name, pkgs }:
+    {
+      program = if isStorePath s then s else "${pkgs.writeShellScript "app-${name}" s}";
+    };
 in
 fix (
   types':
   let
     inherit (types')
       check
-      coercedTo'
       devShell
-      drv
       function
+      functionTo
+      loader
       matcher
+      nonFunction
       nullable
+      optCallWith
       optFunctionTo
       optListOf
       outputsValue
@@ -74,88 +91,95 @@ fix (
       ;
   in
   {
-    check =
-      src:
-      mkOptionType {
-        name = "check";
-        description = pipe drv [
-          (coercedTo' stringLike (abort ""))
-          (optionDescriptionPhrase (class: class == "noun" || class == "composite"))
-          (targetDesc: "${targetDesc} or function that evaluates to it")
-        ];
-        descriptionClass = "composite";
-        check = x: isFunction x || drv.check x || stringLike.check x;
-        merge =
-          loc: defs: pkgs:
-          let
-            coerceFunc = mkCheck (last loc) pkgs src;
-            targetType = coercedTo' stringLike coerceFunc drv;
-          in
-          pipe defs [
-            (map (fn: {
-              inherit (fn) file;
-              value = if isFunction fn.value then fn.value pkgs else fn.value;
-            }))
-            (mergeDefinitions loc targetType)
-            (x: x.mergedValue)
-          ];
-      };
-
-    checks = src: lazyAttrsOf (check src);
-
-    coercedTo' =
-      coercedType: coerceFunc: finalType:
-      (coercedTo coercedType coerceFunc finalType)
-      // {
-        merge =
-          loc: defs:
-          let
-            coerceVal = val: if finalType.check val then val else coerceFunc val;
-          in
-          finalType.merge loc (map (def: def // { value = coerceVal def.value; }) defs);
-      };
-
-    devShell =
-      pipe
-        {
-          freeformType = lazyAttrsOf (optFunctionTo types.unspecified);
-
-          options = {
-            stdenv = mkOption {
-              type = optFunctionTo package;
-              default = pkgs: pkgs.stdenv;
-            };
-
-            overrideShell = mkOption {
-              type = nullable package;
-              internal = true;
-              default = null;
+    app = pipe "app" [
+      (default: {
+        options = {
+          type = mkOption {
+            inherit default;
+            type = enum [ default ];
+          };
+          program = mkOption {
+            type = types.pathInStore // {
+              check = isStorePath;
             };
           };
-        }
-        [
-          submodule
-          (coercedTo package (p: {
-            overrideShell = p;
-          }))
-          optFunctionTo
-          (coercedTo function (
-            fn: pkgs:
+        };
+      })
+      submodule
+      optFunctionTo
+      (coercedTo (optFunctionTo unspecified) (
+        value:
+        let
+          f' =
+            { name, pkgs, ... }@args:
             let
-              val = pkgs.callPackage fn { };
+              value' = callWith args value { };
             in
-            if (functionArgs fn == { }) || !(package.check val) then fn pkgs else val
-          ))
-        ];
+            if isStringLike value' then mkApp value' { inherit name pkgs; } else value';
+          fargs = functionArgs value // (functionArgs f');
+        in
+        if isFunction value then setFunctionArgs f' fargs else value
+      ))
+      (coercedTo stringLike mkApp)
+    ];
+
+    apps = optFunctionTo (lazyAttrsOf types'.app);
+
+    bundler = function;
+
+    bundlers = optFunctionTo (lazyAttrsOf types'.bundler);
+
+    check = pipe types'.package [
+      (coercedTo (optFunctionTo stringLike) (
+        value:
+        if isDerivation value then
+          value
+        else
+          {
+            name,
+            pkgs,
+            src,
+            pkgsCall,
+          }:
+          pipe value [
+            pkgsCall
+            (mkCheck { inherit name pkgs src; })
+          ]
+      ))
+    ];
+
+    checks = optFunctionTo (lazyAttrsOf check);
+
+    devShell = pipe (lazyAttrsOf (optFunctionTo unspecified)) [
+      (freeformType: {
+        inherit freeformType;
+
+        options = {
+          stdenv = mkOption {
+            type = optFunctionTo package;
+            default = { pkgs }: pkgs.stdenv;
+          };
+
+          overrideShell = mkOption {
+            internal = true;
+            type = nullable package;
+            default = null;
+          };
+        };
+      })
+      submodule
+      (coercedTo package (p: {
+        overrideShell = p;
+      }))
+      optFunctionTo
+    ];
 
     devShells = lazyAttrsOf devShell;
 
-    drv = mkOptionType {
+    drv = types.package // {
       name = "drv";
       description = "derivation";
-      descriptionClass = "noun";
       check = isDerivation;
-      merge = mergeOneOption;
     };
 
     fileset = mkOptionType {
@@ -165,6 +189,8 @@ fix (
       check = x: isPath x || x._type or null == "fileset";
     };
 
+    formatters = optFunctionTo (lazyAttrsOf str);
+
     function = mkOptionType {
       name = "function";
       description = "function";
@@ -173,23 +199,55 @@ fix (
       merge = mergeOneOption;
     };
 
-    legacyPackages = lazyAttrsOf (either (lazyAttrsOf raw) raw);
+    /**
+      Like `lib.types.functionTo`, but keep `functionArgs`
+      instead of turn it to be `{}`.
+    */
+    functionTo = flip pipe [
+      types.functionTo
+      (
+        super:
+        mergeAttrs super {
+          merge =
+            loc: defs:
+            let
+              fargs = pipe defs [
+                (map (def: def.value))
+                (map functionArgs)
+                (zipAttrsWith (_: all id))
+              ];
+              f = super.merge loc defs;
+            in
+            if fargs == { } then f else setFunctionArgs f fargs;
+
+          substSubModules = m: types'.functionTo (super.nestedTypes.elemType.substSubModules m);
+        }
+      )
+    ];
+
+    inputs = lazyAttrsOf raw;
+
+    legacyPackages = functionTo (lazyAttrsOf (either (lazyAttrsOf raw) raw));
 
     loader = functionTo unspecified;
 
-    matcher = coercedTo (either path str) (
-      value:
-      {
-        dir,
-        path,
-        root,
-        ...
-      }:
-      pipe value [
-        (x: if isString x then root + /${x} else x)
-        (x: x == dir || x == path)
-      ]
-    ) (functionTo bool);
+    loaders = lazyAttrsOf (optListOf loader);
+
+    matcher = pipe (functionTo bool) [
+      (coercedTo (either path str) (
+        value:
+        {
+          dir,
+          path,
+          root,
+          ...
+        }:
+        pipe value [
+          (x: if isString x then root + /${x} else x)
+          (x: x == dir || x == path)
+        ]
+      ))
+    ];
 
     matchers = listOf matcher;
 
@@ -201,18 +259,27 @@ fix (
       merge = _: defs: { imports = getValues defs; };
     };
 
-    # `lib.types.nullOr`'s merge function requires definitions
-    # to all be null or all be non-null.
-    #
-    # It was being used where the intent was that null be used as a
-    # value representing unset, and as such the merge should return null
-    # if all definitions are null and ignore nulls otherwise.
-    #
-    # This adds a type with that merge semantics.
+    nonFunction = mkOptionType {
+      name = "nonFunction";
+      description = "non-function";
+      descriptionClass = "noun";
+      check = x: !isFunction x;
+      merge = mergeOneOption;
+    };
+
+    /**
+      `lib.types.nullOr`'s merge function requires definitions
+      to all be null or all be non-null.
+
+      It was being used where the intent was that null be used as a
+      value representing unset, and as such the merge should return null
+      if all definitions are null and ignore nulls otherwise.
+
+      This adds a type with that merge semantics.
+    */
     nullable =
       elemType:
-      (nullOr elemType)
-      // {
+      mergeAttrs (nullOr elemType) {
         name = "nullable";
         description = "nullable ${
           optionDescriptionPhrase (class: class == "noun" || class == "composite") elemType
@@ -231,13 +298,9 @@ fix (
         };
       };
 
-    packageDef = mkOptionType {
-      name = "packageDef";
-      description = "package definition";
-      descriptionClass = "noun";
-      check = isFunction;
-      merge = mergeOneOption;
-    };
+    package = optFunctionTo types.package;
+
+    packages = optFunctionTo (lazyAttrsOf types'.package);
 
     path = types.path // {
       check = isPath;
@@ -245,19 +308,19 @@ fix (
 
     pathTree = lazyAttrsOf (either path pathTree);
 
-    optCallWith = args: elemType: coercedTo function (x: x args) elemType;
+    perSystem = functionTo types'.outputs;
 
-    optFunctionTo =
-      let
-        nonFunction = mkOptionType {
-          name = "nonFunction";
-          description = "non-function";
-          descriptionClass = "noun";
-          check = x: !isFunction x;
-          merge = mergeOneOption;
-        };
-      in
-      elemType: coercedTo nonFunction (x: _: x) (functionTo elemType);
+    optCallWith =
+      args:
+      flip pipe [
+        (coercedTo function (x: x args))
+      ];
+
+    optFunctionTo = flip pipe [
+      functionTo
+      (coercedTo nonFunction (x: _: x))
+    ];
+
     optListOf = elemType: coercedTo elemType singleton (listOf elemType);
 
     outputs = lazyAttrsOf outputsValue;
@@ -286,15 +349,17 @@ fix (
 
     overlays = optListOf overlay;
 
-    stringLike = mkOptionType {
+    stringLike = str // {
       name = "stringLike";
       description = "string-convertible value";
-      descriptionClass = "noun";
       check = isStringLike;
-      merge = mergeEqualOption;
     };
 
-    template = submodule (
+    systems = pipe (uniq (listOf nonEmptyStr)) [
+      (coercedTo types.package import)
+    ];
+
+    templateModule = submodule (
       { name, ... }:
       {
         options = {
@@ -314,15 +379,25 @@ fix (
       }
     );
 
-    testVal =
-      v:
-      throwIf (length v < 2) "list should have at least 2 elements" {
-        expr = pipe (head v) (sublist 1 ((length v) - 2) v);
-        expected = last v;
-      };
+    template =
+      args:
+      pipe types'.templateModule [
+        (optCallWith args)
+      ];
 
-    test = coercedTo (nonEmptyListOf raw) types'.testVal (lazyAttrsOf raw);
+    templates =
+      args:
+      pipe (lazyAttrsOf (types'.template args)) [
+        (optCallWith args)
+      ];
 
-    tests = lazyAttrsOf test;
+    test = pipe (lazyAttrsOf raw) [
+      (coercedTo (nonEmptyListOf raw) mkTestFromList)
+    ];
+
+    tests = pipe (lazyAttrsOf test) [
+      optListOf
+      optFunctionTo
+    ];
   }
 )

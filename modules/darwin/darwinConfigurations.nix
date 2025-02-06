@@ -10,9 +10,11 @@
 
 let
   inherit (builtins) mapAttrs;
-  inherit (lib) mkIf mkOption types;
+  inherit (lib) mkIf mkOption;
   inherit (lib.types) attrs lazyAttrsOf;
   inherit (conflake.types) optCallWith;
+
+  cfg = config.darwinConfigurations;
 
   isDarwin = x: x ? config.system.builder;
 
@@ -30,9 +32,7 @@ let
       }
     );
 
-  configs = mapAttrs (
-    hostname: cfg: if isDarwin cfg then cfg else mkDarwin hostname cfg
-  ) config.darwinConfigurations;
+  configs = mapAttrs (hostname: cfg: if isDarwin cfg then cfg else mkDarwin hostname cfg) cfg;
 in
 {
   options.darwinConfigurations = mkOption {
@@ -41,7 +41,7 @@ in
   };
 
   config = {
-    outputs = mkIf (config.darwinConfigurations != { }) {
+    outputs = mkIf (cfg != { }) {
       darwinConfigurations = configs;
     };
 

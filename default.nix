@@ -1,14 +1,11 @@
 inputs:
 
 let
-  inherit (builtins) intersectAttrs;
   inherit (inputs.nixpkgs) lib;
   inherit (lib)
     evalModules
     fix
-    functionArgs
-    isFunction
-    mkDefault
+    mkOptionDefault
     setDefaultModuleLocation
     ;
 
@@ -17,12 +14,6 @@ let
   mkOutputs = {
     __functor =
       self: src: module:
-      let
-        flakePath = src + /flake.nix;
-        conflake' = ((import ./modules/lib/default.nix) { inherit lib; }).extend (
-          _: _: { inherit flakePath src; }
-        );
-      in
       (evalModules {
         class = "conflake";
         modules =
@@ -31,14 +22,14 @@ let
           ++ [
             (setDefaultModuleLocation ./default.nix {
               finalInputs = {
-                nixpkgs = mkDefault inputs.nixpkgs;
-                conflake = mkDefault inputs.self;
+                nixpkgs = mkOptionDefault inputs.nixpkgs;
+                conflake = mkOptionDefault inputs.self;
               };
             })
-            (setDefaultModuleLocation flakePath module)
+            (setDefaultModuleLocation (src + /flake.nix) module)
           ];
         specialArgs = {
-          inherit conflake conflake' src;
+          inherit conflake src;
 
           modulesPath = ./modules;
         };
@@ -61,21 +52,6 @@ let
         mkOutputs;
   };
 
-  callWith =
-    autoArgs: fn: args:
-    let
-      f = if isFunction fn then fn else import fn;
-      fargs = functionArgs f;
-      allArgs = intersectAttrs fargs autoArgs // args;
-    in
-    f allArgs;
-
-  callWith' =
-    mkAutoArgs: fn: args:
-    callWith (mkAutoArgs args) fn args;
-
-  conflake = (import ./lib/default.nix { inherit lib; }).extend (
-    _: _: { inherit callWith callWith' mkOutputs; }
-  );
+  conflake = (import ./lib/default.nix { inherit lib; }).extend (_: _: { inherit mkOutputs; });
 in
 conflake

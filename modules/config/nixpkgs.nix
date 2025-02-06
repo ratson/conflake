@@ -1,5 +1,4 @@
 {
-  config,
   lib,
   conflake,
   ...
@@ -19,9 +18,5 @@ in
       type = conflake.types.overlays;
       default = [ ];
     };
-  };
-
-  config = {
-    nixpkgs.overlays = config.withOverlays ++ [ config.packageOverlay ];
   };
 }

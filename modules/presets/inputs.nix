@@ -7,7 +7,7 @@
 }:
 
 let
-  inherit (builtins) isPath mapAttrs;
+  inherit (builtins) mapAttrs;
   inherit (lib)
     mkEnableOption
     mkIf
@@ -19,8 +19,6 @@ let
   inherit (conflake.flake) lock2inputs;
 
   cfg = config.presets.inputs;
-
-  flakeLockExists = isPath (config.srcTree."flake.lock" or null);
 in
 {
   options.presets.inputs = {
@@ -29,11 +27,11 @@ in
     };
     priority = mkOption {
       type = types.int;
-      default = 950;
+      default = 1250;
     };
   };
 
-  config = mkIf (cfg.enable && config.inputs == null && flakeLockExists) {
+  config = mkIf (cfg.enable && config.inputs != null && config.src.has "flake.lock") {
     finalInputs = pipe (src + /flake.lock) [
       lock2inputs
       (mapAttrs (_: mkOverride cfg.priority))

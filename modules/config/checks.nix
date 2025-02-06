@@ -2,23 +2,22 @@
   config,
   lib,
   conflake,
-  src,
   ...
 }:
 
 let
-  inherit (builtins) mapAttrs;
   inherit (lib) mkIf mkOption;
-  inherit (config) genSystems;
-  inherit (conflake.types) nullable optFunctionTo;
+  inherit (conflake.types) nullable;
+
+  cfg = config.checks;
 in
 {
   options.checks = mkOption {
-    type = nullable (optFunctionTo (conflake.types.checks src));
+    type = nullable conflake.types.checks;
     default = null;
   };
 
-  config = mkIf (config.checks != null) {
-    outputs.checks = genSystems (pkgs: mapAttrs (_: v: v pkgs) (config.checks pkgs));
+  config = mkIf (cfg != null) {
+    outputs.checks = config.callSystemsWithAttrs cfg;
   };
 }

@@ -2,7 +2,6 @@
   config,
   lib,
   conflake,
-  conflake',
   src,
   ...
 }:
@@ -51,7 +50,7 @@ in
       internal = true;
       readOnly = true;
       type = nullOr (lazyAttrsOf types.unspecified);
-      default = if cfg.has "flake.nix" then import conflake'.flakePath else null;
+      default = if cfg.has "flake.nix" then import (src + /flake.nix) else null;
     };
     get = mkOption {
       internal = true;

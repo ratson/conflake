@@ -9,6 +9,8 @@ let
   inherit (lib) mkIf mkOption;
   inherit (lib.types) functionTo raw uniq;
   inherit (conflake.types) nullable;
+
+  cfg = config.functor;
 in
 {
   options.functor = mkOption {
@@ -16,9 +18,7 @@ in
     default = null;
   };
 
-  config = {
-    outputs = mkIf (config.functor != null) (_: {
-      __functor = config.functor;
-    });
-  };
+  config.outputs = mkIf (cfg != null) (_: {
+    __functor = cfg;
+  });
 }

@@ -30,7 +30,7 @@ in
 
   config = mkIf cfg.enable {
     checks.statix =
-      pkgs:
+      { pkgs, ... }:
       optionalString (hasStatix pkgs) (
         concatStringsSep " " [
           (getExe pkgs.statix)

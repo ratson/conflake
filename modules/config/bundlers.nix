@@ -13,39 +13,39 @@ let
     mkMerge
     mkOption
     ;
-  inherit (lib.types) lazyAttrsOf;
-  inherit (config) genSystems;
-  inherit (conflake.types)
-    function
-    nullable
-    optFunctionTo
-    ;
+  inherit (conflake.types) nullable;
 
-  wrapBundler =
-    pkgs: bundler: drv:
-    if isFunction (bundler (pkgs // drv)) then bundler pkgs drv else bundler drv;
+  cfg = config.bundlers;
 in
 {
   options = {
     bundler = mkOption {
-      type = nullable function;
+      type = nullable conflake.types.bundler;
       default = null;
     };
 
     bundlers = mkOption {
-      type = nullable (optFunctionTo (lazyAttrsOf function));
+      type = nullable conflake.types.bundlers;
       default = null;
     };
   };
 
   config = mkMerge [
-
     (mkIf (config.bundler != null) {
       bundlers.default = config.bundler;
     })
 
-    (mkIf (config.bundlers != null) {
-      outputs.bundlers = genSystems (pkgs: mapAttrs (_: wrapBundler pkgs) (config.bundlers pkgs));
+    (mkIf (cfg != null) {
+      outputs.bundlers = config.genSystems (
+        { pkgs, pkgsCall }:
+        mapAttrs (
+          _: bundler: drv:
+          let
+            bundler' = if isFunction (bundler (pkgs // drv)) then bundler pkgs else bundler;
+          in
+          bundler' drv
+        ) (pkgsCall cfg)
+      );
     })
   ];
 }
