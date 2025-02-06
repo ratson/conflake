@@ -117,8 +117,23 @@ in
                 (callWith final)
                 (f: f { })
               ];
+          pkgsCall' =
+            f:
+            let
+              f' = if isFunction f then f else import f;
+              noArgs = functionArgs f' == { };
+            in
+            if noArgs then
+              f' pkgs
+            else
+              pipe f' [
+                (callWith pkgs)
+                (callWith moduleArgs)
+                (callWith final)
+                (f: pkgs.callPackage f { })
+              ];
           final = (config.mkSystemArgs system) // {
-            inherit pkgsCall;
+            inherit pkgsCall pkgsCall';
           };
         in
         final;

@@ -447,6 +447,7 @@ in
       };
     })
     (f: [
+      (f.packages.x86_64-linux.default ? override)
       (import f.packages.x86_64-linux.default)
       (import f.packages.x86_64-linux.pkg2)
       (import f.packages.x86_64-linux.pkg3)
@@ -461,6 +462,7 @@ in
       (f ? checks.x86_64-linux.packages-pkg3)
     ])
     [
+      true
       true
       true
       true
@@ -631,9 +633,11 @@ in
     (x: [
       (attrNames x.legacyPackages.x86_64-linux)
       (hasPrefix "awesome-emacs-with-packages-" x.packages.x86_64-linux.default.name)
+      (x.packages.x86_64-linux.default ? override)
     ])
     [
       [ "emacsPackages" ]
+      true
       true
     ]
   ];
@@ -1482,7 +1486,7 @@ in
   packages-example = [
     (conflakeExample "packages" { })
     (x: [
-      (x.legacyPackages.x86_64-linux ? emacsPackages.greet)
+      (x.legacyPackages.x86_64-linux ? emacsPackages.greet.override)
       (attrNames x.packages.x86_64-linux)
       (attrNames x.devShells.x86_64-linux)
     ])
