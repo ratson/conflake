@@ -30,10 +30,10 @@ in
 
   config = mkIf cfg.enable {
     checks.statix =
-      { pkgs, statix, ... }:
+      { pkgs, ... }:
       optionalString (hasStatix pkgs) (
         concatStringsSep " " [
-          (getExe statix)
+          (getExe pkgs.statix)
           "check"
           (optionalString (cfg.ignore != null) "--ignore=${escapeShellArg cfg.ignore}")
           (optionalString cfg.unrestricted "--unrestricted")

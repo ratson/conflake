@@ -37,12 +37,8 @@ in
   config = mkIf (cfg.enable && has ".editorconfig") {
     loaders.outputs = _: {
       checks = config.genSystems (
-        {
-          editorconfig-checker,
-          stdenv,
-          pkgsCall,
-        }:
-        mkIf (elem stdenv.hostPlatform.system platforms) {
+        { pkgs, pkgsCall }:
+        mkIf (elem pkgs.stdenv.hostPlatform.system platforms) {
           editorconfig = pipe conflake.mkCheck [
             (conflake.callWith { name = "editorconfig"; })
             pkgsCall
@@ -50,7 +46,7 @@ in
               f:
               f (
                 concatStringsSep " " [
-                  (getExe editorconfig-checker)
+                  (getExe pkgs.editorconfig-checker)
                   cfg.args
                 ]
               )

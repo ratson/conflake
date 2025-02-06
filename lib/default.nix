@@ -29,13 +29,13 @@ lib.makeExtensible (self: {
 
   mkCheck =
     {
+      pkgs,
       name,
       src,
-      runCommand,
       ...
     }:
     cmd:
-    runCommand "check-${name}" { } ''
+    pkgs.runCommand "check-${name}" { } ''
       pushd "${src}"
       if  [ -x "${cmd}" ]; then
         ${cmd}

@@ -64,7 +64,7 @@ let
 
   mkCheck =
     tests:
-    { pkgsCall, runCommand }:
+    { pkgs, pkgsCall }:
     let
       results = pipe placeholderTree [
         (mergeAttrs { ${config.src.relTo cfg.src} = tests; })
@@ -98,7 +98,7 @@ let
         toJSON
       ];
     in
-    runCommand "check-tests"
+    pkgs.runCommand "check-tests"
       {
         inherit results;
         passAsFile = [ "results" ];

@@ -28,15 +28,12 @@ let
 
   mkFormatter =
     {
-      coreutils,
-      fd,
-      stdenv,
-      writeShellApplication,
       outputs',
+      pkgs,
       pkgsCall,
     }:
     let
-      inherit (stdenv.hostPlatform) system;
+      inherit (pkgs.stdenv.hostPlatform) system;
       formatters = pkgsCall config.formatters;
       fullContext = all hasContext (attrValues formatters);
       caseArms = pipe formatters [
@@ -44,12 +41,12 @@ let
         toString
       ];
     in
-    writeShellApplication {
+    pkgs.writeShellApplication {
       name = "formatter";
 
       runtimeInputs =
-        [ coreutils ]
-        ++ (optionals (!elem system [ "x86_64-freebsd" ]) [ fd ])
+        [ pkgs.coreutils ]
+        ++ (optionals (!elem system [ "x86_64-freebsd" ]) [ pkgs.fd ])
         ++ (optionals (!fullContext) outputs'.devShells.default.nativeBuildInputs or [ ]);
 
       text = ''

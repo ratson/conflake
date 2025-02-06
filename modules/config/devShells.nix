@@ -40,7 +40,7 @@ in
 
     (mkIf (cfg != { }) {
       outputs.devShells = config.genSystems (
-        { mkShell, pkgsCall }:
+        { pkgs, pkgsCall }:
         pipe cfg [
           (mapAttrs (
             _:
@@ -52,7 +52,7 @@ in
                   (mapAttrs (_: v: if isFunction v then pkgsCall v else v))
                   (
                     cfg':
-                    mkShell.override { inherit (cfg') stdenv; } (
+                    pkgs.mkShell.override { inherit (cfg') stdenv; } (
                       removeAttrs cfg' [
                         "overrideShell"
                         "stdenv"

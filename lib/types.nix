@@ -62,9 +62,9 @@ let
 
   mkApp =
     s:
-    { name, writeShellScript }:
+    { name, pkgs }:
     {
-      program = if isStorePath s then s else "${writeShellScript "app-${name}" s}";
+      program = if isStorePath s then s else "${pkgs.writeShellScript "app-${name}" s}";
     };
 in
 fix (
@@ -111,11 +111,11 @@ fix (
         value:
         let
           f' =
-            { name, writeShellScript, ... }@args:
+            { name, pkgs, ... }@args:
             let
               value' = callWith args value { };
             in
-            if isStringLike value' then mkApp value' { inherit name writeShellScript; } else value';
+            if isStringLike value' then mkApp value' { inherit name pkgs; } else value';
           fargs = functionArgs value // (functionArgs f');
         in
         if isFunction value then setFunctionArgs f' fargs else value
@@ -138,13 +138,12 @@ fix (
           {
             name,
             pkgs,
-            runCommand,
             src,
             pkgsCall,
           }:
           pipe value [
             pkgsCall
-            (mkCheck { inherit name src runCommand; })
+            (mkCheck { inherit name pkgs src; })
           ]
       ))
     ];

@@ -129,7 +129,7 @@ in
                 (f: pkgs.callPackage f { })
               ];
           final = (config.mkSystemArgs system) // {
-            inherit pkgsCall pkgsCall';
+            inherit pkgs pkgsCall pkgsCall';
           };
         in
         final;
