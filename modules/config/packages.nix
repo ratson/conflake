@@ -12,7 +12,6 @@ let
     mkMerge
     mkOption
     optionalAttrs
-    optionals
     pipe
     removeAttrs
     types
@@ -106,8 +105,9 @@ in
     (mkIf (cfg != null) {
       outputs.packages = config.finalPackages;
 
-      devShell.inputsFrom =
-        { outputs' }: optionals (outputs' ? packages.default) [ outputs'.packages.default ];
+      devShell = mkIf (cfg ? default) {
+        inputsFrom = { outputs' }: [ outputs'.packages.default ];
+      };
     })
   ];
 }
