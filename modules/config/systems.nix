@@ -112,9 +112,7 @@ in
               f' pkgs
             else
               pipe f' [
-                (callWith pkgs)
-                (callWith moduleArgs)
-                (callWith final)
+                (callWith (pkgs // moduleArgs // final))
                 (f: f { })
               ];
           pkgsCall' =
@@ -127,9 +125,7 @@ in
               f' pkgs
             else
               pipe f' [
-                (callWith pkgs)
-                (callWith moduleArgs)
-                (callWith final)
+                (callWith (moduleArgs // final))
                 (f: pkgs.callPackage f { })
               ];
           final = (config.mkSystemArgs system) // {

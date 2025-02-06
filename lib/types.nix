@@ -138,13 +138,13 @@ fix (
           {
             name,
             pkgs,
-            runCommandLocal,
+            runCommand,
             src,
             pkgsCall,
           }:
           pipe value [
             pkgsCall
-            (mkCheck { inherit name src runCommandLocal; })
+            (mkCheck { inherit name src runCommand; })
           ]
       ))
     ];

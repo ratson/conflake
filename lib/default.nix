@@ -31,11 +31,11 @@ lib.makeExtensible (self: {
     {
       name,
       src,
-      runCommandLocal,
+      runCommand,
       ...
     }:
     cmd:
-    runCommandLocal "check-${name}" { } ''
+    runCommand "check-${name}" { } ''
       pushd "${src}"
       if  [ -x "${cmd}" ]; then
         ${cmd}
