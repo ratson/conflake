@@ -2,17 +2,11 @@
   config,
   lib,
   conflake,
-  conflake',
   ...
 }:
 
 let
-  inherit (lib)
-    mkIf
-    mkMerge
-    mkOption
-    mkOptionDefault
-    ;
+  inherit (lib) mkIf mkOption;
   inherit (lib.types) nullOr;
 
   cfg = config.inputs;
@@ -30,15 +24,7 @@ in
     };
   };
 
-  config = mkMerge [
-    {
-      finalInputs = {
-        nixpkgs = mkOptionDefault conflake'.inputs.nixpkgs;
-        conflake = mkOptionDefault conflake'.inputs.self;
-      };
-    }
-    (mkIf (cfg != null) {
-      finalInputs = cfg;
-    })
-  ];
+  config = mkIf (cfg != null) {
+    finalInputs = cfg;
+  };
 }

@@ -1,7 +1,7 @@
-{ conflake', ... }:
+{ inputs, ... }:
 
 let
-  inherit (conflake') loadDir loadDir' loadDirWithDefault;
+  inherit (inputs.self.lib.loaders) loadDir loadDir' loadDirWithDefault;
 
   fixtures = {
     loadDirArgs = {

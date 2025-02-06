@@ -190,7 +190,6 @@ in
     [
       "config"
       "conflake"
-      "conflake'"
       "extendModules"
       "inputs"
       "lib"

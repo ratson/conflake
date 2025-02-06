@@ -11,6 +11,10 @@ lib.makeExtensible (self: {
 
   function = import ./function.nix { inherit lib; };
 
+  internal = import ./internal/default.nix { inherit lib; };
+
+  loaders = import ./loaders.nix { inherit lib; };
+
   matchers = import ./matchers.nix { inherit lib; };
 
   types = import ./types.nix {

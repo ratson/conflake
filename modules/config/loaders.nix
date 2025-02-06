@@ -3,7 +3,6 @@
   lib,
   options,
   conflake,
-  conflake',
   moduleArgs,
   ...
 }:
@@ -29,11 +28,11 @@ let
     ;
   inherit (lib.types) functionTo;
   inherit (config) mkSystemArgs;
-  inherit (conflake') loadDirWithDefault;
+  inherit (conflake.loaders) filterLoadable loadDirWithDefault;
 
   cfg = config.loaders;
 
-  loadable = conflake'.filterLoadable options;
+  loadable = filterLoadable options;
 
   mkModule =
     path:

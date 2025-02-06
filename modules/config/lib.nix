@@ -2,7 +2,6 @@
   config,
   lib,
   conflake,
-  conflake',
   moduleArgs,
   ...
 }:
@@ -19,6 +18,7 @@ let
     types
     ;
   inherit (lib.types) lazyAttrsOf;
+  inherit (conflake.loaders) loadDir';
   inherit (conflake.types) optCallWith;
 in
 {
@@ -35,7 +35,7 @@ in
     {
       nixDir.loaders.lib =
         { node, path, ... }:
-        conflake'.loadDir' {
+        loadDir' {
           root = path;
           tree = node;
           mkFilePair =

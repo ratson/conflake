@@ -2,7 +2,6 @@
   config,
   lib,
   conflake,
-  conflake',
   moduleArgs,
   ...
 }:
@@ -39,6 +38,7 @@ let
     uniq
     ;
   inherit (conflake) callWith;
+  inherit (conflake.internal) nameMockedPkgs;
   inherit (conflake.types) nullable overlay;
 
   cfg = config.packages;
@@ -155,7 +155,7 @@ in
         let
           pkgDefs = getPkgDefs prev;
           getName = pkg: pkg.pname or (parseDrvName pkg.name).name;
-          mockPkgs = conflake'.nameMockedPkgs prev;
+          mockPkgs = nameMockedPkgs prev;
 
           defaultPkgName = flip defaultTo config.pname (
             findFirst (x: (tryEval x).success) null [

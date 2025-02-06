@@ -5,6 +5,7 @@ let
   inherit (lib)
     evalModules
     fix
+    mkOptionDefault
     setDefaultModuleLocation
     ;
 
@@ -13,17 +14,22 @@ let
   mkOutputs = {
     __functor =
       self: src: module:
-      let
-        flakePath = src + /flake.nix;
-        conflake' = ((import ./modules/lib/default.nix) { inherit lib; }).extend (
-          _: _: { inherit flakePath inputs src; }
-        );
-      in
       (evalModules {
         class = "conflake";
-        modules = baseModules ++ self.extraModules ++ [ (setDefaultModuleLocation flakePath module) ];
+        modules =
+          baseModules
+          ++ self.extraModules
+          ++ [
+            (setDefaultModuleLocation ./default.nix {
+              finalInputs = {
+                nixpkgs = mkOptionDefault inputs.nixpkgs;
+                conflake = mkOptionDefault inputs.self;
+              };
+            })
+            (setDefaultModuleLocation (src + /flake.nix) module)
+          ];
         specialArgs = {
-          inherit conflake conflake' src;
+          inherit conflake src;
 
           modulesPath = ./modules;
         };

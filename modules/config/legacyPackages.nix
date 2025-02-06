@@ -2,7 +2,6 @@
   config,
   lib,
   conflake,
-  conflake',
   moduleArgs,
   ...
 }:
@@ -15,6 +14,7 @@ let
     mkOption
     pipe
     ;
+  inherit (conflake.loaders) loadDirWithDefault;
   inherit (conflake.types) nullable;
 
   cfg = config.legacyPackages;
@@ -34,7 +34,7 @@ in
       nixDir.loaders.legacyPackages =
         { node, path, ... }:
         { pkgs }:
-        conflake'.loadDirWithDefault {
+        loadDirWithDefault {
           root = path;
           tree = node;
           load = flip pkgs.callPackage moduleArgs;

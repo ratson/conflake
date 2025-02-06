@@ -2,7 +2,6 @@
   config,
   lib,
   conflake,
-  conflake',
   ...
 }:
 
@@ -38,6 +37,7 @@ let
   inherit (lib.generators) toPretty;
   inherit (lib.path) subpath;
   inherit (conflake) matchers prefixAttrsCond;
+  inherit (conflake.loaders) loadDir';
   inherit (conflake.debug) isAttrTest mkTestFromList;
 
   cfg = config.presets.checks.tests;
@@ -139,7 +139,7 @@ in
     (mkIf (isAttrs tree) {
       checks.${cfg.name} = pipe cfg.src [
         (root: { inherit root tree; })
-        conflake'.loadDir'
+        loadDir'
         mkCheck
       ];
     })
