@@ -1,5 +1,4 @@
 {
-  config,
   lib,
   conflake,
   ...
@@ -20,6 +19,4 @@ in
       default = [ ];
     };
   };
-
-  config.nixpkgs.overlays = config.withOverlays;
 }

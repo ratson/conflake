@@ -332,13 +332,13 @@ in
     ]
   ];
 
-  withOverlays = test (conflake' {
-    withOverlays = final: prev: { testValue = "true"; };
+  nixpkgs-overlays = test (conflake' {
+    nixpkgs.overlays = final: prev: { testValue = "true"; };
     package = { writeText, testValue }: writeText "test" "${testValue}";
   }) (f: import f.packages.x86_64-linux.default);
 
-  withOverlays-multiple = test (conflake' {
-    withOverlays = [
+  nixpkgs-overlays-multiple = test (conflake' {
+    nixpkgs.overlays = [
       (final: prev: { testValue = "tr"; })
       (final: prev: { testValue2 = "ue"; })
     ];
@@ -477,17 +477,21 @@ in
     (conflake' {
       packages = {
         default =
-          { outputs' }:
-          (outputs'.packages.pkg1.override {
-          }).overrideAttrs
-            (_: {
-              pname = "new-name";
-            });
-        pkg1 = { pkgs }: pkgs.hello;
+          pkgs:
+          (pkgs.pkg1.override { }).overrideAttrs (_: {
+            pname = "new-name";
+          });
+        pkg1 = pkgs: pkgs.hello;
       };
     })
-    (x: x.packages.aarch64-linux.default.pname)
-    "new-name"
+    (x: [
+      (x.packages.aarch64-linux.default ? override)
+      x.packages.aarch64-linux.default.pname
+    ])
+    [
+      true
+      "new-name"
+    ]
   ];
 
   packages-refer-default-as-default = [

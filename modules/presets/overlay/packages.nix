@@ -21,7 +21,7 @@ in
     overlay =
       final:
       flip pipe [
-        (config.packageOverlay (final.appendOverlays config.withOverlays))
+        (config.packageOverlay (final.appendOverlays config.nixpkgs.overlays))
         (flip removeAttrs [ "default" ])
       ];
   };
