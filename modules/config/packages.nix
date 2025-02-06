@@ -104,10 +104,6 @@ in
 
     (mkIf (cfg != null) {
       outputs.packages = config.finalPackages;
-
-      devShell = mkIf (cfg ? default) {
-        inputsFrom = { outputs' }: [ outputs'.packages.default ];
-      };
     })
   ];
 }

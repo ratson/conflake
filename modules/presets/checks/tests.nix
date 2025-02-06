@@ -111,7 +111,7 @@ in
 {
   options.presets.checks.tests = {
     enable = mkEnableOption "tests" // {
-      default = config.presets.enable;
+      default = config.presets.checks.enable;
     };
     name = mkOption {
       type = types.str;
