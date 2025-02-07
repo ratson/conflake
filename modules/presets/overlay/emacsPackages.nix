@@ -2,7 +2,11 @@
 
 let
   inherit (builtins) mapAttrs;
-  inherit (lib) flip mkEnableOption mkIf;
+  inherit (lib)
+    flip
+    mkEnableOption
+    mkIf
+    ;
 
   cfg = config.presets.overlay.emacsPackages;
 

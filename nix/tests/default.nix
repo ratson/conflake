@@ -624,10 +624,12 @@ in
     })
     (x: [
       (attrNames x.legacyPackages.x86_64-linux)
+      (attrNames x.legacyPackages.x86_64-linux.emacsPackages)
       (hasPrefix "emacs-with-packages-" x.packages.x86_64-linux.default.name)
     ])
     [
       [ "emacsPackages" ]
+      [ ]
       true
     ]
   ];
@@ -636,11 +638,13 @@ in
     (conflake fixtures.emacsPackages { pname = "stop-inf-recursion"; })
     (x: [
       (attrNames x.legacyPackages.x86_64-linux)
+      (attrNames x.legacyPackages.x86_64-linux.emacsPackages)
       (hasPrefix "awesome-emacs-with-packages-" x.packages.x86_64-linux.default.name)
       (x.packages.x86_64-linux.default ? override)
     ])
     [
       [ "emacsPackages" ]
+      [ ]
       true
       true
     ]
@@ -1491,11 +1495,17 @@ in
   packages-example = [
     (conflakeExample "packages" { })
     (x: [
+      (attrNames x.legacyPackages.x86_64-linux.emacsPackages)
       (x.legacyPackages.x86_64-linux ? emacsPackages.greet.override)
       (attrNames x.packages.x86_64-linux)
       (attrNames x.devShells.x86_64-linux)
     ])
     [
+      [
+        "greet"
+        "hei"
+        "hi"
+      ]
       true
       [
         "default"

@@ -2,13 +2,11 @@
   config,
   lib,
   conflake,
-  moduleArgs,
   ...
 }:
 
 let
   inherit (lib)
-    flip
     mkIf
     mkMerge
     mkOption
@@ -33,11 +31,11 @@ in
     {
       nixDir.loaders.legacyPackages =
         { node, path, ... }:
-        { pkgs }:
+        { pkgsCall }:
         loadDirWithDefault {
           root = path;
           tree = node;
-          load = flip pkgs.callPackage moduleArgs;
+          load = pkgsCall;
           mkValue =
             { contexts, ... }:
             pipe contexts [
