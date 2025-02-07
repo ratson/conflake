@@ -70,7 +70,7 @@ in
       formatters =
         { pkgs }:
         optionalAttrs (hasNixfmt pkgs) {
-          "*.nix" = mkDefault (getExe pkgs.nixfmt-rfc-style);
+          "*.nix" = mkDefault pkgs.nixfmt-rfc-style;
         };
     })
 

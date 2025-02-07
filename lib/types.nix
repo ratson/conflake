@@ -17,6 +17,7 @@ let
     fix
     flip
     functionArgs
+    getExe
     getFiles
     getValues
     id
@@ -189,7 +190,11 @@ fix (
       check = x: isPath x || x._type or null == "fileset";
     };
 
-    formatters = optFunctionTo (lazyAttrsOf str);
+    formatters = pipe str [
+      (coercedTo types.package getExe)
+      lazyAttrsOf
+      optFunctionTo
+    ];
 
     function = mkOptionType {
       name = "function";
