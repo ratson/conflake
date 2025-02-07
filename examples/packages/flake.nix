@@ -1,12 +1,19 @@
 {
   outputs =
-    { conflake, ... }@inputs:
+    { conflake, self, ... }@inputs:
     conflake ./. {
       inherit inputs;
 
       _module.args = {
         extra-arg = true;
       };
+
+      devShell.packages =
+        { pkgs, system, ... }:
+        [
+          pkgs.hello
+          self.packages.${system}.default
+        ];
 
       packages.hi = { pkgs, ... }: pkgs.hello;
 

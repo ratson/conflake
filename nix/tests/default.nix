@@ -733,6 +733,7 @@ in
     (conflake' {
       devShell.inputsFrom = { pkgs }: [ pkgs.emacs ];
       devShells = {
+        default.inputsFrom = { pkgs, system, ... }: [ pkgs.hello ];
         shell1 = { mkShell }: mkShell { };
         shell2 = {
           packages = { pkgs }: [ pkgs.emacs ];
