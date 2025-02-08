@@ -1498,7 +1498,7 @@ in
       (attrNames f.nixosModules)
       (attrNames f.homeModules)
       (f.lib ? greeting.hi)
-      f.lib.hello-world
+      (f.lib.hello-world { })
     ])
     [
       [
