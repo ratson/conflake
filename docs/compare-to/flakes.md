@@ -13,7 +13,7 @@ and manually import any needed files.
 `Conflake` builds on top of `Flakes` to offer file-based attribute loading
 and practical defaults, enhancing productivity in authoring `Flakes`.
 
-See [What is Conflake?](../guide/introduction.md) for a list of provided features.
+See [the homepage](../index.md) for a list of provided features.
 
 ## Migration
 
