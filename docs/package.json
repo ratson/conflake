@@ -2,7 +2,7 @@
   "private": true,
   "type": "module",
   "devDependencies": {
-    "@types/node": "^22.10.10",
+    "@types/node": "^22.13.1",
     "execa": "^9.5.2",
     "strip-ansi": "^7.1.0",
     "vitepress": "^1.6.3"
