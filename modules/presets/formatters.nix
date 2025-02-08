@@ -70,7 +70,7 @@ in
       formatters =
         { pkgs }:
         optionalAttrs (hasNixfmt pkgs) {
-          "*.nix" = mkDefault (getExe pkgs.nixfmt-rfc-style);
+          "*.nix" = mkDefault pkgs.nixfmt-rfc-style;
         };
     })
 
@@ -84,14 +84,14 @@ in
     (mkIf config.presets.devShell.formatters (mkMerge [
       (mkIf cfg.nix {
         devShell.packages =
-          { pkgs }:
+          { pkgs, ... }:
           optionals (hasNixfmt pkgs) [
             pkgs.nixfmt-rfc-style
           ];
       })
       (mkIf (cfg.json || cfg.markdown || cfg.yaml) {
         devShell.packages =
-          { pkgs }:
+          { pkgs, ... }:
           optionals (hasNodejs pkgs) [
             pkgs.nodePackages.prettier
           ];
