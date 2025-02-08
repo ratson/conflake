@@ -18,8 +18,11 @@ let
     types
     ;
   inherit (lib.types) lazyAttrsOf;
+  inherit (conflake) callWith;
   inherit (conflake.loaders) loadDir';
   inherit (conflake.types) optCallWith;
+
+  cfg = config.lib;
 in
 {
   options.lib = mkOption {
@@ -28,8 +31,8 @@ in
   };
 
   config = mkMerge [
-    (mkIf (config.lib != { }) {
-      outputs.lib = config.lib;
+    (mkIf (cfg != { }) {
+      outputs.lib = cfg;
     })
 
     {
@@ -42,7 +45,7 @@ in
             { name, node, ... }:
             let
               value = import node;
-              value' = if isFunction value then value moduleArgs else value;
+              value' = if isFunction value then callWith moduleArgs value { } else value;
             in
             if hasSuffix ".raw.nix" name then
               nameValuePair (removeSuffix ".raw.nix" name) value

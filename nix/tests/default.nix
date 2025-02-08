@@ -9,6 +9,7 @@ let
     attrNames
     deepSeq
     isList
+    mapAttrs
     tryEval
     ;
   inherit (lib)
@@ -1252,6 +1253,33 @@ in
     })
     (f: f.lib.addFive 4)
     9
+  ];
+
+  lib-args = [
+    (conflake' {
+      lib =
+        { inputs, outputs, ... }:
+        {
+          result = {
+            inherit inputs outputs;
+          };
+        };
+    })
+    (x: x.lib.result)
+    (mapAttrs (_: attrNames))
+    {
+      inputs = [
+        "conflake"
+        "nixpkgs"
+        "self"
+      ];
+      outputs = [
+        "checks"
+        "devShells"
+        "formatter"
+        "lib"
+      ];
+    }
   ];
 
   functor = [
