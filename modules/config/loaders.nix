@@ -28,7 +28,7 @@ let
     types
     ;
   inherit (lib.types) functionTo;
-  inherit (config) mkSystemArgs;
+  inherit (config) mkSystemArgs nixpkgs;
   inherit (conflake) callWith;
   inherit (conflake.loaders) filterLoadable loadDirWithDefault;
 
@@ -44,8 +44,11 @@ let
         { pkgs, ... }@args:
         let
           inherit (pkgs.stdenv.hostPlatform) system;
+          pkgs' = pipe nixpkgs.overlays [
+            pkgs.appendOverlays
+          ];
         in
-        pipe { pkgs = pkgs.appendOverlays config.nixpkgs.overlays; } [
+        pipe { pkgs = pkgs'; } [
           (mergeAttrs (mkSystemArgs system))
           (mergeAttrs args)
           (callWith moduleArgs module)
@@ -54,7 +57,7 @@ let
     if isFunction module then
       pipe f [
         functionArgs
-        (flip mergeAttrs { pkgs = true; })
+        (flip mergeAttrs { pkgs = false; })
         (setFunctionArgs f)
         (setDefaultModuleLocation path)
         (mergeAttrs { key = path; })

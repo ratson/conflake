@@ -7,6 +7,14 @@
   ...
 }:
 
+let
+  broken-packages = [
+    # fixed via overlay in flake.nix
+    pkgs.broken
+    pkgs.broken-deep
+    outputs'.packages.broken-deep
+  ];
+in
 {
   imports = [ inputs.self.homeModules.greet ];
 
@@ -17,6 +25,6 @@
       inputs'.greet.packages.greet
       outputs'.packages.bonjour
       config.greet.finalPackage
-    ];
+    ] ++ broken-packages;
   };
 }

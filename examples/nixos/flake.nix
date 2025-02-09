@@ -10,6 +10,10 @@
     conflake ./. {
       inherit inputs;
 
+      nixpkgs.overlays = [
+        (final: _: { broken = final.lib.trace "fix broken package" final.hello; })
+      ];
+
       nixosModules.hi = {
         imports = [ self.nixosModules.greet ];
       };
@@ -33,6 +37,7 @@
 
                 home.stateVersion = "24.11";
               };
+
               system.stateVersion = "24.11";
             }
           ];
