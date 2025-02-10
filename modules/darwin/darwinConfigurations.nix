@@ -10,29 +10,13 @@
 
 let
   inherit (builtins) mapAttrs;
-  inherit (lib) mkIf mkOption;
+  inherit (lib) mergeAttrs mkIf mkOption;
   inherit (lib.types) attrs lazyAttrsOf;
   inherit (conflake.types) optCallWith;
 
   cfg = config.darwinConfigurations;
 
   isDarwin = x: x ? config.system.builder;
-
-  mkDarwin =
-    hostname: cfg:
-    inputs.nix-darwin.lib.darwinSystem (
-      cfg
-      // {
-        specialArgs =
-          {
-            inherit hostname inputs;
-          }
-          // (mkSystemArgs cfg.system)
-          // cfg.specialArgs or { };
-      }
-    );
-
-  configs = mapAttrs (hostname: cfg: if isDarwin cfg then cfg else mkDarwin hostname cfg) cfg;
 in
 {
   options.darwinConfigurations = mkOption {
@@ -42,7 +26,23 @@ in
 
   config = {
     outputs = mkIf (cfg != { }) {
-      darwinConfigurations = configs;
+      darwinConfigurations = mapAttrs (
+        k: v:
+        if isDarwin v then
+          v
+        else
+          inputs.nix-darwin.lib.darwinSystem (
+            mergeAttrs v {
+              specialArgs =
+                {
+                  inherit inputs;
+                  hostname = k;
+                }
+                // (mkSystemArgs cfg.system)
+                // cfg.specialArgs or { };
+            }
+          )
+      ) cfg;
     };
 
     nixDir.aliases.darwinConfigurations = [ "darwin" ];

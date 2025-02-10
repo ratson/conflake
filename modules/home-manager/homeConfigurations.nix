@@ -10,45 +10,53 @@
 let
   inherit (builtins) hasAttr mapAttrs;
   inherit (lib)
-    mkDefault
+    flip
+    mergeAttrs
     mkIf
     mkOption
+    mkOptionDefault
     pipe
     ;
   inherit (lib.types) attrs lazyAttrsOf;
+  inherit (config) mkSystemArgs;
   inherit (conflake.strings) getUsername;
   inherit (conflake.types) optCallWith;
 
   cfg = config.homeConfigurations;
 
   isHome = x: x ? activationPackage;
-  inherit (config) mkSystemArgs';
+
   mkHome =
-    name: cfg:
-    pipe cfg [
+    name:
+    flip pipe [
       (
         x:
         if (!hasAttr "pkgs" x && hasAttr "system" x) then
-          x
-          // {
-            pkgs = inputs.nixpkgs.legacyPackages.${x.system};
+          mergeAttrs x {
+            pkgs = config.pkgsFor.${x.system};
           }
         else
           x
       )
       (
         x:
-        x
-        // {
-          extraSpecialArgs = (mkSystemArgs' x.pkgs) // x.extraSpecialArgs or { };
+        mergeAttrs x {
           modules = [
-            {
-              home.username = mkDefault (getUsername name);
-            }
+            (
+              { pkgs, ... }:
+              {
+                _module.args = pipe pkgs.stdenv.hostPlatform.system [
+                  mkSystemArgs
+                  (mapAttrs (_: mkOptionDefault))
+                ];
+
+                home.username = mkOptionDefault (getUsername name);
+              }
+            )
           ] ++ x.modules or [ ];
         }
       )
-      (x: removeAttrs x [ "system" ])
+      (flip removeAttrs [ "system" ])
       inputs.home-manager.lib.homeManagerConfiguration
     ];
 in

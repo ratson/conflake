@@ -11,9 +11,10 @@ let
   inherit (builtins) mapAttrs;
   inherit (lib)
     mergeAttrs
-    mkDefault
     mkIf
     mkOption
+    mkOptionDefault
+    pipe
     ;
   inherit (lib.types) attrs lazyAttrsOf;
   inherit (config) mkSystemArgs;
@@ -41,20 +42,25 @@ in
           inputs.nixpkgs.lib.nixosSystem (
             mergeAttrs v {
               modules = [
-                {
-                  config.nixpkgs = mapAttrs (_: mkDefault) {
-                    inherit (config.nixpkgs) config overlays;
-                    hostPlatform = "x86_64-linux";
-                  };
-                }
+                (
+                  { pkgs, ... }:
+                  {
+                    _module.args = pipe v.system [
+                      mkSystemArgs
+                      (mergeAttrs {
+                        inherit inputs;
+                        hostname = k;
+                      })
+                      (mapAttrs (_: mkOptionDefault))
+                    ];
+
+                    nixpkgs = mapAttrs (_: mkOptionDefault) {
+                      inherit (config.nixpkgs) config overlays;
+                      hostPlatform = "x86_64-linux";
+                    };
+                  }
+                )
               ] ++ v.modules or [ ];
-              specialArgs =
-                {
-                  inherit inputs;
-                  hostname = k;
-                }
-                // (mkSystemArgs v.system)
-                // v.specialArgs or { };
             }
           )
       ) cfg;
