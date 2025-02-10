@@ -44,8 +44,9 @@ let
         { pkgs, ... }@args:
         let
           inherit (pkgs.stdenv.hostPlatform) system;
+          pkgs' = config.pkgsFor.${system} // pkgs;
         in
-        pipe { pkgs = pkgs.appendOverlays config.nixpkgs.overlays; } [
+        pipe { pkgs = pkgs'; } [
           (mergeAttrs (mkSystemArgs system))
           (mergeAttrs args)
           (callWith moduleArgs module)
@@ -54,7 +55,7 @@ let
     if isFunction module then
       pipe f [
         functionArgs
-        (flip mergeAttrs { pkgs = true; })
+        (flip mergeAttrs { pkgs = false; })
         (setFunctionArgs f)
         (setDefaultModuleLocation path)
         (mergeAttrs { key = path; })

@@ -15,6 +15,7 @@ let
     mkIf
     nameValuePair
     removeSuffix
+    pipe
     types
     ;
   inherit (lib.types) lazyAttrsOf;
@@ -45,7 +46,7 @@ in
             { name, node, ... }:
             let
               value = import node;
-              value' = if isFunction value then callWith moduleArgs value { } else value;
+              value' = if isFunction value then pipe value [ (callWith moduleArgs) ] else value;
             in
             if hasSuffix ".raw.nix" name then
               nameValuePair (removeSuffix ".raw.nix" name) value

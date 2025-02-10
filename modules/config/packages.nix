@@ -80,7 +80,7 @@ in
       readOnly = true;
       type = lazyAttrsOf (lazyAttrsOf types.package);
       default = config.genSystems (
-        { pkgsCall, pkgsCall' }:
+        { pkgsCall, pkgsCall', ... }:
         let
           packages = pkgsCall cfg;
           packages' = mapAttrs (

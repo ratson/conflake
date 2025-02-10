@@ -9,9 +9,8 @@
 }:
 
 let
-  inherit (builtins) getAttr mapAttrs;
+  inherit (builtins) mapAttrs;
   inherit (lib)
-    flip
     functionArgs
     genAttrs
     isFunction
@@ -55,7 +54,7 @@ in
       default =
         fn:
         config.genSystems (
-          { pkgsCall }:
+          { pkgsCall, ... }:
           pipe fn [
             pkgsCall
             (mapAttrs (
@@ -72,16 +71,7 @@ in
       internal = true;
       readOnly = true;
       type = types.unspecified;
-      default =
-        f:
-        genAttrs cfg (
-          system:
-          pipe system [
-            (flip getAttr config.pkgsFor)
-            config.mkSystemArgs'
-            ({ pkgsCall, ... }: pkgsCall f)
-          ]
-        );
+      default = f: genAttrs cfg (system: f (config.mkSystemArgs' config.pkgsFor.${system}));
     };
     mkSystemArgs = mkOption {
       internal = true;

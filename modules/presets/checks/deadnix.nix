@@ -1,10 +1,13 @@
-{ config, lib, ... }:
+{
+  config,
+  lib,
+  conflake,
+  ...
+}:
 
 let
-  inherit (builtins) concatStringsSep elem;
   inherit (lib)
     escapeShellArgs
-    getExe
     mkEnableOption
     mkIf
     mkOption
@@ -12,6 +15,7 @@ let
     types
     ;
   inherit (lib.types) listOf;
+  inherit (conflake.loaders) mkCheck;
 
   cfg = config.presets.checks.deadnix;
 in
@@ -31,15 +35,10 @@ in
   };
 
   config = mkIf cfg.enable {
-    checks.deadnix =
-      { pkgs }:
-      optionalString (!elem pkgs.stdenv.hostPlatform.system [ "x86_64-freebsd" ]) (
-        concatStringsSep " " [
-          (getExe pkgs.deadnix)
-          (optionalString (cfg.exclude != null) "--exclude ${escapeShellArgs cfg.exclude}")
-          "--fail"
-          (escapeShellArgs cfg.files)
-        ]
-      );
+    checks.deadnix = mkCheck (pkgs: [ pkgs.deadnix ]) ''
+      deadnix ${
+        optionalString (cfg.exclude != null) "--exclude ${escapeShellArgs cfg.exclude}"
+      } --fail ${escapeShellArgs cfg.files}
+    '';
   };
 }

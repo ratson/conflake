@@ -3,8 +3,6 @@
 let
   inherit (builtins) mapAttrs;
   inherit (lib)
-    filterAttrs
-    isDerivation
     mapAttrs'
     mkEnableOption
     mkIf
@@ -30,15 +28,16 @@ in
 
   config = mkMerge [
     (mkIf (cfg.enable && config.packages != null) {
-      outputs.checks = mapAttrs (_: mapAttrs' (k: nameValuePair "packages-${k}")) config.outputs.packages;
+      outputs.checks = pipe config.outputs.packages [
+        (mapAttrs (_: mapAttrs' (k: nameValuePair "packages-${k}")))
+      ];
     })
 
     (mkIf (cfg.emacs && config.legacyPackages != null) {
       checks =
-        { outputs, system }:
-        pipe system [
-          (x: outputs.legacyPackages.${x}.emacsPackages or { })
-          (filterAttrs (_: isDerivation))
+        { outputs' }:
+        pipe { } [
+          (x: outputs'.legacyPackages.emacsPackages or x)
           (mapAttrs' (k: nameValuePair "emacsPackages-${k}"))
         ];
     })

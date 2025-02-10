@@ -6,21 +6,17 @@
 }:
 
 let
-  inherit (builtins) concatStringsSep elem;
   inherit (lib)
-    getExe
     mkEnableOption
     mkIf
     mkOption
     optionalString
-    pipe
     types
     ;
   inherit (config.src) has;
+  inherit (conflake.loaders) mkCheck;
 
   cfg = config.presets.checks.editorconfig;
-
-  platforms = lib.platforms.darwin ++ lib.platforms.linux;
 in
 {
   options.presets.checks.editorconfig = {
@@ -35,25 +31,8 @@ in
   };
 
   config = mkIf (cfg.enable && has ".editorconfig") {
-    loaders.outputs = _: {
-      checks = config.genSystems (
-        { pkgs, pkgsCall }:
-        mkIf (elem pkgs.stdenv.hostPlatform.system platforms) {
-          editorconfig = pipe conflake.mkCheck [
-            (conflake.callWith { name = "editorconfig"; })
-            pkgsCall
-            (
-              f:
-              f (
-                concatStringsSep " " [
-                  (getExe pkgs.editorconfig-checker)
-                  cfg.args
-                ]
-              )
-            )
-          ];
-        }
-      );
-    };
+    checks.editorconfig = mkCheck (pkgs: [ pkgs.editorconfig-checker ]) ''
+      editorconfig-checker ${cfg.args}
+    '';
   };
 }

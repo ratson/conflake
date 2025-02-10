@@ -7,6 +7,8 @@ let
     groupBy
     head
     isAttrs
+    isFunction
+    isList
     isPath
     mapAttrs
     ;
@@ -124,4 +126,22 @@ fix (self: {
       // args
 
     );
+
+  mkCheck =
+    env: buildCommand:
+    {
+      pkgs,
+      name,
+      src,
+    }:
+    let
+      envValue = if isFunction env then env pkgs else env;
+      envAttrs = if isList envValue then { nativeBuildInputs = envValue; } else envValue;
+    in
+    pkgs.runCommandLocal "check-${name}" envAttrs ''
+      pushd "${src}"
+      ${buildCommand}
+      popd
+      touch $out
+    '';
 })
