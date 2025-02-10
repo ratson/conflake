@@ -9,6 +9,7 @@ in
     ./devShell.nix
     ./formatters.nix
     ./inputs.nix
+    ./nixos.nix
     ./overlay/default.nix
   ];
 
