@@ -11,6 +11,8 @@
       inherit inputs lib;
 
       functor = _: conflake;
+
+      presets.enable = false;
     };
 
   inputs.nixpkgs.url = "github:NixOS/nixpkgs/nixpkgs-unstable";
