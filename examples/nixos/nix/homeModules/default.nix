@@ -12,6 +12,7 @@ let
     # fixed via overlay in flake.nix
     pkgs.broken
     pkgs.broken-deep
+    pkgs.broken-here
     outputs'.packages.broken-deep
   ];
 in

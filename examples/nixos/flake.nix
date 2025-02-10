@@ -10,7 +10,13 @@
     conflake ./. {
       inherit inputs;
 
-      nixpkgs.overlays = final: _: { broken = final.lib.trace "fix broken package" final.hello; };
+      nixpkgs.overlays = [
+        inputs.overlay.overlays.default
+        (final: _: {
+          broken = final.lib.trace "fix broken package" final.hello;
+          broken-here = final.lib.trace "fix broken-here package" final.hello;
+        })
+      ];
 
       nixosModules.hi = {
         imports = [ self.nixosModules.greet ];
@@ -27,6 +33,7 @@
             {
               home-manager = {
                 sharedModules = [
+                  inputs.overlay.homeModules.default
                   self.homeModules.default
                   self.homeModules.greet
                 ];
@@ -39,7 +46,10 @@
               };
 
               nixpkgs.overlays = [
-                (final: _: { broken = final.lib.trace "fix broken package (config)" final.hello; })
+                (final: _: {
+                  broken = final.lib.trace "fix broken package (config)" final.hello;
+                  broken-here = final.lib.trace "fix broken-here package (config)" final.hello;
+                })
               ];
 
               system.stateVersion = "24.11";
@@ -65,6 +75,11 @@
     };
     greet = {
       url = "../packages";
+      inputs.conflake.follows = "conflake";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
+    overlay = {
+      url = "../overlay";
       inputs.conflake.follows = "conflake";
       inputs.nixpkgs.follows = "nixpkgs";
     };
