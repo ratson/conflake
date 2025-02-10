@@ -38,7 +38,7 @@ in
                   inherit inputs;
                   hostname = k;
                 }
-                // (mkSystemArgs cfg.system)
+                // (config.mkSystemArgs cfg.system)
                 // cfg.specialArgs or { };
             }
           )
