@@ -8,6 +8,7 @@ in
     ./deadnix.nix
     ./editorconfig.nix
     ./formatting.nix
+    ./nixos.nix
     ./packages.nix
     ./tests.nix
     ./statix.nix
