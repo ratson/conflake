@@ -339,8 +339,6 @@ fix (
       merge = _: defs: composeManyExtensions (getValues defs);
     };
 
-    overlays = optListOf overlay;
-
     stringLike = str // {
       name = "stringLike";
       description = "string-convertible value";

@@ -10,9 +10,7 @@
     conflake ./. {
       inherit inputs;
 
-      nixpkgs.overlays = [
-        (final: _: { broken = final.lib.trace "fix broken package" final.hello; })
-      ];
+      nixpkgs.overlays = final: _: { broken = final.lib.trace "fix broken package" final.hello; };
 
       nixosModules.hi = {
         imports = [ self.nixosModules.greet ];
@@ -27,16 +25,22 @@
             self.nixosModules.greet
             home-manager.nixosModules.home-manager
             {
-              home-manager.sharedModules = [
-                self.homeModules.default
-                self.homeModules.greet
-              ];
+              home-manager = {
+                sharedModules = [
+                  self.homeModules.default
+                  self.homeModules.greet
+                ];
 
-              home-manager.users.root = {
-                programs.fish.enable = true;
+                users.root = {
+                  programs.fish.enable = true;
 
-                home.stateVersion = "24.11";
+                  home.stateVersion = "24.11";
+                };
               };
+
+              nixpkgs.overlays = [
+                (final: _: { broken = final.lib.trace "fix broken package (config)" final.hello; })
+              ];
 
               system.stateVersion = "24.11";
             }

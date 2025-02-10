@@ -7,6 +7,7 @@
 let
   inherit (lib) mkOption;
   inherit (lib.types) lazyAttrsOf raw;
+  inherit (conflake.types) optListOf overlay;
 in
 {
   options.nixpkgs = {
@@ -15,7 +16,7 @@ in
       default = { };
     };
     overlays = mkOption {
-      type = conflake.types.overlays;
+      type = optListOf overlay;
       default = [ ];
     };
   };
