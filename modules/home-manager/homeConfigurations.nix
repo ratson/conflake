@@ -8,12 +8,7 @@
 }:
 
 let
-  inherit (builtins)
-    hasAttr
-    head
-    mapAttrs
-    match
-    ;
+  inherit (builtins) hasAttr mapAttrs;
   inherit (lib)
     mkDefault
     mkIf
@@ -21,6 +16,7 @@ let
     pipe
     ;
   inherit (lib.types) attrs lazyAttrsOf;
+  inherit (conflake.strings) getUsername;
   inherit (conflake.types) optCallWith;
 
   cfg = config.homeConfigurations;
@@ -47,7 +43,7 @@ let
           extraSpecialArgs = (mkSystemArgs' x.pkgs) // x.extraSpecialArgs or { };
           modules = [
             {
-              home.username = mkDefault (head (match "([^@]*)(@.*)?" name));
+              home.username = mkDefault (getUsername name);
             }
           ] ++ x.modules or [ ];
         }

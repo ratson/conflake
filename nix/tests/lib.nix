@@ -5,6 +5,7 @@ let
   inherit (lib) functionArgs;
   inherit (inputs) self;
   inherit (self.lib) callMustWith callWith mkVersion;
+  inherit (self.lib.strings) getUsername;
 in
 {
   callMustWith-no-args = [
@@ -135,6 +136,18 @@ in
         c = true;
       }
     ]
+  ];
+
+  getUsername = [
+    "user"
+    getUsername
+    "user"
+  ];
+
+  getUsername-with-host = [
+    "user@host"
+    getUsername
+    "user"
   ];
 
   mkVersion-null = [

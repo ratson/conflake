@@ -17,6 +17,8 @@ lib.makeExtensible (self: {
 
   matchers = import ./matchers.nix { inherit lib; };
 
+  strings = import ./strings.nix { inherit lib; };
+
   types = import ./types.nix {
     inherit lib;
     lib' = self;
