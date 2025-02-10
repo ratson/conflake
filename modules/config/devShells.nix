@@ -40,7 +40,7 @@ in
 
     (mkIf (cfg != { }) {
       outputs.devShells = config.genSystems (
-        { pkgs, pkgsCall }:
+        { pkgs, pkgsCall, ... }:
         pipe cfg [
           (mapAttrs (
             _:

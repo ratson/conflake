@@ -98,7 +98,7 @@ let
         toJSON
       ];
     in
-    pkgs.runCommand "check-tests"
+    pkgs.runCommandLocal "check-tests"
       {
         inherit results;
         passAsFile = [ "results" ];

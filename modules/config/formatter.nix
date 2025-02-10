@@ -31,6 +31,7 @@ let
       outputs',
       pkgs,
       pkgsCall,
+      ...
     }:
     let
       inherit (pkgs.stdenv.hostPlatform) system;
@@ -76,7 +77,7 @@ in
 
   config = mkMerge [
     (mkIf (cfg != null) {
-      outputs.formatter = genSystems ({ pkgsCall }: pkgsCall cfg);
+      outputs.formatter = genSystems ({ pkgsCall, ... }: pkgsCall cfg);
     })
 
     (mkIf (config.formatters != null) {

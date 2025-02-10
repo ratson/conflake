@@ -1,20 +1,22 @@
-{ config, lib, ... }:
+{
+  config,
+  lib,
+  conflake,
+  ...
+}:
 
 let
-  inherit (builtins) concatStringsSep elem;
   inherit (lib)
     escapeShellArg
-    getExe
     mkEnableOption
     mkIf
     mkOption
     optionalString
     types
     ;
+  inherit (conflake.loaders) mkCheck;
 
   cfg = config.presets.checks.statix;
-
-  hasStatix = pkgs: !elem pkgs.stdenv.hostPlatform.system [ "x86_64-freebsd" ];
 in
 {
   options.presets.checks.statix = {
@@ -29,15 +31,10 @@ in
   };
 
   config = mkIf cfg.enable {
-    checks.statix =
-      { pkgs, ... }:
-      optionalString (hasStatix pkgs) (
-        concatStringsSep " " [
-          (getExe pkgs.statix)
-          "check"
-          (optionalString (cfg.ignore != null) "--ignore=${escapeShellArg cfg.ignore}")
-          (optionalString cfg.unrestricted "--unrestricted")
-        ]
-      );
+    checks.statix = mkCheck (pkgs: [ pkgs.statix ]) ''
+      statix check ${
+        optionalString (cfg.ignore != null) "--ignore=${escapeShellArg cfg.ignore}"
+      } ${optionalString cfg.unrestricted "--unrestricted"}
+    '';
   };
 }

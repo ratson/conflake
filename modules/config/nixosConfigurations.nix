@@ -42,24 +42,21 @@ in
           inputs.nixpkgs.lib.nixosSystem (
             mergeAttrs v {
               modules = [
-                (
-                  { pkgs, ... }:
-                  {
-                    _module.args = pipe v.system [
-                      mkSystemArgs
-                      (mergeAttrs {
-                        inherit inputs;
-                        hostname = k;
-                      })
-                      (mapAttrs (_: mkOptionDefault))
-                    ];
+                {
+                  _module.args = pipe v.system [
+                    mkSystemArgs
+                    (mergeAttrs {
+                      inherit inputs;
+                      hostname = k;
+                    })
+                    (mapAttrs (_: mkOptionDefault))
+                  ];
 
-                    nixpkgs = mapAttrs (_: mkOptionDefault) {
-                      inherit (config.nixpkgs) config overlays;
-                      hostPlatform = "x86_64-linux";
-                    };
-                  }
-                )
+                  nixpkgs = mapAttrs (_: mkOptionDefault) {
+                    inherit (config.nixpkgs) config overlays;
+                    hostPlatform = "x86_64-linux";
+                  };
+                }
               ] ++ v.modules or [ ];
             }
           )

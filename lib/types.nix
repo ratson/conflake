@@ -56,7 +56,7 @@ let
     unspecified
     ;
   inherit (lib.options) mergeOneOption;
-  inherit (lib') callWith mkCheck;
+  inherit (lib') callWith;
   inherit (lib'.debug) mkTestFromList;
 
   isStorePath = s: match "${storeDir}/[^.][^ \n]*" s != null;
@@ -131,21 +131,8 @@ fix (
     bundlers = optFunctionTo (lazyAttrsOf types'.bundler);
 
     check = pipe types'.package [
-      (coercedTo (optFunctionTo stringLike) (
-        value:
-        if isDerivation value then
-          value
-        else
-          {
-            name,
-            pkgs,
-            src,
-            pkgsCall,
-          }:
-          pipe value [
-            pkgsCall
-            (mkCheck { inherit name pkgs src; })
-          ]
+      (coercedTo (optFunctionTo str) (
+        value: if isString value then lib'.loaders.mkCheck { } value else value
       ))
     ];
 

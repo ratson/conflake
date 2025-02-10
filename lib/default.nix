@@ -28,21 +28,4 @@ lib.makeExtensible (self: {
   inherit (self.filesystem) collectPaths;
   inherit (self.flake) mkVersion mkVersion';
   inherit (self.function) callMustWith callWith;
-
-  mkCheck =
-    {
-      pkgs,
-      name,
-      src,
-      ...
-    }:
-    cmd:
-    pkgs.runCommand "check-${name}" { } ''
-      pushd "${src}"
-      if  [ -x "${cmd}" ]; then
-        ${cmd}
-      fi
-      popd
-      touch $out
-    '';
 })
