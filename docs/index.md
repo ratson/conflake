@@ -1,3 +1,5 @@
+<!-- #region README -->
+
 # Conflake
 
 A batteries included, convention-based configuration framework for Nix Flakes.
@@ -5,13 +7,16 @@ A batteries included, convention-based configuration framework for Nix Flakes.
 ## Features
 
 - Auto-load files into `outputs` attribute set according to [project layout](./guide/project-layout.md)
+- Function-based declaration
 - Provide `outputs` and `perSystem` options for flexible configuration
 - Handle generating per-system attributes, with
   [`nix-systems`](./options/systems.md#nix-systems) support
 - Given package definitions, generates package and overlay outputs
 - Enable `nix fmt` for common file types
-- Easy to [write and run tests](./guide//writing-tests.md)
+- Easy to [write and run tests](./guide/writing-tests.md)
 - Extensible using the module system
+
+<!-- #endregion README -->
 
 ## Why I Need This
 

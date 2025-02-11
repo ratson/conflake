@@ -1,4 +1,5 @@
 import fs from "node:fs/promises";
+import { replaceInFile } from "replace-in-file";
 import { defineConfig } from "vitepress";
 import templates from "../templates/[name].paths.ts";
 
@@ -6,6 +7,29 @@ async function collectNames(dir: string) {
   const files = await fs.readdir(dir);
   return files.filter((x) => x.endsWith(".md") && x !== "index.md")
     .map((x) => x.replace(/\.md$/, ""));
+}
+
+async function updateReadme(srcPath: string) {
+  const s = await fs.readFile(srcPath, "utf8");
+  const m = s.match(
+    /<!-- #region README -->\s+(.+)<!-- #endregion README -->/s,
+  );
+  if (!m) return;
+  let t = m[1];
+  for (const m of t.matchAll(/\]\([^)]+\)/gs)) {
+    t = t.replace(
+      m[0],
+      m[0].replace(".md", "").replace(
+        "(./",
+        "(https://ratson.github.io/conflake/",
+      ),
+    );
+  }
+  await replaceInFile({
+    files: "../README.md",
+    from: /(<!-- #region generated -->\s+).+(<!-- #endregion generated -->)/s,
+    to: `$1${t}$2`,
+  });
 }
 
 export default async () => {
@@ -24,7 +48,7 @@ export default async () => {
     lastUpdated: true,
 
     title: "Conflake",
-    description: "Config Flakes",
+    description: "conflake Config Flakes",
 
     markdown: {
       image: {
@@ -105,8 +129,10 @@ export default async () => {
       ],
     },
 
-    transformPageData(pageData) {
+    async transformPageData(pageData) {
       switch (pageData.filePath) {
+        case "index.md":
+          await updateReadme(pageData.filePath);
         case "templates/[name].md":
           pageData.title = `Templates - ${pageData.params?.name}`;
       }
