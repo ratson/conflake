@@ -14,10 +14,9 @@ let
     mkIf
     mkOption
     mkOptionDefault
-    pipe
+    optionals
     ;
   inherit (lib.types) attrs lazyAttrsOf;
-  inherit (config) mkSystemArgs;
   inherit (conflake.types) optCallWith;
 
   cfg = config.nixosConfigurations;
@@ -41,23 +40,10 @@ in
         else
           inputs.nixpkgs.lib.nixosSystem (
             mergeAttrs v {
-              modules = [
-                {
-                  _module.args = pipe v.system [
-                    mkSystemArgs
-                    (mergeAttrs {
-                      inherit inputs;
-                      hostname = k;
-                    })
-                    (mapAttrs (_: mkOptionDefault))
-                  ];
-
-                  nixpkgs = mapAttrs (_: mkOptionDefault) {
-                    inherit (config.nixpkgs) config overlays;
-                    hostPlatform = "x86_64-linux";
-                  };
-                }
-              ] ++ v.modules or [ ];
+              modules =
+                [ { _module.args.hostname = mkOptionDefault k; } ]
+                ++ (optionals (config.presets.nixos.enable or false) [ config.presets.nixos.module ])
+                ++ v.modules or [ ];
             }
           )
       ) cfg;
