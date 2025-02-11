@@ -3,6 +3,10 @@ import { replaceInFile } from "replace-in-file";
 import { defineConfig } from "vitepress";
 import templates from "../templates/[name].paths.ts";
 
+const base = "/conflake/";
+
+const hostname = `https://ratson.github.io${base}`;
+
 async function collectNames(dir: string) {
   const files = await fs.readdir(dir);
   return files.filter((x) => x.endsWith(".md") && x !== "index.md")
@@ -16,14 +20,8 @@ async function updateReadme(srcPath: string) {
   );
   if (!m) return;
   let t = m[1];
-  for (const m of t.matchAll(/\]\([^)]+\)/gs)) {
-    t = t.replace(
-      m[0],
-      m[0].replace(".md", "").replace(
-        "(./",
-        "(https://ratson.github.io/conflake/",
-      ),
-    );
+  for (const [x] of t.matchAll(/\]\([^)]+\)/gs)) {
+    t = t.replace(x, x.replace(".md", "").replace("(./", `(${hostname}`));
   }
   await replaceInFile({
     files: "../README.md",
@@ -43,7 +41,7 @@ export default async () => {
   ]);
 
   return defineConfig({
-    base: "/conflake/",
+    base,
     cleanUrls: true,
     lastUpdated: true,
 
@@ -55,6 +53,8 @@ export default async () => {
         lazyLoading: true,
       },
     },
+
+    sitemap: { hostname },
 
     themeConfig: {
       editLink: {
