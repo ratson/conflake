@@ -3,5 +3,10 @@
   "packageManager": "pnpm@10.3.0",
   "scripts": {
     "docs:build": "pnpm --filter ./docs run build"
+  },
+  "pnpm": {
+    "onlyBuiltDependencies": [
+      "esbuild"
+    ]
   }
 }
