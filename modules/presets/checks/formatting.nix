@@ -19,6 +19,7 @@ in
         outputs',
         pkgs,
         src,
+        ...
       }:
       pkgs.runCommandLocal "check-${name}"
         {

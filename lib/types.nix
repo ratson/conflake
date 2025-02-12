@@ -145,7 +145,7 @@ fix (
         options = {
           stdenv = mkOption {
             type = optFunctionTo package;
-            default = { pkgs }: pkgs.stdenv;
+            default = { pkgs, ... }: pkgs.stdenv;
           };
 
           overrideShell = mkOption {
@@ -289,8 +289,6 @@ fix (
       };
 
     package = optFunctionTo types.package;
-
-    packages = optFunctionTo (lazyAttrsOf types'.package);
 
     path = types.path // {
       check = isPath;

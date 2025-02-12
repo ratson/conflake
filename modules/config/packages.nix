@@ -23,19 +23,19 @@ let
     str
     ;
   inherit (conflake) callWith;
-  inherit (conflake.types) nullable;
+  inherit (conflake.types) optFunctionTo nullable package;
 
   cfg = config.packages;
 in
 {
   options = {
     package = mkOption {
-      type = nullable conflake.types.package;
+      type = nullable package;
       default = null;
     };
 
     packages = mkOption {
-      type = nullable conflake.types.packages;
+      type = nullable (optFunctionTo (lazyAttrsOf package));
       default = null;
     };
 
