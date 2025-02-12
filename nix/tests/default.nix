@@ -1486,8 +1486,27 @@ in
 
   demo-example = [
     (conflakeExample "demo" { })
-    (f: attrNames f.overlays)
-    [ "default" ]
+    (x: [
+      (attrNames x)
+      (attrNames x.overlays)
+    ])
+    [
+      [
+        "checks"
+        "darwinConfigurations"
+        "darwinModules"
+        "devShells"
+        "formatter"
+        "homeConfigurations"
+        "homeModules"
+        "nixosConfigurations"
+        "nixosModules"
+        "overlays"
+        "packages"
+        "templates"
+      ]
+      [ "default" ]
+    ]
   ];
 
   nixos-example = [
