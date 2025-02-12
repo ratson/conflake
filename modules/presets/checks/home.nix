@@ -14,6 +14,7 @@ let
     pipe
     ;
   inherit (conflake) prefixAttrs;
+  inherit (conflake.loaders) mkPackageCheck;
 
   cfg = config.presets.checks.home;
 in
@@ -26,11 +27,12 @@ in
 
   config = mkIf (cfg.enable && config.homeConfigurations != { }) {
     outputs.checks = config.genSystems (
-      { system, ... }:
+      { pkgs, system, ... }:
       pipe config.outputs.homeConfigurations [
         (filterAttrs (_: v: v.pkgs.system == system))
         (prefixAttrs "home-")
         (mapAttrs (_: v: v.activationPackage))
+        (mapAttrs (mkPackageCheck pkgs))
       ]
     );
   };

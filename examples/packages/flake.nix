@@ -9,16 +9,16 @@
       };
 
       devShell.packages =
-        { pkgs, system, ... }:
+        { pkgs, system }:
         [
           pkgs.hello
           self.packages.${system}.default
         ];
 
-      packages.hi = { pkgs, ... }: pkgs.hello;
+      packages.hi = pkgs: pkgs.hello;
 
       perSystem =
-        { pkgs, ... }:
+        { pkgs }:
         {
           packages.haloha = pkgs.hello;
         };

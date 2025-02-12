@@ -389,6 +389,26 @@ in
     "hello"
   ];
 
+  package-no-eval = [
+    (conflake' {
+      package = { not-called }: not-called.not-a-package;
+    })
+    (x: [
+      (attrNames x.checks.x86_64-linux)
+      (attrNames x.packages.x86_64-linux)
+      (x.packages.x86_64-linux ? default)
+    ])
+    [
+      [
+        "formatting"
+        "packages-default"
+        "statix"
+      ]
+      [ "default" ]
+      true
+    ]
+  ];
+
   package-overlay-no-default = [
     (conflake' {
       package =

@@ -144,4 +144,10 @@ fix (self: {
       popd
       touch $out
     '';
+
+  mkPackageCheck =
+    pkgs: name: pkg:
+    pkgs.runCommandLocal "check-${name}" { nativeBuildInputs = [ pkg ]; } ''
+      touch $out
+    '';
 })
