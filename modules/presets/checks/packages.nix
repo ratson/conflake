@@ -47,7 +47,7 @@ in
       outputs.checks = mapAttrs (
         system:
         flip pipe [
-          (x: x.emacsPackages)
+          (x: x.emacsPackages or { })
           (prefixAttrs "emacsPackages-")
           (mapAttrs (mkPackageCheck config.pkgsFor.${system}))
         ]

@@ -12,14 +12,15 @@ let
     mkOption
     pipe
     ;
+  inherit (lib.types) either lazyAttrsOf raw;
   inherit (conflake.loaders) loadDirWithDefault;
-  inherit (conflake.types) nullable;
+  inherit (conflake.types) optFunctionTo nullable;
 
   cfg = config.legacyPackages;
 in
 {
   options.legacyPackages = mkOption {
-    type = nullable conflake.types.legacyPackages;
+    type = nullable (optFunctionTo (lazyAttrsOf (either (lazyAttrsOf raw) raw)));
     default = null;
   };
 

@@ -596,7 +596,7 @@ in
       inputs = {
         inherit nixpkgs;
       };
-      legacyPackages = { pkgs }: pkgs;
+      legacyPackages = pkgs: pkgs;
     })
     (x: x.legacyPackages.x86_64-linux.hello)
     nixpkgs.legacyPackages.x86_64-linux.hello
@@ -618,15 +618,15 @@ in
       inputs = {
         inherit nixpkgs;
       };
-      legacyPackages = _: { };
+      legacyPackages = _: { a = 1; };
     })
     (x: x.legacyPackages.x86_64-linux)
-    { }
+    { a = 1; }
   ];
 
   legacyPackages-emacsPackages-empty = [
     (conflake' {
-      legacyPackages = _: {
+      legacyPackages = {
         emacsPackages = { };
       };
       package =

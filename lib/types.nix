@@ -219,8 +219,6 @@ fix (
 
     inputs = lazyAttrsOf raw;
 
-    legacyPackages = functionTo (lazyAttrsOf (either (lazyAttrsOf raw) raw));
-
     loader = functionTo unspecified;
 
     loaders = lazyAttrsOf (optListOf loader);
