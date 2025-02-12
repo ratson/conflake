@@ -18,7 +18,7 @@
       packages.hi = pkgs: pkgs.hello;
 
       perSystem =
-        { pkgs }:
+        { pkgs, ... }:
         {
           packages.haloha = pkgs.hello;
         };

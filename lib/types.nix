@@ -300,8 +300,6 @@ fix (
 
     pathTree = lazyAttrsOf (either path pathTree);
 
-    perSystem = functionTo types'.outputs;
-
     optCallWith =
       args:
       flip pipe [
