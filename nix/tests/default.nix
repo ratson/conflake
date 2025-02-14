@@ -17,6 +17,7 @@ let
     hasPrefix
     isDerivation
     mkDefault
+    pipe
     ;
   inherit (inputs) nixpkgs;
   inherit (inputs.self.lib) mkOutputs;
@@ -656,7 +657,7 @@ in
   ];
 
   legacyPackages-emacsPackages-loader = [
-    (conflake fixtures.emacsPackages { pname = "stop-inf-recursion"; })
+    (conflake fixtures.emacsPackages { })
     (x: [
       (attrNames x.legacyPackages.x86_64-linux)
       (attrNames x.legacyPackages.x86_64-linux.emacsPackages)
@@ -1575,6 +1576,7 @@ in
       ]
       true
       [
+        "awesome-emacs"
         "default"
         "greet"
         "hei"
