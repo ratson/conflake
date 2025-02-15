@@ -2,6 +2,7 @@
   config,
   lib,
   conflake,
+  inputs,
   ...
 }:
 
@@ -28,7 +29,7 @@ in
   config = mkIf (cfg.enable && config.homeConfigurations != { }) {
     outputs.checks = config.genSystems (
       { pkgs, system, ... }:
-      pipe config.outputs.homeConfigurations [
+      pipe inputs.self.homeConfigurations [
         (filterAttrs (_: v: v.pkgs.system == system))
         (prefixAttrs "home-")
         (mapAttrs (_: v: v.activationPackage))
