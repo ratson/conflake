@@ -15,6 +15,8 @@
           self.packages.${system}.default
         ];
 
+      legacyPackages.emacsPackages.azul = { elpaBuild, dash }: dash;
+
       packages.hi = pkgs: pkgs.hello;
 
       perSystem =

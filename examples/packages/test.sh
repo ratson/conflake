@@ -17,6 +17,7 @@ nix_run .#hei
 
 nix_build .#devShells.x86_64-linux.default
 
+nix_build .#legacyPackages.x86_64-linux.emacsPackages.azul
 nix_build .#legacyPackages.x86_64-linux.emacsPackages.greet
 nix_build .#legacyPackages.x86_64-linux.emacsPackages.hi
 nix_build .#legacyPackages.x86_64-linux.emacsPackages.hei
