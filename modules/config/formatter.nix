@@ -28,7 +28,7 @@ let
 
   mkFormatter =
     {
-      outputs',
+      inputs',
       pkgs,
       pkgsCall,
       ...
@@ -48,7 +48,7 @@ let
       runtimeInputs =
         [ pkgs.coreutils ]
         ++ (optionals (!elem system [ "x86_64-freebsd" ]) [ pkgs.fd ])
-        ++ (optionals (!fullContext) outputs'.devShells.default.nativeBuildInputs or [ ]);
+        ++ (optionals (!fullContext) inputs'.self.devShells.default.nativeBuildInputs or [ ]);
 
       text = ''
         for f in "$@"; do

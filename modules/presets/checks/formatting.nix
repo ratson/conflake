@@ -15,15 +15,16 @@ in
   config = mkIf (cfg.enable && (config.formatters != null) || (config.formatter != null)) {
     checks.formatting =
       {
+        inputs',
         name,
-        outputs',
         pkgs,
         src,
+        ...
       }:
       pkgs.runCommandLocal "check-${name}"
         {
           nativeBuildInputs = [
-            outputs'.formatter
+            inputs'.self.formatter
             pkgs.diffutils
           ];
         }

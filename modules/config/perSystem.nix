@@ -2,14 +2,16 @@
   config,
   lib,
   options,
-  conflake,
+  moduleArgs,
   ...
 }:
 
 let
-  inherit (builtins) mapAttrs;
+  inherit (builtins) attrValues mapAttrs;
   inherit (lib)
+    evalModules
     foldAttrs
+    genAttrs
     mergeAttrs
     mkIf
     mkOption
@@ -17,36 +19,43 @@ let
     types
     ;
   inherit (lib.types) lazyAttrsOf;
+  inherit (config) mkSystemArgs;
 
   cfg = config.perSystem;
 in
 {
-  options = {
-    perSystem = mkOption {
-      type = conflake.types.perSystem;
-      default = _: { };
-    };
+  options.perSystem = mkOption {
+    type = types.deferredModuleWith {
+      staticModules = [
+        (
+          { system, ... }:
+          {
+            freeformType = lazyAttrsOf types.unspecified;
 
-    perSystemOutputs = mkOption {
-      internal = true;
-      readOnly = true;
-      type = lazyAttrsOf (lazyAttrsOf types.unspecified);
-      default = pipe config.systems [
-        (map (system: config.pkgsFor.${system}))
-        (map config.mkSystemArgs')
-        (map (
-          { system, pkgsCall, ... }:
-          pipe cfg [
-            pkgsCall
-            (mapAttrs (_: v: { ${system} = v; }))
-          ]
-        ))
-        (foldAttrs mergeAttrs { })
+            _module.args = config.pkgsFor.${system} // moduleArgs // mkSystemArgs system;
+          }
+        )
       ];
     };
+    apply =
+      module: system:
+      (evalModules {
+        class = "perSystem";
+        modules = [ module ];
+        prefix = [
+          "perSystem"
+          system
+        ];
+        specialArgs = { inherit system; };
+      }).config;
   };
 
   config = mkIf options.perSystem.isDefined {
-    outputs = config.perSystemOutputs;
+    outputs = pipe cfg [
+      (genAttrs config.systems)
+      (mapAttrs (system: mapAttrs (_: v: { ${system} = v; })))
+      attrValues
+      (foldAttrs mergeAttrs { })
+    ];
   };
 }

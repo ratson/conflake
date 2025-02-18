@@ -50,27 +50,17 @@ in
     callSystemsWithAttrs = mkOption {
       internal = true;
       readOnly = true;
-      type = types.unspecified;
+      type = functionTo (lazyAttrsOf (lazyAttrsOf types.unspecified));
       default =
         fn:
         config.genSystems (
-          { pkgsCall, ... }:
-          pipe fn [
-            pkgsCall
-            (mapAttrs (
-              name: f:
-              pipe f [
-                (callWith { inherit name; })
-                pkgsCall
-              ]
-            ))
-          ]
+          { pkgsCall, ... }: mapAttrs (name: f: pkgsCall (callWith { inherit name; } f)) (pkgsCall fn)
         );
     };
     genSystems = mkOption {
       internal = true;
       readOnly = true;
-      type = types.unspecified;
+      type = functionTo (lazyAttrsOf types.unspecified);
       default = f: genAttrs cfg (system: f (config.mkSystemArgs' config.pkgsFor.${system}));
     };
     mkSystemArgs = mkOption {

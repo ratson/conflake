@@ -1,17 +1,23 @@
-{ config, lib, ... }:
+{
+  config,
+  lib,
+  conflake,
+  ...
+}:
 
 let
   inherit (builtins) mapAttrs;
   inherit (lib)
-    mapAttrs'
+    flip
     mkEnableOption
     mkIf
     mkMerge
     mkOption
-    nameValuePair
     pipe
     types
     ;
+  inherit (conflake) prefixAttrs;
+  inherit (conflake.loaders) mkPackageCheck;
 
   cfg = config.presets.checks.packages;
 in
@@ -28,18 +34,24 @@ in
 
   config = mkMerge [
     (mkIf (cfg.enable && config.packages != null) {
-      outputs.checks = pipe config.outputs.packages [
-        (mapAttrs (_: mapAttrs' (k: nameValuePair "packages-${k}")))
-      ];
+      outputs.checks = mapAttrs (
+        system:
+        flip pipe [
+          (prefixAttrs "packages-")
+          (mapAttrs (mkPackageCheck config.pkgsFor.${system}))
+        ]
+      ) config.outputs.packages;
     })
 
     (mkIf (cfg.emacs && config.legacyPackages != null) {
-      checks =
-        { outputs' }:
-        pipe { } [
-          (x: outputs'.legacyPackages.emacsPackages or x)
-          (mapAttrs' (k: nameValuePair "emacsPackages-${k}"))
-        ];
+      outputs.checks = mapAttrs (
+        system:
+        flip pipe [
+          (x: x.emacsPackages or { })
+          (prefixAttrs "emacsPackages-")
+          (mapAttrs (mkPackageCheck config.pkgsFor.${system}))
+        ]
+      ) config.outputs.legacyPackages;
     })
   ];
 }

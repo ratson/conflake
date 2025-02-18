@@ -64,7 +64,7 @@ let
 
   mkCheck =
     tests:
-    { pkgs, pkgsCall }:
+    { pkgs, pkgsCall, ... }:
     let
       results = pipe placeholderTree [
         (mergeAttrs { ${config.src.relTo cfg.src} = tests; })

@@ -27,9 +27,9 @@ let
     setFunctionArgs
     types
     ;
-  inherit (lib.types) functionTo;
   inherit (config) mkSystemArgs;
   inherit (conflake) callWith;
+  inherit (conflake.types) functionTo;
   inherit (conflake.loaders) filterLoadable loadDirWithDefault;
 
   cfg = config.loaders;

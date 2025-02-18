@@ -124,7 +124,6 @@ fix (self: {
           if isPath (node."default.nix" or null) then load node."default.nix" else self.loadDir args;
       }
       // args
-
     );
 
   mkCheck =
@@ -133,6 +132,7 @@ fix (self: {
       pkgs,
       name,
       src,
+      ...
     }:
     let
       envValue = if isFunction env then env pkgs else env;
@@ -142,6 +142,12 @@ fix (self: {
       pushd "${src}"
       ${buildCommand}
       popd
+      touch $out
+    '';
+
+  mkPackageCheck =
+    pkgs: name: pkg:
+    pkgs.runCommandLocal "check-${name}" { nativeBuildInputs = [ pkg ]; } ''
       touch $out
     '';
 })

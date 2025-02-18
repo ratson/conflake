@@ -7,6 +7,7 @@
 }:
 
 let
+  inherit (builtins) isPath;
   inherit (lib)
     hasSuffix
     isFunction
@@ -39,20 +40,23 @@ in
     {
       nixDir.loaders.lib =
         { node, path, ... }:
-        loadDir' {
-          root = path;
-          tree = node;
-          mkFilePair =
-            { name, node, ... }:
-            let
-              value = import node;
-              value' = if isFunction value then pipe value [ (callWith moduleArgs) ] else value;
-            in
-            if hasSuffix ".raw.nix" name then
-              nameValuePair (removeSuffix ".raw.nix" name) value
-            else
-              nameValuePair (removeSuffix ".nix" name) value';
-        };
+        if isPath node then
+          import node
+        else
+          loadDir' {
+            root = path;
+            tree = node;
+            mkFilePair =
+              { name, node, ... }:
+              let
+                value = import node;
+                value' = if isFunction value then pipe value [ (callWith moduleArgs) ] else value;
+              in
+              if hasSuffix ".raw.nix" name then
+                nameValuePair (removeSuffix ".raw.nix" name) value
+              else
+                nameValuePair (removeSuffix ".nix" name) value';
+          };
 
       nixDir.matchers.lib = conflake.matchers.always;
     }

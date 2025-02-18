@@ -1,39 +1,50 @@
 { config, lib, ... }:
 
 let
-  inherit (builtins) mapAttrs;
   inherit (lib)
     flip
     mkEnableOption
     mkIf
+    mkOption
+    pipe
+    removeAttrs
+    types
     ;
 
   cfg = config.presets.overlay.emacsPackages;
 
-  overlay =
-    _: prev:
+  mkOverlay =
+    blacklist: _: prev:
     let
       inherit (prev.stdenv.hostPlatform) system;
-      epkgs = config.outputs.legacyPackages.${system}.emacsPackages or { };
+      epkgs = pipe system [
+        (x: config.outputs.legacyPackages.${x}.emacsPackages or { })
+        (flip removeAttrs blacklist)
+      ];
     in
     {
-      emacsPackagesFor =
-        emacs:
-        (prev.emacsPackagesFor emacs).overrideScope (
-          final: _: mapAttrs (_: flip final.callPackage { }) epkgs
-        );
+      emacsPackagesFor = flip pipe [
+        prev.emacsPackagesFor
+        (x: x.overrideScope (_: _: epkgs))
+      ];
 
       emacsPackages = prev.emacsPackages // epkgs;
     };
 in
 {
-  options.presets.overlay.emacsPackages = mkEnableOption "emacsPackages overlay" // {
-    default = config.presets.overlay.enable;
+  options.presets.overlay.emacsPackages = {
+    enable = mkEnableOption "emacsPackages overlay" // {
+      default = config.presets.overlay.enable;
+    };
+    blacklist = mkOption {
+      type = types.listOf types.str;
+      default = [ ];
+    };
   };
 
-  config = mkIf (cfg && config.legacyPackages != null) {
-    inherit overlay;
+  config = mkIf (cfg.enable && config.legacyPackages != null) {
+    nixpkgs.overlays = [ (mkOverlay [ ]) ];
 
-    nixpkgs.overlays = [ overlay ];
+    overlay = mkOverlay cfg.blacklist;
   };
 }

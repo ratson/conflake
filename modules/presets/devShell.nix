@@ -22,6 +22,6 @@ in
   };
 
   config = mkIf (cfg.package && config.packages != null && config.packages ? default) {
-    devShell.inputsFrom = { outputs', ... }: [ outputs'.packages.default ];
+    devShell.inputsFrom = { inputs', ... }: [ inputs'.self.packages.default ];
   };
 }
