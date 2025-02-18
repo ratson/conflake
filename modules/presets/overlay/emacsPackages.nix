@@ -1,25 +1,26 @@
-{
-  config,
-  lib,
-  inputs,
-  ...
-}:
+{ config, lib, ... }:
 
 let
   inherit (lib)
     flip
     mkEnableOption
     mkIf
+    mkOption
     pipe
+    removeAttrs
+    types
     ;
 
   cfg = config.presets.overlay.emacsPackages;
 
-  overlay =
-    _: prev:
+  mkOverlay =
+    blacklist: _: prev:
     let
       inherit (prev.stdenv.hostPlatform) system;
-      epkgs = inputs.self.legacyPackages.${system}.emacsPackages or { };
+      epkgs = pipe system [
+        (x: config.outputs.legacyPackages.${x}.emacsPackages or { })
+        (flip removeAttrs blacklist)
+      ];
     in
     {
       emacsPackagesFor = flip pipe [
@@ -31,13 +32,19 @@ let
     };
 in
 {
-  options.presets.overlay.emacsPackages = mkEnableOption "emacsPackages overlay" // {
-    default = config.presets.overlay.enable;
+  options.presets.overlay.emacsPackages = {
+    enable = mkEnableOption "emacsPackages overlay" // {
+      default = config.presets.overlay.enable;
+    };
+    blacklist = mkOption {
+      type = types.listOf types.str;
+      default = [ ];
+    };
   };
 
-  config = mkIf (cfg && config.legacyPackages != null) {
-    inherit overlay;
+  config = mkIf (cfg.enable && config.legacyPackages != null) {
+    nixpkgs.overlays = [ (mkOverlay [ ]) ];
 
-    nixpkgs.overlays = [ overlay ];
+    overlay = mkOverlay cfg.blacklist;
   };
 }

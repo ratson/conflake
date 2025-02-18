@@ -43,6 +43,8 @@ let
   conflake' = conflake fixtures.empty;
 
   conflakeExample = s: conflake ../../examples/${s};
+
+  pkgs = nixpkgs.legacyPackages.x86_64-linux;
 in
 {
   call-conflake = [
@@ -308,7 +310,7 @@ in
 
   outputs-handled-attr = test (conflake' {
     outputs.overlays.test = final: prev: { testVal = true; };
-  }) (f: (nixpkgs.legacyPackages.x86_64-linux.extend f.overlays.test).testVal);
+  }) (f: (pkgs.extend f.overlays.test).testVal);
 
   perSystem = [
     (conflake' {
@@ -368,7 +370,7 @@ in
       (attrNames f.packages.x86_64-linux)
       (import f.packages.x86_64-linux.default)
       (f ? packages.aarch64-linux.default)
-      ((nixpkgs.legacyPackages.x86_64-linux.extend f.overlays.default) ? pkg1)
+      ((pkgs.extend f.overlays.default) ? pkg1)
       (f ? checks.x86_64-linux.packages-default)
       (f ? checks.aarch64-linux.packages-default)
     ])
@@ -420,7 +422,7 @@ in
           installPhase = "echo true > $out";
         };
     })
-    (x: nixpkgs.legacyPackages.x86_64-linux.extend x.overlays.default)
+    (x: pkgs.extend x.overlays.default)
     (x: x ? default)
     false
   ];
@@ -475,7 +477,7 @@ in
       (import f.packages.x86_64-linux.pkg3)
       (
         let
-          pkgs' = nixpkgs.legacyPackages.x86_64-linux.extend f.overlays.default;
+          pkgs' = pkgs.extend f.overlays.default;
         in
         (pkgs' ? pkg1) && (pkgs' ? pkg2) && (pkgs' ? pkg3)
       )
@@ -822,21 +824,6 @@ in
     { testValue = "hello"; }
   ];
 
-  overlays = [
-    (conflake' {
-      overlay = final: prev: { testValue = "hello"; };
-      overlays.cool = final: prev: { testValue = "cool"; };
-    })
-    (x: [
-      (fix (self: x.overlays.default self { }))
-      (fix (self: x.overlays.cool self { }))
-    ])
-    [
-      { testValue = "hello"; }
-      { testValue = "cool"; }
-    ]
-  ];
-
   overlay-empty = [
     (conflake' { overlay = final: prev: { }; })
     (x: x.overlays.default { } { })
@@ -856,6 +843,21 @@ in
       testValue = "hello";
       testValue2 = "hello2";
     }
+  ];
+
+  overlays = [
+    (conflake' {
+      overlay = final: prev: { testValue = "hello"; };
+      overlays.cool = final: prev: { testValue = "cool"; };
+    })
+    (x: [
+      (fix (self: x.overlays.default self { }))
+      (fix (self: x.overlays.cool self { }))
+    ])
+    [
+      { testValue = "hello"; }
+      { testValue = "cool"; }
+    ]
   ];
 
   overlays-merge = [
@@ -1430,6 +1432,27 @@ in
     })
     (x: x ? checks.x86_64-linux.editorconfig)
     false
+  ];
+
+  presets-overlay-blacklist = [
+    (conflake' {
+      packages.test-pkg = pkgs: pkgs.hello;
+      legacyPackages.emacsPackages.test-epkg = { dash }: dash;
+
+      presets.overlay = {
+        packages.blacklist = [ "test-pkg" ];
+        emacsPackages.blacklist = [ "test-epkg" ];
+      };
+    })
+    (x: pkgs.extend x.overlays.default)
+    (x: [
+      (x ? test-pkg)
+      (x.emacsPackages ? test-epkg)
+    ])
+    [
+      false
+      false
+    ]
   ];
 
   self-outputs = [

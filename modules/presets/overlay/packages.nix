@@ -60,8 +60,14 @@ let
 in
 {
   options = {
-    presets.overlay.packages = mkEnableOption "packages overlay" // {
-      default = config.presets.overlay.enable;
+    presets.overlay.packages = {
+      enable = mkEnableOption "packages overlay" // {
+        default = config.presets.overlay.enable;
+      };
+      blacklist = mkOption {
+        type = types.listOf types.str;
+        default = [ ];
+      };
     };
     packageOverlay = mkOption {
       internal = true;
@@ -70,7 +76,7 @@ in
     };
   };
 
-  config = mkIf (cfg && config.packages != null) {
+  config = mkIf (cfg.enable && config.packages != null) {
     packageOverlay =
       final: prev:
       let
@@ -101,7 +107,7 @@ in
       final:
       flip pipe [
         (config.packageOverlay (final.appendOverlays config.nixpkgs.overlays))
-        (flip removeAttrs [ "default" ])
+        (flip removeAttrs ([ "default" ] ++ cfg.blacklist))
       ];
   };
 }
