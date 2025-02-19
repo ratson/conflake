@@ -221,7 +221,7 @@ fix (
 
     loader = functionTo unspecified;
 
-    loaders = lazyAttrsOf (optListOf loader);
+    loaders = lazyAttrsOf loader;
 
     matcher = pipe (functionTo bool) [
       (coercedTo (either path str) (

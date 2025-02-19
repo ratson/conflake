@@ -9,6 +9,7 @@
 
 let
   inherit (builtins)
+    attrValues
     isAttrs
     hasAttr
     mapAttrs
@@ -27,14 +28,13 @@ let
     setFunctionArgs
     types
     ;
+  inherit (lib.types) lazyAttrsOf;
   inherit (config) mkSystemArgs;
   inherit (conflake) callWith;
   inherit (conflake.types) functionTo;
   inherit (conflake.loaders) filterLoadable loadDirWithDefault;
 
   cfg = config.loaders;
-
-  loadable = filterLoadable options;
 
   mkModule =
     path:
@@ -66,7 +66,7 @@ in
 {
   options = {
     loaders = mkOption {
-      type = conflake.types.loaders;
+      type = lazyAttrsOf conflake.types.loaders;
       default = { };
     };
 
@@ -108,12 +108,14 @@ in
     };
   };
 
-  config = pipe loadable [
+  config = pipe options [
+    filterLoadable
     (mapAttrs (
       attr: _:
       mkIf (hasAttr attr cfg) (
         pipe attr [
           (x: cfg.${x})
+          attrValues
           (map (f: f { inherit attr; }))
           mkMerge
         ]

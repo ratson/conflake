@@ -65,7 +65,7 @@ in
       default = { };
     };
     loaders = mkOption {
-      type = lazyAttrsOf conflake.types.loader;
+      type = conflake.types.loaders;
       default = { };
     };
     matchers = mkOption {
@@ -151,9 +151,13 @@ in
                 type = "regular";
               };
             in
-            [
-              (mkIf (isPath fileArgs.node) (args: f (args // fileArgs)))
-              (mkIf (isAttrs dirArgs.node) (args: f (args // dirArgs)))
+            mkMerge [
+              (mkIf (isPath fileArgs.node) {
+                ${config.src.relTo fileArgs.path} = mkDefault (args: f (args // fileArgs));
+              })
+              (mkIf (isAttrs dirArgs.node) {
+                ${config.src.relTo dirArgs.path} = mkDefault (args: f (args // dirArgs));
+              })
             ]
           ))
           mkMerge
