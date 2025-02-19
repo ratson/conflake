@@ -1600,7 +1600,6 @@ in
       true
       [
         "awesome-emacs"
-        "default"
         "greet"
         "hei"
       ]

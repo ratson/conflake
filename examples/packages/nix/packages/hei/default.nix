@@ -1,3 +1,8 @@
-{ hello, ... }:
+{
+  hello,
+  inputs',
+  extra-arg,
+  ...
+}:
 
 hello

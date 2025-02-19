@@ -35,6 +35,7 @@ let
   genPkg =
     final: prev: name: pkg:
     let
+      inherit (prev.stdenv.hostPlatform) system;
       args = functionArgs pkg;
       noArgs = args == { };
       pkg' = if noArgs then { pkgs }: pkg pkgs else pkg;
@@ -44,7 +45,7 @@ let
         ${name} = prev.${name} or (throw "${name} depends on ${name}, but no existing ${name}.");
       };
       overrides =
-        filterAttrs (k: _: hasAttr k args) moduleArgs
+        filterAttrs (k: _: hasAttr k args) (moduleArgs // (config.mkSystemArgs system))
         // optionalAttrs dependsOnSelf selfOverride
         // optionalAttrs dependsOnPkgs { pkgs = final.pkgs // selfOverride; };
     in
