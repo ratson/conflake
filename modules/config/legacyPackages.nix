@@ -19,7 +19,7 @@ let
   inherit (lib.types) either lazyAttrsOf raw;
   inherit (conflake) callWith;
   inherit (conflake.loaders) loadDirWithDefault;
-  inherit (conflake.types) optFunctionTo nullable;
+  inherit (conflake.types) optPkgs nullable;
 
   cfg = config.legacyPackages;
 
@@ -47,7 +47,7 @@ let
 in
 {
   options.legacyPackages = mkOption {
-    type = nullable (optFunctionTo (lazyAttrsOf (either (lazyAttrsOf raw) raw)));
+    type = nullable (optPkgs (lazyAttrsOf (either (lazyAttrsOf raw) raw)));
     default = null;
   };
 

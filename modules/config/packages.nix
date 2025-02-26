@@ -23,7 +23,7 @@ let
     str
     ;
   inherit (conflake) callWith;
-  inherit (conflake.types) optFunctionTo nullable package;
+  inherit (conflake.types) optPkgs nullable package;
 
   cfg = config.packages;
 in
@@ -35,7 +35,7 @@ in
     };
 
     packages = mkOption {
-      type = nullable (optFunctionTo (lazyAttrsOf package));
+      type = nullable (optPkgs (lazyAttrsOf package));
       default = null;
     };
 

@@ -73,7 +73,6 @@ fix (
   let
     inherit (types')
       check
-      devShell
       function
       functionTo
       loader
@@ -83,8 +82,8 @@ fix (
       optCallWith
       optFunctionTo
       optListOf
+      optPkgs
       outputsValue
-      overlay
       path
       pathTree
       stringLike
@@ -124,11 +123,11 @@ fix (
       (coercedTo stringLike mkApp)
     ];
 
-    apps = optFunctionTo (lazyAttrsOf types'.app);
+    apps = optPkgs (lazyAttrsOf types'.app);
 
     bundler = function;
 
-    bundlers = optFunctionTo (lazyAttrsOf types'.bundler);
+    bundlers = optPkgs (lazyAttrsOf types'.bundler);
 
     check = pipe types'.package [
       (coercedTo (optFunctionTo str) (
@@ -136,10 +135,10 @@ fix (
       ))
     ];
 
-    checks = optFunctionTo (lazyAttrsOf check);
+    checks = optPkgs (lazyAttrsOf check);
 
     devShell = pipe unspecified [
-      optFunctionTo
+      optPkgs
       lazyAttrsOf
       (freeformType: {
         inherit freeformType;
@@ -178,10 +177,10 @@ fix (
     };
 
     formatters = pipe str [
-      optFunctionTo
+      optPkgs
       (coercedTo types.package getExe)
       lazyAttrsOf
-      optFunctionTo
+      optPkgs
     ];
 
     function = mkOptionType {
@@ -289,7 +288,7 @@ fix (
         };
       };
 
-    package = optFunctionTo types.package;
+    package = optPkgs types.package;
 
     path = types.path // {
       check = isPath;
@@ -309,6 +308,12 @@ fix (
     ];
 
     optListOf = elemType: coercedTo elemType singleton (listOf elemType);
+
+    optPkgs = flip pipe [
+      functionTo
+      (coercedTo function (f: if functionArgs f == { } then { pkgs, ... }: f pkgs else f))
+      (coercedTo nonFunction (x: _: x))
+    ];
 
     outputs = lazyAttrsOf outputsValue;
 
@@ -380,7 +385,8 @@ fix (
       (coercedTo (nonEmptyListOf raw) mkTestFromList)
     ];
 
-    tests = pipe (lazyAttrsOf test) [
+    tests = pipe test [
+      lazyAttrsOf
       optListOf
       optFunctionTo
     ];
