@@ -776,6 +776,7 @@ in
           {
             packages = [ emacs ];
           };
+        shell5.packages = pkgs: [ pkgs.hello ];
       };
     })
     (x: [
@@ -784,8 +785,10 @@ in
       (isDerivation x.devShells.x86_64-linux.shell2)
       (isDerivation x.devShells.x86_64-linux.shell3)
       (isDerivation x.devShells.x86_64-linux.shell4)
+      (isDerivation x.devShells.x86_64-linux.shell5)
     ])
     [
+      true
       true
       true
       true

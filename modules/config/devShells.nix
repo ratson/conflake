@@ -16,19 +16,20 @@ let
     mkOption
     pipe
     ;
-  inherit (conflake.types) nullable;
+  inherit (lib.types) lazyAttrsOf;
+  inherit (conflake.types) devShell nullable;
 
   cfg = config.devShells;
 in
 {
   options = {
     devShell = mkOption {
-      type = nullable conflake.types.devShell;
+      type = nullable devShell;
       default = null;
     };
 
     devShells = mkOption {
-      type = conflake.types.devShells;
+      type = lazyAttrsOf devShell;
       default = { };
     };
   };

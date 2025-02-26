@@ -138,7 +138,9 @@ fix (
 
     checks = optFunctionTo (lazyAttrsOf check);
 
-    devShell = pipe (lazyAttrsOf (optFunctionTo unspecified)) [
+    devShell = pipe unspecified [
+      optFunctionTo
+      lazyAttrsOf
       (freeformType: {
         inherit freeformType;
 
@@ -161,8 +163,6 @@ fix (
       }))
       optFunctionTo
     ];
-
-    devShells = lazyAttrsOf devShell;
 
     drv = types.package // {
       name = "drv";
