@@ -178,6 +178,7 @@ fix (
     };
 
     formatters = pipe str [
+      optFunctionTo
       (coercedTo types.package getExe)
       lazyAttrsOf
       optFunctionTo

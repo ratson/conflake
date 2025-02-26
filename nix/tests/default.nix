@@ -1078,6 +1078,7 @@ in
       devShell.packages = { pkgs }: [ pkgs.rustfmt ];
       formatters = {
         "*.rs" = "rustfmt";
+        "*.ts" = pkgs: "${pkgs.deno}/bin/deno fmt";
       };
     })
     (x: isDerivation x.formatter.x86_64-linux)
