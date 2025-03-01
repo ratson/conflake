@@ -9,10 +9,11 @@ let
   inherit (builtins)
     all
     attrValues
-    elem
     hasContext
     ;
   inherit (lib)
+    isFunction
+    mapAttrs
     mkDefault
     mkMerge
     mkOption
@@ -28,14 +29,16 @@ let
 
   mkFormatter =
     {
-      inputs',
+      outputs',
       pkgs,
       pkgsCall,
       ...
     }:
     let
-      inherit (pkgs.stdenv.hostPlatform) system;
-      formatters = pkgsCall config.formatters;
+      formatters = pipe config.formatters [
+        pkgsCall
+        (mapAttrs (_: v: if isFunction v then pkgsCall v else v))
+      ];
       fullContext = all hasContext (attrValues formatters);
       caseArms = pipe formatters [
         (mapAttrsToList (k: v: "\n      ${k}) ${v} \"$f\" & ;;"))
@@ -45,10 +48,10 @@ let
     pkgs.writeShellApplication {
       name = "formatter";
 
-      runtimeInputs =
-        [ pkgs.coreutils ]
-        ++ (optionals (!elem system [ "x86_64-freebsd" ]) [ pkgs.fd ])
-        ++ (optionals (!fullContext) inputs'.self.devShells.default.nativeBuildInputs or [ ]);
+      runtimeInputs = [
+        pkgs.coreutils
+        pkgs.fd
+      ] ++ (optionals (!fullContext) outputs'.devShells.default.nativeBuildInputs or [ ]);
 
       text = ''
         for f in "$@"; do

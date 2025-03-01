@@ -1,15 +1,7 @@
-{
-  config,
-  lib,
-  ...
-}@args:
+{ config, lib, ... }@args:
 
 let
-  inherit (lib)
-    mkEnableOption
-    mkIf
-    mkMerge
-    ;
+  inherit (lib) mkEnableOption mkIf;
   inherit (config) outputs;
 
   cfg = config.moduleArgs;
@@ -25,14 +17,11 @@ in
 
   };
 
-  config = mkMerge [
-    (mkIf cfg.enable { })
-    {
-      _module.args = {
-        inherit inputs outputs;
+  config = mkIf cfg.enable {
+    _module.args = {
+      inherit inputs outputs;
 
-        moduleArgs = args // config._module.args;
-      };
-    }
-  ];
+      moduleArgs = args // config._module.args;
+    };
+  };
 }
