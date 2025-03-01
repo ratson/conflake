@@ -15,6 +15,7 @@ let
     mapAttrs
     ;
   inherit (lib)
+    filterAttrs
     flip
     functionArgs
     hasPrefix
@@ -55,8 +56,10 @@ let
     if isFunction module then
       pipe module [
         functionArgs
+        (filterAttrs (_: v: !v))
         (flip removeAttrs [
           "inputs"
+          "moduleArgs"
           "outputs"
         ])
         (flip mergeAttrs (functionArgs f))
