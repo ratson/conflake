@@ -19,7 +19,11 @@
 
       package = pkgs: pkgs.hei;
 
-      packages.hi = pkgs: pkgs.hello;
+      packages =
+        { inputs', ... }:
+        {
+          hi = inputs'.self.packages.default;
+        };
 
       perSystem =
         { pkgs, ... }:
