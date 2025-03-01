@@ -1255,7 +1255,7 @@ in
   }) (f: f ? nixosModules.default);
 
   nixosModules = test (conflake' {
-    nixosModules.test = _: { };
+    nixosModules.test = { unknown-arg, ... }: { };
   }) (f: f ? nixosModules.test);
 
   homeModule = test (conflake' {
@@ -1263,7 +1263,7 @@ in
   }) (f: f ? homeModules.default);
 
   homeModules = test (conflake' {
-    homeModules.test = _: { };
+    homeModules.test = { unknown-arg, ... }: { };
   }) (f: f ? homeModules.test);
 
   conflakeModule = test (conflake' {
@@ -1575,6 +1575,7 @@ in
       true
       [
         "default"
+        "extra"
         "greet"
         "hallo"
       ]

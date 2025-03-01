@@ -10,6 +10,10 @@
     conflake ./. {
       inherit inputs;
 
+      _module.args = {
+        extra-arg = 1;
+      };
+
       nixpkgs.overlays = [
         inputs.overlay.overlays.default
         (final: _: {

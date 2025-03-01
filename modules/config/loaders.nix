@@ -53,8 +53,13 @@ let
         ];
     in
     if isFunction module then
-      pipe f [
+      pipe module [
         functionArgs
+        (flip removeAttrs [
+          "inputs"
+          "outputs"
+        ])
+        (flip mergeAttrs (functionArgs f))
         (flip mergeAttrs { pkgs = false; })
         (setFunctionArgs f)
         (setDefaultModuleLocation path)
