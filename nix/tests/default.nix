@@ -17,7 +17,6 @@ let
     hasPrefix
     isDerivation
     mkDefault
-    pipe
     ;
   inherit (inputs) nixpkgs;
   inherit (inputs.self.lib) mkOutputs;

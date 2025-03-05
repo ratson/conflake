@@ -4,7 +4,12 @@ let
   inherit (builtins) attrNames;
   inherit (lib) functionArgs;
   inherit (inputs) self;
-  inherit (self.lib) callMustWith callWith mkVersion;
+  inherit (self.lib)
+    callMustWith
+    callWith
+    mkVersion
+    selectHigherVersion
+    ;
   inherit (self.lib.strings) getUsername;
 in
 {
@@ -161,5 +166,32 @@ in
       inherit (self) lastModifiedDate;
       shortRev = self.shortRev or "dirty";
     })
+  ];
+
+  selectHigherVersion = [
+    (selectHigherVersion { version = "1.0"; } { version = "2.0"; })
+    { version = "2.0"; }
+  ];
+
+  selectHigherVersion-reverse = [
+    (selectHigherVersion { version = "1.0.2"; } { version = "1.0.1"; })
+    { version = "1.0.2"; }
+  ];
+
+  selectHigherVersion-equal = [
+    (selectHigherVersion
+      {
+        version = "1.0";
+        a = 1;
+      }
+      {
+        version = "1.0";
+        b = 1;
+      }
+    )
+    {
+      version = "1.0";
+      a = 1;
+    }
   ];
 }

@@ -8,6 +8,7 @@ let
     mapAttrs'
     nameValuePair
     pipe
+    versionOlder
     ;
 in
 fix (self: {
@@ -50,4 +51,36 @@ fix (self: {
     );
 
   selectAttr = attr: mapAttrs (_: v: v.${attr} or { });
+
+  /**
+    Select attrset with higher version.
+
+    # Inputs
+
+    `a.version`
+
+    : First attrset version
+
+    `b.version`
+
+    : Second attrset version
+
+    # Type
+
+    ```
+    sselectHigherVersion :: AttrSet -> AttrSet -> AttrSet
+    ```
+
+    # Examples
+    :::{.example}
+    ## `lib.attrsets.selectHigherVersion` usage example
+
+    ```nix
+    selectHigherVersion { version = "1.0"; } { version = "2.0"; }
+    => { version = "2.0"; }
+    ```
+
+    :::
+  */
+  selectHigherVersion = a: b: if versionOlder a.version b.version then b else a;
 })
