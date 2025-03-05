@@ -18,6 +18,7 @@ let
   inherit (lib)
     flip
     imap0
+    isFunction
     mapAttrsRecursive
     mergeAttrs
     mkDefault
@@ -79,6 +80,8 @@ let
                   (imap0 (i: v: nameValuePair (toString i) [ v ]))
                   listToAttrs
                 ]
+              else if isFunction x then
+                pkgsCall x
               else
                 singleton x
             )
