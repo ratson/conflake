@@ -1,0 +1,3 @@
+{ emacsPackages, elpaBuild, ... }:
+
+emacsPackages.dash
