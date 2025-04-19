@@ -1,6 +1,6 @@
 {
   "private": true,
-  "packageManager": "pnpm@10.3.0",
+  "packageManager": "pnpm@10.8.1",
   "scripts": {
     "docs:build": "pnpm --filter ./docs run build"
   },
