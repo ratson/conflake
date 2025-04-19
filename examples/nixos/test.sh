@@ -2,10 +2,10 @@
 set -ex
 
 nix_build() {
-  nix build --no-link --reference-lock-file flake.lock "$@"
+    nix build --no-link --override-input conflake ../.. --reference-lock-file flake.lock "$@"
 }
 
-nix eval --reference-lock-file flake.lock .#lib.hello-world
+nix eval --override-input conflake ../.. --reference-lock-file flake.lock .#lib.hello-world
 
 nix_build .#nixosConfigurations.vm.config.system.build.vm
 nix_build .#nixosConfigurations.vm-dir.config.system.build.vm

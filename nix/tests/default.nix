@@ -191,6 +191,7 @@ in
     ))
     (x: attrNames x.moduleArgs)
     [
+      "_class"
       "config"
       "conflake"
       "extendModules"

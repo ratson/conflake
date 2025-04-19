@@ -2,11 +2,11 @@
 set -ex
 
 nix_build() {
-  nix build --no-link --reference-lock-file flake.lock "$@"
+    nix build --no-link --override-input conflake ../.. --reference-lock-file flake.lock "$@"
 }
 
 nix_run() {
-  nix run --reference-lock-file flake.lock "$@"
+    nix run --override-input conflake ../.. --reference-lock-file flake.lock "$@"
 }
 
 nix_run
