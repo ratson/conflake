@@ -20,6 +20,7 @@ let
   inherit (conflake.types) optCallWith;
 
   cfg = config.nixosConfigurations;
+  preset = config.presets.nixos;
 
   # Avoid checking if toplevel is a derivation as it causes the nixos modules
   # to be evaluated.
@@ -42,7 +43,7 @@ in
             mergeAttrs v {
               modules =
                 [ { _module.args.hostname = mkOptionDefault k; } ]
-                ++ (optionals (config.presets.nixos.enable or false) [ config.presets.nixos.module ])
+                ++ (optionals (preset.enable or false) [ preset.module ])
                 ++ v.modules or [ ];
             }
           )

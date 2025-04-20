@@ -33,13 +33,13 @@ let
   inherit (lib.path) subpath;
   inherit (lib.types)
     lazyAttrsOf
-    listOf
     functionTo
     nonEmptyListOf
     nullOr
     str
     ;
   inherit (conflake.loaders) filterLoadable;
+  inherit (conflake.types) optListOf;
 
   cfg = config.nixDir;
 
@@ -61,7 +61,7 @@ in
       default = src + /nix;
     };
     aliases = mkOption {
-      type = lazyAttrsOf (listOf str);
+      type = lazyAttrsOf (optListOf str);
       default = { };
     };
     loaders = mkOption {

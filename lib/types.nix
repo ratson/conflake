@@ -311,7 +311,7 @@ fix (
 
     optPkgs = flip pipe [
       functionTo
-      (coercedTo function (f: if functionArgs f == { } then { pkgs, ... }: f pkgs else f))
+      (coercedTo unspecified (f: if functionArgs f == { } then { pkgs, ... }: f pkgs else f))
       (coercedTo nonFunction (x: _: x))
     ];
 

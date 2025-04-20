@@ -3,18 +3,27 @@
   lib,
   inputs,
   conflake,
-  mkSystemArgs,
   moduleArgs,
   ...
 }:
 
 let
   inherit (builtins) mapAttrs;
-  inherit (lib) mergeAttrs mkIf mkOption;
+  inherit (lib)
+    mergeAttrs
+    mkEnableOption
+    mkIf
+    mkOption
+    mkOptionDefault
+    optionals
+    pipe
+    types
+    ;
   inherit (lib.types) attrs lazyAttrsOf;
   inherit (conflake.types) optCallWith;
 
   cfg = config.darwinConfigurations;
+  preset = config.presets.darwin;
 
   isDarwin = x: x ? config.system.builder;
 in
@@ -22,6 +31,33 @@ in
   options.darwinConfigurations = mkOption {
     type = optCallWith moduleArgs (lazyAttrsOf (optCallWith moduleArgs attrs));
     default = { };
+  };
+
+  options.presets.darwin = {
+    enable = mkEnableOption "darwin default module" // {
+      default = config.presets.enable or false;
+    };
+
+    module = mkOption {
+      internal = true;
+      readOnly = true;
+      type = types.deferredModule;
+      default =
+        { pkgs, ... }:
+        {
+          _module.args = pipe pkgs.system [
+            config.mkSystemArgs
+            (mergeAttrs {
+              inherit inputs;
+            })
+            (mapAttrs (_: mkOptionDefault))
+          ];
+
+          nixpkgs.hostPlatform = mkOptionDefault "aarch64-darwin";
+
+          system.stateVersion = mkOptionDefault 6;
+        };
+    };
   };
 
   config = {
@@ -33,13 +69,10 @@ in
         else
           inputs.nix-darwin.lib.darwinSystem (
             mergeAttrs v {
-              specialArgs =
-                {
-                  inherit inputs;
-                  hostname = k;
-                }
-                // (config.mkSystemArgs cfg.system)
-                // cfg.specialArgs or { };
+              modules =
+                [ { _module.args.hostname = mkOptionDefault k; } ]
+                ++ (optionals preset.enable [ preset.module ])
+                ++ v.modules or [ ];
             }
           )
       ) cfg;
