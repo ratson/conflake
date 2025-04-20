@@ -11,6 +11,7 @@ let
   inherit (builtins) mapAttrs;
   inherit (lib)
     mergeAttrs
+    mkDefault
     mkEnableOption
     mkIf
     mkOption
@@ -55,7 +56,7 @@ in
 
           nixpkgs.hostPlatform = mkOptionDefault "aarch64-darwin";
 
-          system.stateVersion = mkOptionDefault 6;
+          system.stateVersion = mkDefault 6;
         };
     };
   };
